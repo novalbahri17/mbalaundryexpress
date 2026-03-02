@@ -1,0 +1,39 @@
+﻿import { useQuery } from "@tanstack/react-query";
+import { getBranches } from "@/api/branches.api";
+import { getPromos } from "@/api/promos.api";
+import { getTestimonials } from "@/api/testimonials.api";
+import { PageHeader } from "@/components/public/shared/PageHeader";
+import { CountUp } from "@/components/public/shared/CountUp";
+
+export default function StatistikPage() {
+	const { data: branchRes } = useQuery({ queryKey: ["stat-branches"], queryFn: () => getBranches({ activeOnly: true, perPage: 100 }) });
+	const { data: promoRes } = useQuery({ queryKey: ["stat-promos"], queryFn: () => getPromos({ activeOnly: true, status: "published", perPage: 100 }) });
+	const { data: testimonials = [] } = useQuery({ queryKey: ["stat-testimonials"], queryFn: () => getTestimonials({ approvedOnly: true, limit: 1000 }) });
+
+	const rating = testimonials.length > 0
+		? testimonials.reduce((sum, item) => sum + item.rating, 0) / testimonials.length
+		: 0;
+
+	const stats = [
+		{ label: "Cabang Aktif", value: branchRes?.totalItems ?? 0 },
+		{ label: "Promo Berjalan", value: promoRes?.totalItems ?? 0 },
+		{ label: "Testimoni Approved", value: testimonials.length },
+		{ label: "Rata-rata Rating", value: Number(rating.toFixed(1)) },
+	];
+
+	return (
+		<section className="pb-20">
+			<PageHeader kicker="Statistik" title="Data" highlight="Operasional" description="Ringkasan metrik operasional dari data realtime seluruh modul." />
+			<div className="mx-auto grid max-w-6xl gap-4 px-4 md:grid-cols-2 lg:grid-cols-4 md:px-8">
+				{stats.map((item) => (
+					<div key={item.label} className="glass-card rounded-2xl p-6">
+						<p className="text-sm text-[var(--text-muted)]">{item.label}</p>
+						<p className="mt-2 text-4xl font-extrabold text-red-600 dark:text-red-300"><CountUp value={item.value} /></p>
+					</div>
+				))}
+			</div>
+		</section>
+	);
+}
+
+

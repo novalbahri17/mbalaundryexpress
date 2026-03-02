@@ -1,0 +1,90 @@
+﻿Bootstrap PocketBase: http://127.0.0.1:8090
+[auth] mencoba endpoint: /api/collections/_superusers/auth-with-password
+[api] calling: http://127.0.0.1:8090/api/collections/_superusers/auth-with-password
+[api] FAILED: 404 Not Found
+[api] Response body: {
+  code: 404,
+  message: "The requested resource wasn't found.",
+  data: {}
+}
+[auth] Gagal di /api/collections/_superusers/auth-with-password: 404 The requested resource wasn't found.
+[auth] mencoba endpoint: /api/collections/_admins/auth-with-password
+[api] calling: http://127.0.0.1:8090/api/collections/_admins/auth-with-password
+[api] FAILED: 404 Not Found
+[api] Response body: {
+  code: 404,
+  message: "The requested resource wasn't found.",
+  data: {}
+}
+[auth] Gagal di /api/collections/_admins/auth-with-password: 404 The requested resource wasn't found.
+[auth] mencoba endpoint: /api/admins/auth-with-password
+[api] calling: http://127.0.0.1:8090/api/admins/auth-with-password
+[auth] BERHASIL login via /api/admins/auth-with-password
+[ensure] Memulai pengecekan 19 koleksi...
+[find] mencari koleksi: branches
+[api] calling: http://127.0.0.1:8090/api/collections/branches
+[api] FAILED: 404 Not Found
+[api] Response body: {
+  code: 404,
+  message: "The requested resource wasn't found.",
+  data: {}
+}
+[find] Error mencari branches: 404 The requested resource wasn't found.
+[create] membuat koleksi: branches
+[api] calling: http://127.0.0.1:8090/api/collections
+[api] FAILED: 400 Bad Request
+[api] Response body: {
+  code: 400,
+  message: 'Something went wrong while processing your request.',
+  data: {
+    schema: { code: 'validation_required', message: 'Cannot be blank.' }
+  }
+}
+node : Gagal bootstrap
+ PocketBase: Error: 40
+0 Something went wrong
+ while processing your
+ request.
+At line:1 char:1
++ node scripts/bootstr
+ap-pocketbase.mjs *>&1
+ | Out-File -FilePath 
+boots ...
++ ~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo    
+          : NotSpeci  
+  fied: (Gagal boot   
+ strap...g your re    
+quest.:String) []    ,
+ RemoteException
+    + FullyQualifiedE 
+   rrorId : NativeCo  
+  mmandError
+ 
+    at api (file:///E:
+/projekt%20gabut/lauun
+dry/slash-admin/script
+s/bootstrap-pocketbase
+.mjs:387:9)
+    at process.process
+TicksAndRejections (no
+de:internal/process/ta
+sk_queues:103:5)
+    at async createCol
+lection (file:///E:/pr
+ojekt%20gabut/lauundry
+/slash-admin/scripts/b
+ootstrap-pocketbase.mj
+s:431:2)
+    at async ensureCol
+lections (file:///E:/p
+rojekt%20gabut/lauundr
+y/slash-admin/scripts/
+bootstrap-pocketbase.m
+js:475:3)
+    at async main (fil
+e:///E:/projekt%20gabu
+t/lauundry/slash-admin
+/scripts/bootstrap-poc
+ketbase.mjs:787:2)

@@ -1,0 +1,65 @@
+﻿import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { getFaqs } from "@/api/faqs.api";
+import { PageHeader } from "@/components/public/shared/PageHeader";
+
+const categories = ["harga", "mesin", "waktu", "pembayaran", "keamanan", "barang-hilang", "umum"] as const;
+
+export default function FaqPage() {
+	const [category, setCategory] = useState<(typeof categories)[number] | "all">("all");
+	const [openId, setOpenId] = useState<string | null>(null);
+	const { data: faqs = [] } = useQuery({
+		queryKey: ["faqs", category],
+		queryFn: () => getFaqs({ activeOnly: true, category: category === "all" ? undefined : category }),
+	});
+
+	const grouped = useMemo(() => {
+		if (category !== "all") return [{ category, items: faqs }];
+		return categories.map((key) => ({
+			category: key,
+			items: faqs.filter((item) => item.category === key),
+		}));
+	}, [category, faqs]);
+
+	return (
+		<section className="pb-20">
+			<PageHeader kicker="FAQ" title="Pertanyaan" highlight="Umum" description="Jawaban cepat untuk pertanyaan yang paling sering ditanyakan pelanggan." />
+			<div className="mx-auto max-w-5xl px-4 md:px-8">
+				<div className="mb-6 flex flex-wrap gap-2">
+					<button type="button" onClick={() => setCategory("all")} className={`rounded-full px-4 py-2 text-xs font-semibold ${category === "all" ? "bg-red-600 text-white" : "glass-card"}`}>
+						Semua
+					</button>
+					{categories.map((key) => (
+						<button key={key} type="button" onClick={() => setCategory(key)} className={`rounded-full px-4 py-2 text-xs font-semibold capitalize ${category === key ? "bg-red-600 text-white" : "glass-card"}`}>
+							{key}
+						</button>
+					))}
+				</div>
+				{grouped.map((group) => (
+					<div key={group.category} className="mb-6">
+						<h2 className="mb-3 text-lg font-bold capitalize">{group.category}</h2>
+						<div className="space-y-2">
+							{group.items.map((item) => {
+								const open = openId === item.id;
+								return (
+									<div key={item.id} className="glass-card rounded-xl">
+										<button
+											type="button"
+											onClick={() => setOpenId((prev) => (prev === item.id ? null : item.id))}
+											className="flex w-full items-center justify-between gap-4 px-4 py-3 text-left text-sm font-semibold"
+										>
+											<span>{item.question}</span>
+											<span>{open ? "−" : "+"}</span>
+										</button>
+										{open ? <div className="border-t border-slate-200 px-4 py-3 text-sm text-[var(--text-muted)] dark:border-slate-700">{item.answer}</div> : null}
+									</div>
+								);
+							})}
+						</div>
+						{group.items.length === 0 ? <p className="mt-2 text-sm text-[var(--text-muted)]">Belum ada FAQ.</p> : null}
+					</div>
+				))}
+			</div>
+		</section>
+	);
+}
