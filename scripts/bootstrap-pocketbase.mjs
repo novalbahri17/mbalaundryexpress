@@ -162,6 +162,7 @@ const collections = [
 			textField("whatsapp_apply"),
 			dateField("posted_at"),
 			dateField("closed_at"),
+			fileField("image"),
 		],
 		listRule: "",
 		viewRule: "",

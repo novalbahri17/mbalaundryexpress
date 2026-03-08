@@ -7,6 +7,7 @@ const CabangListPage = lazy(() => import("@/pages/public/CabangListPage"));
 const CabangDetailPage = lazy(() => import("@/pages/public/CabangDetailPage"));
 const PromoPage = lazy(() => import("@/pages/public/PromoPage"));
 const HargaPage = lazy(() => import("@/pages/public/HargaPage"));
+const KalkulatorPage = lazy(() => import("@/pages/public/KalkulatorPage"));
 const CaraPakaiPage = lazy(() => import("@/pages/public/CaraPakaiPage"));
 const FaqPage = lazy(() => import("@/pages/public/FaqPage"));
 const BlogListPage = lazy(() => import("@/pages/public/BlogListPage"));
@@ -19,8 +20,7 @@ const KemitraanPage = lazy(() => import("@/pages/public/KemitraanPage"));
 const KorporatPage = lazy(() => import("@/pages/public/KorporatPage"));
 const TentangPage = lazy(() => import("@/pages/public/TentangPage"));
 const KontakPage = lazy(() => import("@/pages/public/KontakPage"));
-const SpinPage = lazy(() => import("@/pages/public/SpinPage"));
-const LoyalitasPage = lazy(() => import("@/pages/public/LoyalitasPage"));
+
 const StatistikPage = lazy(() => import("@/pages/public/StatistikPage"));
 
 export const publicRoutes: RouteObject = {
@@ -32,6 +32,7 @@ export const publicRoutes: RouteObject = {
 		{ path: "cabang/:slug", element: <CabangDetailPage /> },
 		{ path: "promo", element: <PromoPage /> },
 		{ path: "harga", element: <HargaPage /> },
+		{ path: "kalkulator", element: <KalkulatorPage /> },
 		{ path: "cara-pakai", element: <CaraPakaiPage /> },
 		{ path: "faq", element: <FaqPage /> },
 		{ path: "blog", element: <BlogListPage /> },
@@ -44,9 +45,7 @@ export const publicRoutes: RouteObject = {
 		{ path: "korporat", element: <KorporatPage /> },
 		{ path: "tentang", element: <TentangPage /> },
 		{ path: "kontak", element: <KontakPage /> },
-		{ path: "spin", element: <SpinPage /> },
-		{ path: "loyalitas", element: <LoyalitasPage /> },
+
 		{ path: "statistik", element: <StatistikPage /> },
 	],
 };
-

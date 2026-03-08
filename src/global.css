@@ -1,38 +1,38 @@
-﻿@tailwind base;
+﻿@import "./styles/tokens.css";
+
+@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    /* IE and Edge */
+    scrollbar-width: none;
+    /* Firefox */
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 :root {
-  color-scheme: light;
-  --bg: #FAFAFA;
-  --surface: #ffffff;
-  --surface-border: #F0F0F0;
-  --text-main: #111827;
-  --text-muted: #6B7280;
-  --accent-ruby: #C62828;
-  --accent-blue: #1565C0;
-  --accent-teal: #00695C;
-  --accent-amber: #F59E0B;
-  --hero-gradient: linear-gradient(135deg, #FFF5F5 0%, #F0F4FF 50%, #F0FFFE 100%);
-  --glass-bg: rgba(255, 255, 255, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.2);
+  --bg: var(--surface-0);
+  --surface: var(--surface-1);
+  --text-main: var(--text-1);
+  --text-muted: var(--text-3);
+  --accent-ruby: var(--ruby-700);
+  --accent-blue: var(--sapphire-700);
+  --accent-teal: var(--teal-700);
+  --hero-gradient: var(--gradient-hero);
   --orb-opacity: 0.08;
 }
 
 .dark {
-  color-scheme: dark;
-  --bg: #0A0A0F;
-  --surface: #13131A;
-  --surface-border: #1E1E2E;
-  --text-main: #F9FAFB;
-  --text-muted: #9CA3AF;
-  --accent-ruby: #EF5350;
-  --accent-blue: #42A5F5;
-  --accent-teal: #2DD4BF;
-  --accent-amber: #FBBF24;
-  --hero-gradient: linear-gradient(135deg, #1A0A0A 0%, #0A0A1A 50%, #0A1A18 100%);
-  --glass-bg: rgba(15, 15, 25, 0.7);
-  --glass-border: rgba(255, 255, 255, 0.14);
+  --accent-ruby: var(--ruby-500);
+  --accent-blue: var(--sapphire-500);
+  --accent-teal: var(--teal-500);
   --orb-opacity: 0.12;
 }
 
@@ -329,9 +329,20 @@ select {
   animation: cursorPulse 1.6s ease-out infinite;
 }
 
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
 .shadow-ruby-glow {
   box-shadow: 0 0 40px rgba(198, 40, 40, 0.2), 0 10px 30px rgba(198, 40, 40, 0.22);
 }
+
+
 
 @media (max-width: 1024px) {
   .custom-cursor {

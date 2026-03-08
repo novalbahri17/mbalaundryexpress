@@ -110,6 +110,7 @@ export interface Job extends BaseTable {
 	whatsapp_apply?: string;
 	posted_at?: string;
 	closed_at?: string;
+	image?: string;
 }
 
 export interface Article extends BaseTable {

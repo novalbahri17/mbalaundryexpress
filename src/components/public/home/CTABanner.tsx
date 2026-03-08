@@ -6,7 +6,7 @@ export function CTABanner() {
 	return (
 		<section className="section-wrap mt-24 pb-20">
 			<div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#0F111A] px-8 py-16 text-center text-white">
-				<div className="pointer-events-none absolute -left-20 top-6 h-[260px] w-[260px] rounded-full bg-brand-500/30 blur-3xl" />
+				<div className="pointer-events-none absolute -left-20 top-6 h-[260px] w-[260px] rounded-full bg-ruby-500/30 blur-3xl" />
 				<div className="pointer-events-none absolute -right-20 bottom-0 h-[260px] w-[260px] rounded-full bg-sapphire-500/30 blur-3xl" />
 				<div className="pointer-events-none absolute left-1/2 top-8 h-[180px] w-[180px] -translate-x-1/2 rounded-full bg-teal-500/20 blur-3xl" />
 				<div className="pointer-events-none absolute inset-0 dot-grid opacity-15" />
@@ -30,3 +30,4 @@ export function CTABanner() {
 		</section>
 	);
 }
+

@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getJobById } from "@/api/jobs.api";
 import { PageHeader } from "@/components/public/shared/PageHeader";
 import { GlassCard } from "@/components/public/shared/GlassCard";
-import { formatRupiah, toWhatsappLink } from "@/utils/format";
+import { formatRupiah, resolveImageUrl, toWhatsappLink } from "@/utils/format";
 
 export default function KarirDetailPage() {
 	const { id } = useParams();
@@ -21,7 +21,14 @@ export default function KarirDetailPage() {
 		<section className="pb-20">
 			<PageHeader kicker="Karir Detail" title={job.title} description={job.type} />
 			<div className="mx-auto max-w-5xl px-4 md:px-8">
-				<GlassCard hoverable={false}>
+				<GlassCard hoverable={false} className="overflow-hidden p-0">
+					<img
+						src={resolveImageUrl(job.image, job.title, "#C62828", "#1565C0")}
+						alt={job.title}
+						loading="lazy"
+						className="h-56 w-full object-cover md:h-72"
+					/>
+					<div className="p-5 md:p-6">
 					<p className="text-sm font-semibold">Deskripsi</p>
 					<p className="mt-2 text-sm text-[var(--text-muted)]">{job.description}</p>
 					<p className="mt-5 text-sm font-semibold">Kualifikasi</p>
@@ -34,6 +41,7 @@ export default function KarirDetailPage() {
 							Lamar via WhatsApp
 						</a>
 					) : null}
+					</div>
 				</GlassCard>
 			</div>
 		</section>

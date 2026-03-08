@@ -26,7 +26,7 @@ function ToggleChip({
 			className={`rounded-xl border px-5 py-2.5 text-sm font-semibold transition-all shadow-sm ${
 				active
 					? `${colorClass} border-transparent text-white shadow-md -translate-y-0.5`
-					: "border-mba-border bg-white text-mba-subtext hover:bg-mba-bg dark:border-mba-darkBorder dark:bg-mba-darkSurface dark:text-mba-darkSubtext dark:hover:bg-mba-darkBorder"
+					: "border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900/70 dark:text-neutral-300 dark:hover:bg-neutral-700"
 			}`}
 		>
 			{label}
@@ -47,30 +47,30 @@ export function KalkulatorSection({ washPrice, dryPrice }: KalkulatorSectionProp
 
 	return (
 		<section className="section-wrap mt-14" id="kalkulator">
-			<div className="relative overflow-hidden rounded-[2rem] border border-mba-border bg-white p-8 shadow-card-sm dark:border-mba-darkBorder dark:bg-mba-darkSurface dark:shadow-none md:p-12">
-				<div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-brand-500/10 blur-[100px]" />
+			<div className="relative overflow-hidden rounded-[2rem] border border-neutral-200 bg-white p-8 shadow-card-sm dark:border-neutral-700 dark:bg-neutral-900/70 dark:shadow-none md:p-12">
+				<div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-ruby-500/10 blur-[100px]" />
 				<div className="pointer-events-none absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-sapphire-500/10 blur-[100px]" />
 
 				<div className="grid gap-12 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
 					<div>
 						<div className="mb-7 flex items-center gap-4">
-							<div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
+							<div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-ruby-50 text-ruby-600 dark:bg-ruby-500/10 dark:text-ruby-400">
 								<Calculator className="h-7 w-7" />
 							</div>
 							<div>
-								<h3 className="text-[1.4rem] font-extrabold text-mba-text dark:text-mba-darkText">
+								<h3 className="text-[1.4rem] font-extrabold text-neutral-900 dark:text-white">
 									Hitung Estimasi Biaya
 								</h3>
-								<p className="mt-1 text-[15px] font-medium text-mba-subtext dark:text-mba-darkSubtext">
+								<p className="mt-1 text-[15px] font-medium text-neutral-600 dark:text-neutral-300">
 									Atur jumlah muatan dan pilih layanan.
 								</p>
 							</div>
 						</div>
 
-						<div className="mb-8 rounded-2xl border border-mba-border bg-mba-bg p-6 dark:border-mba-darkBorder dark:bg-mba-darkBg">
-							<div className="mb-4 flex justify-between text-[15px] font-bold text-mba-text dark:text-mba-darkText">
+						<div className="mb-8 rounded-2xl border border-neutral-200 bg-neutral-50 p-6 dark:border-neutral-700 dark:bg-neutral-950">
+							<div className="mb-4 flex justify-between text-[15px] font-bold text-neutral-900 dark:text-white">
 								<span>Jumlah Muatan</span>
-								<span className="rounded-md bg-brand-50 px-3 py-1 text-brand-600 dark:bg-brand-500/10 dark:text-brand-400">
+								<span className="rounded-md bg-ruby-50 px-3 py-1 text-ruby-600 dark:bg-ruby-500/10 dark:text-ruby-400">
 									{load} Load
 								</span>
 							</div>
@@ -80,10 +80,10 @@ export function KalkulatorSection({ washPrice, dryPrice }: KalkulatorSectionProp
 								max={10}
 								value={load}
 								onChange={(event) => setLoad(Number(event.target.value))}
-								className="h-2.5 w-full cursor-pointer appearance-none rounded-full bg-slate-200 accent-brand-600 outline-none dark:bg-slate-700 dark:accent-brand-500"
+								className="h-2.5 w-full cursor-pointer appearance-none rounded-full bg-slate-200 accent-ruby-600 outline-none dark:bg-slate-700 dark:accent-ruby-500"
 								aria-label="Jumlah muatan"
 							/>
-							<div className="mt-4 flex justify-between text-sm font-semibold text-mba-subtext dark:text-mba-darkSubtext">
+							<div className="mt-4 flex justify-between text-sm font-semibold text-neutral-600 dark:text-neutral-300">
 								<span>1 Load</span>
 								<span>10 Load</span>
 							</div>
@@ -94,7 +94,7 @@ export function KalkulatorSection({ washPrice, dryPrice }: KalkulatorSectionProp
 								active={washOn}
 								onChange={setWashOn}
 								label="Cuci"
-								colorClass="bg-brand-600 hover:bg-brand-700"
+								colorClass="bg-ruby-600 hover:bg-ruby-700"
 							/>
 							<ToggleChip
 								active={dryOn}
@@ -105,19 +105,19 @@ export function KalkulatorSection({ washPrice, dryPrice }: KalkulatorSectionProp
 						</div>
 					</div>
 
-					<div className="relative overflow-hidden rounded-[1.5rem] border border-brand-100 bg-brand-50 p-10 text-center dark:border-brand-500/20 dark:bg-[#151c33]">
-						<div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-brand-500 via-sapphire-500 to-teal-500" />
+					<div className="relative overflow-hidden rounded-[1.5rem] border border-ruby-100 bg-ruby-50 p-10 text-center dark:border-ruby-500/20 dark:bg-[#151c33]">
+						<div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-ruby-500 via-sapphire-500 to-teal-500" />
 
-						<p className="mb-4 inline-block rounded-full bg-white px-4 py-1.5 text-sm font-bold uppercase tracking-[0.1em] text-brand-700 shadow-sm dark:bg-mba-darkSurface dark:text-brand-300">
+						<p className="mb-4 inline-block rounded-full bg-white px-4 py-1.5 text-sm font-bold uppercase tracking-[0.1em] text-ruby-700 shadow-sm dark:bg-neutral-900/70 dark:text-ruby-300">
 							Estimasi
 						</p>
-						<p className="pt-3 text-[3rem] font-extrabold leading-none tabular-nums text-mba-text dark:text-white md:text-[3.5rem]">
-							<span className="mr-2 text-[1.5rem] font-bold text-mba-subtext dark:text-mba-darkSubtext">
+						<p className="pt-3 text-[3rem] font-extrabold leading-none tabular-nums text-neutral-900 dark:text-white md:text-[3.5rem]">
+							<span className="mr-2 text-[1.5rem] font-bold text-neutral-600 dark:text-neutral-300">
 								Rp
 							</span>
 							<CountUp value={total} />
 						</p>
-						<p className="mt-4 rounded-xl bg-white/60 py-2.5 text-[15px] font-medium text-mba-subtext dark:bg-black/20 dark:text-mba-darkSubtext">
+						<p className="mt-4 rounded-xl bg-white/60 py-2.5 text-[15px] font-medium text-neutral-600 dark:bg-black/20 dark:text-neutral-300">
 							Total untuk <strong>{load} muatan</strong>
 						</p>
 
@@ -134,3 +134,4 @@ export function KalkulatorSection({ washPrice, dryPrice }: KalkulatorSectionProp
 		</section>
 	);
 }
+

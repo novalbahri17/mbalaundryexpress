@@ -1,5 +1,5 @@
-﻿import { motion } from "framer-motion";
-import { cn } from "@/utils";
+import { motion } from "framer-motion";
+import { cn } from "@/utils/index";
 
 type AnimatedOrbProps = {
 	className?: string;
@@ -31,4 +31,5 @@ export function AnimatedOrb({ className, color, size = 280, delay = 0 }: Animate
 		/>
 	);
 }
+
 

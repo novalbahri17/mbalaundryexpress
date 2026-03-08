@@ -1,7 +1,7 @@
 import Icon from "@/components/icon/icon";
 import useLocale from "@/locales/use-locale";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/ui/tooltip";
-import { cn } from "@/utils";
+import { cn } from "@/utils/index";
 import { NavItemRenderer } from "../components";
 import { navItemClasses, navItemStyles } from "../styles";
 import type { NavItemProps } from "../types";
@@ -61,3 +61,4 @@ const ItemIcon = ({ depth = 1 }: { depth?: number }) => {
 	const icon = depth === 1 ? "eva:arrow-ios-downward-fill" : "eva:arrow-ios-forward-fill";
 	return <Icon icon={icon} style={navItemStyles.arrow} />;
 };
+

@@ -1,14 +1,14 @@
-﻿import {
+import {
 	ApartmentOutlined,
 	AppstoreOutlined,
 	ArrowLeftOutlined,
 	BellOutlined,
 	CrownOutlined,
 	DashboardOutlined,
-	LeftOutlined,
 	DownOutlined,
 	GiftOutlined,
 	HomeOutlined,
+	LeftOutlined,
 	LogoutOutlined,
 	MailOutlined,
 	MenuOutlined,
@@ -20,7 +20,6 @@
 	SettingOutlined,
 	StarOutlined,
 	TeamOutlined,
-	TrophyOutlined,
 	UpOutlined,
 } from "@ant-design/icons";
 import type { MenuProps } from "antd";
@@ -72,8 +71,6 @@ const menuEntries: AdminMenuEntry[] = [
 	{ key: "/admin/faq", icon: <QuestionCircleOutlined />, label: "FAQ", group: "group-konten" },
 	{ key: "/admin/galeri", icon: <PictureOutlined />, label: "Galeri", group: "group-konten" },
 	{ key: "/admin/konten-home", icon: <MessageOutlined />, label: "Konten Home", group: "group-konten" },
-	{ key: "/admin/spin", icon: <TrophyOutlined />, label: "Spin", group: "group-program" },
-	{ key: "/admin/loyalitas", icon: <CrownOutlined />, label: "Loyalitas", group: "group-program" },
 	{ key: "/admin/subscribers", icon: <BellOutlined />, label: "Subscribers", group: "group-program" },
 	{ key: "/admin/kemitraan", icon: <HomeOutlined />, label: "Kemitraan", group: "group-komunikasi" },
 	{ key: "/admin/pesan", icon: <MailOutlined />, label: "Pesan", group: "group-komunikasi" },
@@ -99,45 +96,42 @@ function SidebarMenu({
 	onSelect: (key: string) => void;
 	onOpenChange: (keys: string[]) => void;
 }) {
-	const items = useMemo<MenuProps["items"]>(
-		() => {
-			if (collapsed) {
-				return [
-					{
-						key: dashboardMenuEntry.key,
-						icon: dashboardMenuEntry.icon,
-						label: dashboardMenuEntry.label,
-					},
-					...menuEntries.map((entry) => ({
-						key: entry.key,
-						icon: entry.icon,
-						label: entry.label,
-					})),
-				];
-			}
-
+	const items = useMemo<MenuProps["items"]>(() => {
+		if (collapsed) {
 			return [
 				{
 					key: dashboardMenuEntry.key,
 					icon: dashboardMenuEntry.icon,
 					label: dashboardMenuEntry.label,
 				},
-				...menuGroups.map((group) => ({
-					key: group.key,
-					icon: group.icon,
-					label: group.label,
-					children: menuEntries
-						.filter((entry) => entry.group === group.key)
-						.map((entry) => ({
-							key: entry.key,
-							icon: entry.icon,
-							label: entry.label,
-						})),
+				...menuEntries.map((entry) => ({
+					key: entry.key,
+					icon: entry.icon,
+					label: entry.label,
 				})),
 			];
-		},
-		[collapsed],
-	);
+		}
+
+		return [
+			{
+				key: dashboardMenuEntry.key,
+				icon: dashboardMenuEntry.icon,
+				label: dashboardMenuEntry.label,
+			},
+			...menuGroups.map((group) => ({
+				key: group.key,
+				icon: group.icon,
+				label: group.label,
+				children: menuEntries
+					.filter((entry) => entry.group === group.key)
+					.map((entry) => ({
+						key: entry.key,
+						icon: entry.icon,
+						label: entry.label,
+					})),
+			})),
+		];
+	}, [collapsed]);
 
 	return (
 		<Menu
@@ -211,7 +205,7 @@ export default function AdminLayout() {
 	};
 
 	return (
-		<Layout className="min-h-screen bg-mba-bg dark:bg-mba-darkBg">
+		<Layout className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
 			<Sider
 				width={SIDEBAR_WIDTH}
 				collapsedWidth={SIDEBAR_COLLAPSED_WIDTH}
@@ -226,7 +220,7 @@ export default function AdminLayout() {
 					}`}
 				>
 					<Typography.Text className="flex items-center gap-3 text-[1.06rem] font-bold tracking-tight text-white">
-						<span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-brand-600 to-blue-500 text-white shadow">
+						<span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-ruby-600 to-sapphire-500 text-white shadow">
 							<span className="h-2.5 w-2.5 rounded-full border-2 border-white" />
 						</span>
 						<span className={`${sidebarCollapsed ? "hidden" : "inline"}`}>MBA Admin</span>
@@ -252,7 +246,7 @@ export default function AdminLayout() {
 			</Sider>
 
 			<div
-				className="fixed top-[80px] z-40 hidden h-[54px] w-[18px] rounded-r-md border border-l-0 border-mba-border bg-white dark:border-mba-darkBorder dark:bg-mba-darkSurface lg:block"
+				className="fixed top-[80px] z-40 hidden h-[54px] w-[18px] rounded-r-md border border-l-0 border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-900/70 lg:block"
 				style={{ left: sidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH }}
 			/>
 
@@ -261,20 +255,20 @@ export default function AdminLayout() {
 				aria-label={sidebarCollapsed ? "Buka Sidebar" : "Tutup Sidebar"}
 				title={sidebarCollapsed ? "Buka Sidebar" : "Tutup Sidebar (Maximize Workspace)"}
 				onClick={() => setSidebarCollapsed((value) => !value)}
-				className="fixed top-[87px] z-50 hidden h-10 w-7 -translate-x-1/2 items-center justify-center rounded-md border border-mba-border bg-white text-mba-subtext shadow-[0_8px_20px_rgba(15,23,42,0.14)] transition-all duration-300 hover:text-brand-600 dark:border-mba-darkBorder dark:bg-mba-darkSurface dark:text-mba-darkSubtext dark:hover:text-brand-400 lg:flex"
+				className="fixed top-[87px] z-50 hidden h-10 w-7 -translate-x-1/2 items-center justify-center rounded-md border border-neutral-200 bg-white text-neutral-600 shadow-[0_8px_20px_rgba(15,23,42,0.14)] transition-all duration-300 hover:text-ruby-600 dark:border-neutral-700 dark:bg-neutral-900/70 dark:text-neutral-300 dark:hover:text-ruby-400 lg:flex"
 				style={{ left: sidebarCollapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_WIDTH }}
 			>
 				{sidebarCollapsed ? <RightOutlined /> : <LeftOutlined />}
 			</button>
 
 			<Layout className="bg-transparent">
-				<Header className="sticky top-0 z-40 flex h-[70px] items-center justify-between border-b border-mba-border bg-white px-4 md:px-8 dark:border-mba-darkBorder dark:bg-mba-darkSurface">
+				<Header className="sticky top-0 z-40 flex h-[70px] items-center justify-between border-b border-neutral-200 bg-white px-4 md:px-8 dark:border-neutral-700 dark:bg-neutral-900/70">
 					<div className="flex items-center gap-3 md:gap-4">
 						<Button
 							type="text"
 							icon={<MenuOutlined />}
 							onClick={() => setMobileOpen(true)}
-							className="lg:!hidden border-none bg-mba-border text-mba-subtext shadow-none dark:bg-mba-darkBorder dark:text-mba-darkSubtext"
+							className="lg:!hidden border-none bg-neutral-200 text-neutral-600 shadow-none dark:bg-neutral-700 dark:text-neutral-300"
 						/>
 
 						{!isDashboard ? (
@@ -282,25 +276,26 @@ export default function AdminLayout() {
 								type="text"
 								icon={<ArrowLeftOutlined />}
 								onClick={handleBack}
-								className="border border-mba-border text-mba-subtext hover:border-brand-300 hover:text-brand-600 dark:border-mba-darkBorder dark:text-mba-darkSubtext dark:hover:border-brand-500/30 dark:hover:text-brand-400"
+								className="border border-neutral-200 text-neutral-600 hover:border-ruby-300 hover:text-ruby-600 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-ruby-500/30 dark:hover:text-ruby-400"
 							>
 								Kembali
 							</Button>
 						) : null}
 
 						<div className="hidden md:block">
-							<h1 className="m-0 text-[1.15rem] font-bold leading-tight text-mba-text dark:text-mba-darkText">
+							<h1 className="m-0 text-[1.15rem] font-bold leading-tight text-neutral-900 dark:text-white">
 								{pageTitle}
 							</h1>
-							<div className="mt-0.5 flex items-center gap-2 text-xs font-semibold text-mba-subtext dark:text-mba-darkSubtext">
-								<span
-									className="cursor-pointer hover:text-brand-600 dark:hover:text-brand-400"
+							<div className="mt-0.5 flex items-center gap-2 text-xs font-semibold text-neutral-600 dark:text-neutral-300">
+								<button
+									type="button"
+									className="cursor-pointer hover:text-ruby-600 dark:hover:text-ruby-400"
 									onClick={() => navigate("/admin/dashboard")}
 								>
 									Dashboard
-								</span>
-								<span className="h-1 w-1 rounded-full bg-mba-subtext/40" />
-								<span className="text-mba-text dark:text-mba-darkText">{pageTitle}</span>
+								</button>
+								<span className="h-1 w-1 rounded-full bg-neutral-400/40" />
+								<span className="text-neutral-900 dark:text-white">{pageTitle}</span>
 							</div>
 						</div>
 					</div>
@@ -309,34 +304,31 @@ export default function AdminLayout() {
 						<Button
 							type="text"
 							icon={<BellOutlined className="text-base" />}
-							onClick={() => toast("Tidak ada notifikasi baru", { icon: "🔔" })}
-							className="hidden h-9 w-9 items-center justify-center rounded-lg text-mba-subtext hover:bg-mba-bg hover:text-brand-600 dark:text-mba-darkSubtext dark:hover:bg-mba-darkBorder dark:hover:text-brand-400 md:!inline-flex"
+							onClick={() => toast("Tidak ada notifikasi baru", { icon: "i" })}
+							className="hidden h-9 w-9 items-center justify-center rounded-lg text-neutral-600 hover:bg-neutral-50 hover:text-ruby-600 dark:text-neutral-300 dark:hover:bg-neutral-700 dark:hover:text-ruby-400 md:!inline-flex"
 						/>
 
-						<div className="flex cursor-pointer items-center gap-3 rounded-lg px-1.5 py-1 transition-colors hover:bg-mba-bg dark:hover:bg-mba-darkBorder">
+						<div className="flex cursor-pointer items-center gap-3 rounded-lg px-1.5 py-1 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-700">
 							<div className="hidden text-right md:block">
-								<p className="mb-1 text-[13px] leading-none font-bold text-mba-text dark:text-mba-darkText">
+								<p className="mb-1 text-[13px] leading-none font-bold text-neutral-900 dark:text-white">
 									{user.username ?? user.email ?? "Admin"}
 								</p>
-								<p className="text-[11px] leading-none font-semibold text-mba-subtext dark:text-mba-darkSubtext">
+								<p className="text-[11px] leading-none font-semibold text-neutral-600 dark:text-neutral-300">
 									Administrator
 								</p>
 							</div>
-							<Avatar
-								size={36}
-								className="bg-brand-50 font-bold text-brand-600 dark:bg-brand-500/10 dark:text-brand-400"
-							>
+							<Avatar size={36} className="bg-ruby-50 font-bold text-ruby-600 dark:bg-ruby-500/10 dark:text-ruby-400">
 								{(user.username ?? user.email ?? "A").slice(0, 1).toUpperCase()}
 							</Avatar>
 						</div>
 
-						<div className="mx-1 hidden h-6 w-px bg-mba-border dark:bg-mba-darkBorder md:block" />
+						<div className="mx-1 hidden h-6 w-px bg-neutral-200 dark:bg-neutral-700 md:block" />
 
 						<Button
 							type="text"
 							icon={<LogoutOutlined />}
 							onClick={handleLogout}
-							className="text-mba-subtext transition-colors hover:bg-rose-50 hover:text-rose-600 dark:text-mba-darkSubtext dark:hover:bg-rose-500/10"
+							className="text-neutral-600 transition-colors hover:bg-rose-50 hover:text-rose-600 dark:text-neutral-300 dark:hover:bg-rose-500/10"
 						/>
 					</div>
 				</Header>

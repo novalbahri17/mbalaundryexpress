@@ -1,7 +1,7 @@
 import type { NavItemDataProps } from "@/components/nav/types";
 import { GLOBAL_CONFIG } from "@/global-config";
 import { useUserPermissions } from "@/store/userStore";
-import { checkAny } from "@/utils";
+import { checkAny } from "@/utils/index";
 import { useMemo } from "react";
 import { backendNavData } from "./nav-data-backend";
 import { frontendNavData } from "./nav-data-frontend";
@@ -70,3 +70,4 @@ export const useFilteredNavData = () => {
 	const filteredNavData = useMemo(() => filterNavData(permissionCodes), [permissionCodes]);
 	return filteredNavData;
 };
+

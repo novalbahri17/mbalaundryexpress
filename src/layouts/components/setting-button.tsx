@@ -13,7 +13,7 @@ import { Slider } from "@/ui/slider";
 import { Switch } from "@/ui/switch";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/ui/tooltip";
 import { Text } from "@/ui/typography";
-import { cn } from "@/utils";
+import { cn } from "@/utils/index";
 import { type CSSProperties, useCallback, useEffect, useState } from "react";
 
 import { useTranslation } from "react-i18next";
@@ -370,3 +370,4 @@ export default function SettingButton() {
 		</Sheet>
 	);
 }
+

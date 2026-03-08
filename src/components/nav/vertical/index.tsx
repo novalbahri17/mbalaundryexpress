@@ -1,4 +1,4 @@
-import { cn } from "@/utils";
+import { cn } from "@/utils/index";
 import type { NavProps } from "../types";
 import { NavGroup } from "./nav-group";
 
@@ -11,3 +11,4 @@ export function NavVertical({ data, className, ...props }: NavProps) {
 		</nav>
 	);
 }
+

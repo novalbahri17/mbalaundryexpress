@@ -1,177 +1,195 @@
-import { motion } from "framer-motion";
-import { ArrowRight, CheckCircle2, PlayCircle } from "lucide-react";
+import { CheckCircle2, Clock, MapPin, Star, TrendingUp, Users, Home } from "lucide-react";
 import { Link } from "react-router-dom";
-import { GradientText } from "@/components/public/shared/GradientText";
-import { useBranches } from "@/hooks/useBranches";
-import { usePageContentMap } from "@/hooks/usePageContent";
+import { motion } from "framer-motion";
 
-function formatCompact(value: number): string {
-	return value.toLocaleString("id-ID");
-}
+const stats = [
+	{ icon: TrendingUp, value: "12.5K+", label: "Cucian Selesai", color: "text-ruby-500" },
+	{ icon: Star, value: "4.9", label: "Rating Google", color: "text-amber-500" },
+	{ icon: Users, value: "500+", label: "Pelanggan Puas", color: "text-sapphire-500" },
+	{ icon: MapPin, value: "2", label: "Cabang Aktif", color: "text-teal-500" },
+];
+
+const features = [
+	{ icon: Star, text: "4.9/5 dari 500+ review" },
+	{ icon: MapPin, text: "2 cabang di Surabaya" },
+	{ icon: Clock, text: "Buka 07:00 - 23:00" },
+	{ icon: CheckCircle2, text: "Mesin selalu bersih" },
+];
 
 export function HeroSection() {
-	const { data: content = {} } = usePageContentMap();
-	const { data: branches = [] } = useBranches({ activeOnly: true });
-
-	const heroTitle = content.hero_title || "Laundry Sendiri, Bersih Maksimal, Harga Pasti";
-	const titleWords = heroTitle.split(" ");
-	const subtitle =
-		content.hero_subtitle ||
-		"Rp 10.000 cuci dan Rp 10.000 kering. Mesin modern, proses cepat, dan hasil bersih tanpa ribet.";
-
-	const statsCucian = Number(content.stats_cucian ?? 12000);
-	const statsRating = Number(content.stats_rating ?? 4.9);
-
 	return (
-		<section className="hero-noise relative overflow-hidden bg-hero-light pb-24 pt-32 md:pb-32 md:pt-40 dark:bg-hero-dark">
-			<div
-				className="pointer-events-none absolute -left-24 -top-16 h-[320px] w-[320px] rounded-full bg-brand-600 blur-[90px]"
-				style={{ opacity: "var(--orb-opacity)" }}
-			/>
-			<div
-				className="pointer-events-none absolute -right-24 top-1/3 h-[380px] w-[380px] rounded-full bg-sapphire-600 blur-[110px]"
-				style={{ opacity: "var(--orb-opacity)" }}
-			/>
-			<div
-				className="pointer-events-none absolute bottom-[-140px] left-1/2 h-[340px] w-[340px] -translate-x-1/2 rounded-full bg-teal-500 blur-[100px]"
-				style={{ opacity: "var(--orb-opacity)" }}
-			/>
-			<div className="pointer-events-none absolute inset-0 dot-grid opacity-20" />
+		<section className="relative overflow-hidden bg-[var(--landing-bg-light)] px-6 py-20 dark:bg-[var(--landing-bg-dark)] md:py-28 lg:px-12">
+			{/* Background Effects */}
+			<div className="pointer-events-none absolute inset-0">
+				<div className="absolute -left-20 -top-20 h-[340px] w-[340px] rounded-full bg-ruby-400/18 blur-[90px] dark:bg-ruby-500/20" />
+				<div className="absolute right-[-80px] top-[12%] h-[380px] w-[380px] rounded-full bg-sapphire-400/18 blur-[95px] dark:bg-sapphire-500/18" />
+				<div className="absolute bottom-[-120px] left-[36%] h-[340px] w-[340px] rounded-full bg-teal-400/14 blur-[95px] dark:bg-teal-500/16" />
+				<div className="absolute inset-0 bg-gradient-to-b from-white/55 via-white/15 to-white/70 dark:from-neutral-950/30 dark:via-neutral-950/8 dark:to-neutral-950/55" />
+				{/* Subtle pattern */}
+				<div 
+					className="absolute inset-0 opacity-[0.015]"
+					style={{
+						backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+					}}
+				/>
+			</div>
 
-			<div className="section-wrap relative z-10">
-				<div className="grid items-center gap-14 lg:grid-cols-2">
-					<div className="text-center lg:text-left">
-						<motion.p
-							initial={{ opacity: 0, y: 16 }}
-							animate={{ opacity: 1, y: 0 }}
-							transition={{ duration: 0.45 }}
-							className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/40 bg-white/70 px-4 py-2 text-xs font-bold uppercase tracking-[0.14em] text-brand-700 shadow-sm backdrop-blur-md lg:mx-0 dark:border-white/10 dark:bg-white/10 dark:text-brand-300"
-						>
-							<span className="h-1.5 w-1.5 rounded-full bg-brand-500" />
-							Self-Service Laundry Modern
-						</motion.p>
-
-						<h1 className="mt-6 text-[clamp(2.4rem,6.2vw,5rem)] font-extrabold leading-[1.02] tracking-[-0.03em] text-mba-text dark:text-white">
-							{titleWords.map((word, index) => {
-								const shouldHighlight =
-									word.toLowerCase().includes("bersih") ||
-									word.toLowerCase().includes("maksimal") ||
-									word.toLowerCase().includes("pasti");
-								return (
-									<motion.span
-										key={`${word}-${index}`}
-										initial={{ opacity: 0, y: 24, filter: "blur(5px)" }}
-										animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-										transition={{ duration: 0.45, delay: 0.08 + index * 0.06 }}
-										className="mr-3 inline-block"
-									>
-										{shouldHighlight ? <GradientText>{word}</GradientText> : word}
-									</motion.span>
-								);
-							})}
-						</h1>
-
-						<motion.p
-							initial={{ opacity: 0, y: 14 }}
-							animate={{ opacity: 1, y: 0 }}
-							transition={{ duration: 0.45, delay: 0.28 }}
-							className="mx-auto mt-6 max-w-2xl text-base leading-8 text-mba-subtext md:text-lg lg:mx-0 dark:text-mba-darkSubtext"
-						>
-							{subtitle}
-						</motion.p>
-
-						<motion.div
-							initial={{ opacity: 0, y: 14 }}
-							animate={{ opacity: 1, y: 0 }}
-							transition={{ duration: 0.45, delay: 0.38 }}
-							className="mt-8 flex flex-wrap items-center justify-center gap-3 lg:justify-start"
-						>
-							<Link
-								to="/cabang"
-								className="btn-primary inline-flex items-center gap-2 rounded-full px-7 py-3 text-sm font-bold md:text-base"
-							>
-								{content.hero_cta_primary || "Pilih Cabang Terdekat"}
-								<ArrowRight className="h-[18px] w-[18px]" />
-							</Link>
-							<Link
-								to="/promo"
-								className="inline-flex items-center gap-2 rounded-full border border-brand-300 bg-white/70 px-7 py-3 text-sm font-bold text-brand-700 transition hover:-translate-y-0.5 hover:bg-brand-700 hover:text-white dark:border-brand-500/30 dark:bg-white/5 dark:text-brand-300 dark:hover:bg-brand-500 md:text-base"
-							>
-								<PlayCircle className="h-[18px] w-[18px]" />
-								{content.hero_cta_secondary || "Lihat Promo Hari Ini"}
-							</Link>
-						</motion.div>
-
-						<motion.div
-							initial={{ opacity: 0 }}
-							animate={{ opacity: 1 }}
-							transition={{ duration: 0.45, delay: 0.52 }}
-							className="mt-8 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm font-semibold text-mba-subtext lg:justify-start dark:text-mba-darkSubtext"
-						>
-							<span className="inline-flex items-center gap-1.5">
-								<CheckCircle2 className="h-4 w-4 text-teal-500" />
-								{formatCompact(statsCucian)}+ cucian
-							</span>
-							<span className="inline-flex items-center gap-1.5">
-								<CheckCircle2 className="h-4 w-4 text-brand-500" />
-								{statsRating.toFixed(1)} rating
-							</span>
-							<span className="inline-flex items-center gap-1.5">
-								<CheckCircle2 className="h-4 w-4 text-sapphire-500" />
-								{branches.length} cabang aktif
-							</span>
-						</motion.div>
-					</div>
-
-					<motion.div
-						initial={{ opacity: 0, y: 24, scale: 0.97 }}
-						animate={{ opacity: 1, y: 0, scale: 1 }}
-						transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
-						className="relative mx-auto w-full max-w-[560px]"
+			<div className="relative z-10 mx-auto grid max-w-[1280px] grid-cols-1 items-center gap-12 lg:grid-cols-2">
+				{/* Left Content */}
+				<div className="flex flex-col items-start text-left">
+					<motion.span 
+						initial={{ opacity: 0, y: 20 }}
+						animate={{ opacity: 1, y: 0 }}
+						transition={{ duration: 0.5 }}
+						className="rounded-full bg-gradient-to-r from-teal-500 to-teal-600 px-4 py-2 text-[12px] font-bold uppercase tracking-wide text-white shadow-lg"
 					>
-						<div className="rounded-[40px] border border-slate-200 bg-white p-4 shadow-[0_24px_64px_rgba(15,23,42,0.14)] dark:border-white/10 dark:bg-[#141824] md:p-5">
-							<div className="rounded-[30px] border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-[#111827] md:p-5">
-								<div className="overflow-hidden rounded-[22px] border border-slate-200 bg-white dark:border-white/10 dark:bg-[#0B1322]">
-									<img
-										src="/washer-3d.png"
-										alt="Mesin laundry modern MBA Laundry"
-										className="h-[300px] w-full object-cover object-left-center md:h-[360px]"
-										loading="lazy"
-									/>
-								</div>
+						✨ Self-Service Laundry Modern
+					</motion.span>
 
-								<div className="mt-5 grid gap-3 sm:grid-cols-3">
-									<div className="rounded-[18px] border border-slate-200 bg-white px-4 py-4 text-center dark:border-white/10 dark:bg-[#0F1522]">
-										<p className="text-[11px] font-bold uppercase tracking-[0.12em] text-mba-subtext dark:text-mba-darkSubtext">
-											Cuci
-										</p>
-										<p className="mt-1.5 text-lg font-extrabold text-brand-700 dark:text-brand-300">Rp 10.000</p>
-									</div>
-									<div className="rounded-[18px] border border-slate-200 bg-white px-4 py-4 text-center dark:border-white/10 dark:bg-[#0F1522]">
-										<p className="text-[11px] font-bold uppercase tracking-[0.12em] text-mba-subtext dark:text-mba-darkSubtext">
-											Kering
-										</p>
-										<p className="mt-1.5 text-lg font-extrabold text-sapphire-700 dark:text-sapphire-300">Rp 10.000</p>
-									</div>
-									<div className="rounded-[18px] border border-slate-200 bg-white px-4 py-4 text-center dark:border-white/10 dark:bg-[#0F1522]">
-										<p className="text-[11px] font-bold uppercase tracking-[0.12em] text-mba-subtext dark:text-mba-darkSubtext">
-											Estimasi
-										</p>
-										<p className="mt-1.5 text-lg font-extrabold text-slate-800 dark:text-slate-200">60 Menit</p>
+					<motion.h1 
+						initial={{ opacity: 0, y: 20 }}
+						animate={{ opacity: 1, y: 0 }}
+						transition={{ duration: 0.5, delay: 0.1 }}
+						className="mt-4 text-[40px] font-bold leading-[1.1] text-neutral-900 dark:text-neutral-100 md:text-[48px] lg:text-[56px]"
+					>
+						Laundry Sendiri,{" "}
+						<span className="bg-gradient-to-r from-ruby-500 to-ruby-600 bg-clip-text text-transparent">
+							Hemat Maksimal
+						</span>
+						, Cepat Beres
+					</motion.h1>
+
+					<motion.p 
+						initial={{ opacity: 0, y: 20 }}
+						animate={{ opacity: 1, y: 0 }}
+						transition={{ duration: 0.5, delay: 0.2 }}
+						className="mt-6 max-w-[520px] text-[18px] leading-[1.75] text-neutral-600 dark:text-neutral-300"
+					>
+						Cuci dan kering sendiri dengan mesin modern. Rp 10.000 cuci, Rp 10.000 kering. Lokasi strategis, buka sampai malam.
+					</motion.p>
+
+					{/* CTA Buttons */}
+					<motion.div 
+						initial={{ opacity: 0, y: 20 }}
+						animate={{ opacity: 1, y: 0 }}
+						transition={{ duration: 0.5, delay: 0.3 }}
+						className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center"
+					>
+						<Link
+							to="/cabang"
+							className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-ruby-500 to-ruby-600 px-8 py-4 text-[16px] font-semibold text-white shadow-ruby-glow transition-all hover:scale-105 hover:shadow-xl"
+						>
+							<MapPin className="h-5 w-5 transition-transform group-hover:-translate-y-0.5" />
+							Pilih Cabang Terdekat
+						</Link>
+						<Link
+							to="/cara-pakai"
+							className="group inline-flex items-center justify-center gap-2 rounded-xl border-2 border-ruby-500 bg-white/85 px-8 py-4 text-[16px] font-semibold text-ruby-500 transition-all hover:bg-ruby-50 hover:gap-3 dark:bg-neutral-950/70 dark:text-ruby-300 dark:hover:bg-neutral-900"
+						>
+							Lihat Harga & Cara Pakai
+							<span className="transition-transform group-hover:translate-x-1">→</span>
+						</Link>
+					</motion.div>
+
+					{/* Features */}
+					<motion.div 
+						initial={{ opacity: 0, y: 20 }}
+						animate={{ opacity: 1, y: 0 }}
+						transition={{ duration: 0.5, delay: 0.4 }}
+						className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-4"
+					>
+						{features.map((feature, index) => (
+							<div 
+								key={index}
+								className="flex items-center gap-2 rounded-full bg-white/60 px-3 py-1.5 backdrop-blur-sm dark:bg-neutral-900/40"
+							>
+								<feature.icon className="h-4 w-4 text-ruby-500" />
+								<span className="text-[13px] text-neutral-600 dark:text-neutral-300">{feature.text}</span>
+							</div>
+						))}
+					</motion.div>
+
+					{/* Stats Counter */}
+					<motion.div 
+						initial={{ opacity: 0, y: 30 }}
+						animate={{ opacity: 1, y: 0 }}
+						transition={{ duration: 0.6, delay: 0.5 }}
+						className="mt-12 grid grid-cols-2 gap-4 border-t border-neutral-200/60 pt-8 sm:grid-cols-4"
+					>
+						{stats.map((stat, index) => (
+							<motion.div 
+								key={index}
+								initial={{ opacity: 0, scale: 0.8 }}
+								animate={{ opacity: 1, scale: 1 }}
+								transition={{ duration: 0.4, delay: 0.6 + index * 0.1 }}
+								className="group text-center"
+							>
+								<div className="flex justify-center">
+									<div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-sm transition-transform group-hover:scale-110 dark:bg-neutral-800">
+										<stat.icon className={`h-6 w-6 ${stat.color}`} />
 									</div>
 								</div>
-							</div>
-						</div>
+								<p className="mt-3 text-[28px] font-bold leading-none text-neutral-900 dark:text-neutral-100">
+									{stat.value}
+								</p>
+								<p className="mt-1 text-[13px] text-neutral-500">{stat.label}</p>
+							</motion.div>
+						))}
 					</motion.div>
 				</div>
 
-				<motion.div
-					initial={{ opacity: 0, y: 10 }}
-					animate={{ opacity: 1, y: 0 }}
-					transition={{ delay: 0.7, duration: 0.35 }}
-					className="mt-12 text-center text-sm font-semibold text-mba-subtext dark:text-mba-darkSubtext"
+				{/* Right Content - Image */}
+				<motion.div 
+					initial={{ opacity: 0, x: 40 }}
+					animate={{ opacity: 1, x: 0 }}
+					transition={{ duration: 0.7, delay: 0.3 }}
+					className="relative mx-auto mt-8 w-full max-w-lg lg:mt-0 lg:max-w-none"
 				>
-					Jelajahi lebih
+					<div className="relative aspect-[4/3] w-full overflow-hidden rounded-[24px] border border-white/35 shadow-2xl dark:border-white/15">
+						<img
+							src="https://images.unsplash.com/photo-1517677208171-0bc6725a3e60?q=80&w=2070&auto=format&fit=crop"
+							alt="Interior mesin cuci modern"
+							className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
+						/>
+						{/* Overlay gradient */}
+						<div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+					</div>
+
+					{/* Floating Card 1 */}
+					<motion.div 
+						initial={{ opacity: 0, y: 20 }}
+						animate={{ opacity: 1, y: 0 }}
+						transition={{ duration: 0.5, delay: 0.8 }}
+						className="absolute right-[-10px] top-6 rounded-2xl border border-white/50 bg-white/95 px-5 py-3 shadow-lg backdrop-blur-xl md:right-[-24px] dark:border-white/20 dark:bg-neutral-900/95"
+					>
+						<div className="flex items-center gap-3">
+							<div className="flex h-10 w-10 items-center justify-center rounded-full bg-ruby-100 dark:bg-ruby-500/20">
+								<Home className="h-6 w-6 text-ruby-500" />
+							</div>
+							<div>
+								<p className="text-[12px] font-semibold uppercase text-neutral-500 dark:text-neutral-300">Mesin Modern</p>
+								<p className="text-[14px] font-bold text-neutral-900 dark:text-neutral-100">7-10kg Kapasitas</p>
+							</div>
+						</div>
+					</motion.div>
+
+					{/* Floating Card 2 */}
+					<motion.div 
+						initial={{ opacity: 0, y: 20 }}
+						animate={{ opacity: 1, y: 0 }}
+						transition={{ duration: 0.5, delay: 1 }}
+						className="absolute -left-4 bottom-8 rounded-2xl border border-white/50 bg-white/95 px-5 py-3 shadow-lg backdrop-blur-xl md:-left-8 dark:border-white/20 dark:bg-neutral-900/95"
+					>
+						<div className="flex items-center gap-3">
+							<div className="flex h-10 w-10 items-center justify-center rounded-full bg-teal-100 dark:bg-teal-500/20">
+								<Clock className="h-6 w-6 text-teal-500" />
+							</div>
+							<div>
+								<p className="text-[12px] font-semibold uppercase text-neutral-500 dark:text-neutral-300">Cepat & Efisien</p>
+								<p className="text-[14px] font-bold text-neutral-900 dark:text-neutral-100">30-40 Menit</p>
+							</div>
+						</div>
+					</motion.div>
 				</motion.div>
 			</div>
 		</section>

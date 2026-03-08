@@ -21,11 +21,12 @@ import {
 	Tag,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createBranch, deleteBranch, getBranches, updateBranch } from "@/api/branches.api";
+import { getDistricts, getProvinces, getRegencies, getVillages } from "@/api/wilayah.api";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { RichTextEditor } from "@/components/admin/RichTextEditor";
 import type { Branch } from "@/types/database.types";
@@ -37,6 +38,10 @@ type BranchFormValues = {
 	name: string;
 	slug: string;
 	address: string;
+	province_id?: string;
+	regency_id?: string;
+	district_id?: string;
+	village_id?: string;
 	maps_url?: string;
 	maps_embed?: string;
 	whatsapp?: string;
@@ -61,6 +66,24 @@ function statusTag(status: Branch["status"]) {
 	return <Tag color="red">Tutup</Tag>;
 }
 
+const normalizeText = (value: string): string =>
+	value
+		.normalize("NFD")
+		.replace(/[\u0300-\u036f]/g, "")
+		.toUpperCase()
+		.replace(/\s+/g, " ")
+		.trim();
+
+const mergeAddressWithRegions = (baseAddress: string, regions: string[]): string => {
+	const cleanedBase = baseAddress.trim();
+	const current = normalizeText(cleanedBase);
+
+	const uniqueRegions = regions.filter(Boolean).filter((region) => !current.includes(normalizeText(region)));
+	if (uniqueRegions.length === 0) return cleanedBase;
+
+	return [cleanedBase, ...uniqueRegions].filter(Boolean).join(", ");
+};
+
 export default function CabangAdminPage() {
 	const [form] = Form.useForm<BranchFormValues>();
 	const [open, setOpen] = useState(false);
@@ -74,6 +97,54 @@ export default function CabangAdminPage() {
 	});
 
 	const rows = branchRes?.items ?? [];
+	const selectedProvinceId = Form.useWatch("province_id", form);
+	const selectedRegencyId = Form.useWatch("regency_id", form);
+	const selectedDistrictId = Form.useWatch("district_id", form);
+	const selectedVillageId = Form.useWatch("village_id", form);
+
+	const { data: provinces = [] } = useQuery({
+		queryKey: ["wilayah", "provinces", "admin-cabang"],
+		queryFn: getProvinces,
+		staleTime: 24 * 60 * 60 * 1000,
+	});
+
+	const { data: regencies = [], isLoading: loadingRegencies } = useQuery({
+		queryKey: ["wilayah", "regencies", selectedProvinceId, "admin-cabang"],
+		queryFn: () => getRegencies(selectedProvinceId ?? ""),
+		enabled: Boolean(selectedProvinceId),
+		staleTime: 24 * 60 * 60 * 1000,
+	});
+
+	const { data: districts = [], isLoading: loadingDistricts } = useQuery({
+		queryKey: ["wilayah", "districts", selectedRegencyId, "admin-cabang"],
+		queryFn: () => getDistricts(selectedRegencyId ?? ""),
+		enabled: Boolean(selectedRegencyId),
+		staleTime: 24 * 60 * 60 * 1000,
+	});
+
+	const { data: villages = [], isLoading: loadingVillages } = useQuery({
+		queryKey: ["wilayah", "villages", selectedDistrictId, "admin-cabang"],
+		queryFn: () => getVillages(selectedDistrictId ?? ""),
+		enabled: Boolean(selectedDistrictId),
+		staleTime: 24 * 60 * 60 * 1000,
+	});
+
+	const selectedProvinceName = useMemo(
+		() => provinces.find((item) => item.id === selectedProvinceId)?.name ?? "",
+		[provinces, selectedProvinceId],
+	);
+	const selectedRegencyName = useMemo(
+		() => regencies.find((item) => item.id === selectedRegencyId)?.name ?? "",
+		[regencies, selectedRegencyId],
+	);
+	const selectedDistrictName = useMemo(
+		() => districts.find((item) => item.id === selectedDistrictId)?.name ?? "",
+		[districts, selectedDistrictId],
+	);
+	const selectedVillageName = useMemo(
+		() => villages.find((item) => item.id === selectedVillageId)?.name ?? "",
+		[selectedVillageId, villages],
+	);
 
 	const columns: ColumnsType<Branch> = [
 		{
@@ -113,21 +184,21 @@ export default function CabangAdminPage() {
 				<div className="flex flex-wrap gap-2">
 					<Link
 						to={`/admin/cabang/${record.id}/jam`}
-						className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 transition-all hover:-translate-y-px hover:border-brand-300 hover:text-brand-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-brand-500/50 dark:hover:text-brand-400"
+						className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 transition-all hover:-translate-y-px hover:border-ruby-300 hover:text-ruby-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-ruby-500/50 dark:hover:text-ruby-400"
 					>
 						<ClockCircleOutlined />
 						<span>Jam</span>
 					</Link>
 					<Link
 						to={`/admin/cabang/${record.id}/fasilitas`}
-						className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 transition-all hover:-translate-y-px hover:border-brand-300 hover:text-brand-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-brand-500/50 dark:hover:text-brand-400"
+						className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 transition-all hover:-translate-y-px hover:border-ruby-300 hover:text-ruby-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-ruby-500/50 dark:hover:text-ruby-400"
 					>
 						<AppstoreOutlined />
 						<span>Fasilitas</span>
 					</Link>
 					<Link
 						to={`/admin/cabang/${record.id}/galeri`}
-						className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 transition-all hover:-translate-y-px hover:border-brand-300 hover:text-brand-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-brand-500/50 dark:hover:text-brand-400"
+						className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-700 transition-all hover:-translate-y-px hover:border-ruby-300 hover:text-ruby-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-ruby-500/50 dark:hover:text-ruby-400"
 					>
 						<PictureOutlined />
 						<span>Galeri</span>
@@ -159,6 +230,10 @@ export default function CabangAdminPage() {
 								name: record.name,
 								slug: record.slug,
 								address: record.address,
+								province_id: undefined,
+								regency_id: undefined,
+								district_id: undefined,
+								village_id: undefined,
 								maps_url: record.maps_url,
 								maps_embed: record.maps_embed,
 								whatsapp: record.whatsapp,
@@ -202,29 +277,42 @@ export default function CabangAdminPage() {
 
 	const buildPayload = async (): Promise<Partial<Branch> | FormData> => {
 		const values = await form.validateFields();
-		const normalizedSlug = values.slug || slugify(values.name);
+		const { province_id, regency_id, district_id, village_id, ...branchValues } = values;
+		void province_id;
+		void regency_id;
+		void district_id;
+		void village_id;
+
+		const mergedAddress = mergeAddressWithRegions(branchValues.address, [
+			selectedVillageName,
+			selectedDistrictName,
+			selectedRegencyName,
+			selectedProvinceName,
+		]);
+		const normalizedSlug = branchValues.slug || slugify(branchValues.name);
 
 		if (!coverFile) {
 			return {
-				...values,
+				...branchValues,
+				address: mergedAddress,
 				slug: normalizedSlug,
 			};
 		}
 
 		const formData = new FormData();
-		formData.append("name", values.name);
+		formData.append("name", branchValues.name);
 		formData.append("slug", normalizedSlug);
-		formData.append("address", values.address);
-		formData.append("maps_url", values.maps_url ?? "");
-		formData.append("maps_embed", values.maps_embed ?? "");
-		formData.append("whatsapp", values.whatsapp ?? "");
-		formData.append("email", values.email ?? "");
-		formData.append("description", values.description ?? "");
-		formData.append("price_wash", String(values.price_wash));
-		formData.append("price_dry", String(values.price_dry));
-		formData.append("sort_order", String(values.sort_order));
-		formData.append("status", values.status);
-		formData.append("is_active", values.is_active ? "true" : "false");
+		formData.append("address", mergedAddress);
+		formData.append("maps_url", branchValues.maps_url ?? "");
+		formData.append("maps_embed", branchValues.maps_embed ?? "");
+		formData.append("whatsapp", branchValues.whatsapp ?? "");
+		formData.append("email", branchValues.email ?? "");
+		formData.append("description", branchValues.description ?? "");
+		formData.append("price_wash", String(branchValues.price_wash));
+		formData.append("price_dry", String(branchValues.price_dry));
+		formData.append("sort_order", String(branchValues.sort_order));
+		formData.append("status", branchValues.status);
+		formData.append("is_active", branchValues.is_active ? "true" : "false");
 		formData.append("cover_image", coverFile);
 		return formData;
 	};
@@ -271,6 +359,10 @@ export default function CabangAdminPage() {
 							sort_order: 0,
 							status: "buka",
 							is_active: true,
+							province_id: undefined,
+							regency_id: undefined,
+							district_id: undefined,
+							village_id: undefined,
 						});
 						setOpen(true);
 					}}
@@ -314,8 +406,93 @@ export default function CabangAdminPage() {
 						</Form.Item>
 					</div>
 
-					<Form.Item label="Alamat" name="address" rules={[{ required: true, message: "Alamat wajib diisi" }]}>
+					<div className="grid gap-3 md:grid-cols-2">
+						<Form.Item label="Provinsi" name="province_id">
+							<Select
+								placeholder="Pilih provinsi"
+								showSearch
+								optionFilterProp="label"
+								options={provinces.map((item) => ({
+									label: item.name,
+									value: item.id,
+								}))}
+								onChange={() => {
+									form.setFieldValue("regency_id", undefined);
+									form.setFieldValue("district_id", undefined);
+									form.setFieldValue("village_id", undefined);
+								}}
+							/>
+						</Form.Item>
+						<Form.Item label="Kabupaten / Kota" name="regency_id">
+							<Select
+								placeholder={loadingRegencies ? "Memuat kab/kota..." : "Pilih kabupaten/kota"}
+								showSearch
+								optionFilterProp="label"
+								disabled={!selectedProvinceId}
+								loading={loadingRegencies}
+								options={regencies.map((item) => ({
+									label: item.name,
+									value: item.id,
+								}))}
+								onChange={() => {
+									form.setFieldValue("district_id", undefined);
+									form.setFieldValue("village_id", undefined);
+								}}
+							/>
+						</Form.Item>
+					</div>
+
+					<div className="grid gap-3 md:grid-cols-2">
+						<Form.Item label="Kecamatan" name="district_id">
+							<Select
+								placeholder={loadingDistricts ? "Memuat kecamatan..." : "Pilih kecamatan"}
+								showSearch
+								optionFilterProp="label"
+								disabled={!selectedRegencyId}
+								loading={loadingDistricts}
+								options={districts.map((item) => ({
+									label: item.name,
+									value: item.id,
+								}))}
+								onChange={() => {
+									form.setFieldValue("village_id", undefined);
+								}}
+							/>
+						</Form.Item>
+						<Form.Item label="Kelurahan" name="village_id">
+							<Select
+								placeholder={loadingVillages ? "Memuat kelurahan..." : "Pilih kelurahan"}
+								showSearch
+								optionFilterProp="label"
+								disabled={!selectedDistrictId}
+								loading={loadingVillages}
+								options={villages.map((item) => ({
+									label: item.name,
+									value: item.id,
+								}))}
+							/>
+						</Form.Item>
+					</div>
+
+					<Form.Item label="Alamat Detail" name="address" rules={[{ required: true, message: "Alamat wajib diisi" }]}>
 						<Input.TextArea rows={2} />
+					</Form.Item>
+
+					<Form.Item shouldUpdate noStyle>
+						{({ getFieldValue }) => {
+							const previewAddress = mergeAddressWithRegions(getFieldValue("address") ?? "", [
+								selectedVillageName,
+								selectedDistrictName,
+								selectedRegencyName,
+								selectedProvinceName,
+							]);
+							return (
+								<div className="mb-4 rounded-xl border border-dashed border-neutral-300 bg-neutral-50 px-3 py-2 text-xs text-neutral-600 dark:border-neutral-700 dark:bg-neutral-900/50 dark:text-neutral-300">
+									<span className="font-semibold">Preview Alamat Tersimpan:</span>{" "}
+									{previewAddress || "-"}
+								</div>
+							);
+						}}
 					</Form.Item>
 
 					<div className="grid gap-3 md:grid-cols-2">
@@ -381,3 +558,4 @@ export default function CabangAdminPage() {
 		</div>
 	);
 }
+

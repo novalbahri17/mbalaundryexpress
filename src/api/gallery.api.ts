@@ -1,21 +1,32 @@
-import { createRecord, deleteRecord, escapeFilterValue, fileUrl, listRecords, updateRecord } from "@/api/pocketbase";
+import { createRecord, deleteRecord, escapeFilterValue, listRecords, pb, updateRecord } from "@/api/pocketbase";
 import type { BranchGallery, GalleryType } from "@/types/database.types";
 
-const isDirectUrl = (value?: string): boolean =>
-	Boolean(
-		value &&
-			(value.startsWith("http://") ||
-				value.startsWith("https://") ||
-				value.startsWith("/") ||
-				value.startsWith("data:image/") ||
-				value.startsWith("blob:")),
+// Helper to get absolute URL for gallery image
+const getGalleryImageUrl = (item: BranchGallery): string | undefined => {
+	if (!item.image) return undefined;
+	
+	// If already a full URL, return as-is
+	if (item.image.startsWith("http")) return item.image;
+	
+	// Generate URL using PocketBase SDK
+	const url = pb.files.getURL(
+		{ id: item.id, collectionId: "", collectionName: "branch_gallery" },
+		item.image
 	);
+	
+	// If URL is relative, make it absolute
+	if (url && url.startsWith("/") && typeof window !== "undefined") {
+		return `${window.location.origin}${url}`;
+	}
+	
+	return url;
+};
 
 const mapGalleryImage = (item: BranchGallery): BranchGallery => {
-	if (!item.image || isDirectUrl(item.image)) return item;
+	const imageUrl = getGalleryImageUrl(item);
 	return {
 		...item,
-		image: fileUrl("branch_gallery", { id: item.id }, item.image) ?? item.image,
+		image: imageUrl ?? item.image,
 	};
 };
 
@@ -39,5 +50,3 @@ export const createGallery = (payload: Partial<BranchGallery> | FormData): Promi
 export const updateGallery = (id: string, payload: Partial<BranchGallery> | FormData): Promise<BranchGallery> =>
 	updateRecord("branch_gallery", id, payload);
 export const deleteGallery = (id: string): Promise<void> => deleteRecord("branch_gallery", id);
-
-

@@ -1,4 +1,4 @@
-﻿import { useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { getTestimonials } from "@/api/testimonials.api";
 import { PageHeader } from "@/components/public/shared/PageHeader";
 import { GlassCard } from "@/components/public/shared/GlassCard";
@@ -20,7 +20,7 @@ export default function TestimoniPage() {
 					return (
 						<GlassCard key={item.id}>
 							<div className="flex items-start gap-3">
-								<div className="grid h-11 w-11 place-items-center rounded-full bg-brand-gradient text-sm font-bold text-white">{item.customer_name.slice(0, 1)}</div>
+								<div className="grid h-11 w-11 place-items-center rounded-full bg-gradient-primary text-sm font-bold text-white">{item.customer_name.slice(0, 1)}</div>
 								<div>
 									<p className="font-semibold">{item.customer_name}</p>
 									<p className="text-xs text-[var(--text-muted)]">{branchName}</p>
@@ -37,5 +37,6 @@ export default function TestimoniPage() {
 		</section>
 	);
 }
+
 
 

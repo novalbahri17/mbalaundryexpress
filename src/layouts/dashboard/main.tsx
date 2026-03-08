@@ -3,7 +3,7 @@ import { LineLoading } from "@/components/loading";
 import { GLOBAL_CONFIG } from "@/global-config";
 import Page403 from "@/pages/sys/error/Page403";
 import { useSettings } from "@/store/settingStore";
-import { cn } from "@/utils";
+import { cn } from "@/utils/index";
 import { flattenTrees } from "@/utils/tree";
 import { clone, concat } from "ramda";
 import { Suspense } from "react";
@@ -60,3 +60,4 @@ const Main = () => {
 };
 
 export default Main;
+

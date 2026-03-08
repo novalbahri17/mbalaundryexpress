@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Helmet, HelmetProvider } from "react-helmet-async";
 import { RouterProvider } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
+import { Toaster as SonnerToaster } from "sonner";
 import { appRouter } from "@/router";
 import { useThemeStore } from "@/store/themeStore";
 
@@ -128,6 +129,7 @@ export default function App() {
 						},
 					}}
 				/>
+				<SonnerToaster position="bottom-right" richColors closeButton />
 			</QueryClientProvider>
 		</HelmetProvider>
 	);

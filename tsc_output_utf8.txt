@@ -1,0 +1,15 @@
+﻿src/components/public/home/BlogSection.tsx(66,23): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/components/public/home/LocationsSection.tsx(1,10): error TS6133: 'CheckCircle2' is declared but its value is never read.
+src/components/public/home/LocationsSection.tsx(1,31): error TS6133: 'Info' is declared but its value is never read.
+src/components/public/home/LocationsSection.tsx(37,19): error TS2339: Property 'image_url' does not exist on type 'Branch'.
+src/components/public/home/LocationsSection.tsx(58,21): error TS2339: Property 'operating_hours' does not exist on type 'Branch'.
+src/components/public/home/LocationsSection.tsx(64,21): error TS2339: Property 'phone' does not exist on type 'Branch'.
+src/components/public/home/TestimonialsSection.tsx(12,36): error TS2353: Object literal may only specify known properties, and 'isFeatured' does not exist in type '{ approvedOnly?: boolean | undefined; branchId?: string | undefined; limit?: number | undefined; }'.
+src/components/public/home/TestimonialsSection.tsx(59,81): error TS2339: Property 'message' does not exist on type 'Testimonial'.
+src/components/public/home/TestimonialsSection.tsx(64,17): error TS2339: Property 'avatar' does not exist on type 'Testimonial'.
+src/components/public/home/TestimonialsSection.tsx(65,27): error TS2339: Property 'avatar' does not exist on type 'Testimonial'.
+src/components/public/home/TestimonialsSection.tsx(65,45): error TS2339: Property 'name' does not exist on type 'Testimonial'.
+src/components/public/home/TestimonialsSection.tsx(68,19): error TS2339: Property 'name' does not exist on type 'Testimonial'.
+src/components/public/home/TestimonialsSection.tsx(72,79): error TS2339: Property 'name' does not exist on type 'Testimonial'.
+src/components/public/home/TestimonialsSection.tsx(74,19): error TS2339: Property 'role' does not exist on type 'Testimonial'.

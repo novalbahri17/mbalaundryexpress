@@ -17,20 +17,26 @@ export function SafeImage({
 	onError,
 	...props
 }: SafeImageProps) {
-	const [currentSrc, setCurrentSrc] = useState(() =>
-		resolveImageUrl(src, fallbackLabel, fallbackStart, fallbackEnd),
+	const [hasError, setHasError] = useState(false);
+	
+	const resolvedSrc = resolveImageUrl(
+		hasError ? undefined : src, 
+		fallbackLabel, 
+		fallbackStart, 
+		fallbackEnd
 	);
 
 	useEffect(() => {
-		setCurrentSrc(resolveImageUrl(src, fallbackLabel, fallbackStart, fallbackEnd));
-	}, [src, fallbackLabel, fallbackStart, fallbackEnd]);
+		setHasError(false);
+	}, [src]);
 
 	return (
 		<img
 			{...props}
-			src={currentSrc}
+			src={resolvedSrc}
 			onError={(event) => {
-				setCurrentSrc(resolveImageUrl(undefined, fallbackLabel, fallbackStart, fallbackEnd));
+				console.warn(`Image failed to load: ${src}, falling back to placeholder`);
+				setHasError(true);
 				onError?.(event);
 			}}
 		/>

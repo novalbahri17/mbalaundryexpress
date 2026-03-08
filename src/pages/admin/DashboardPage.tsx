@@ -1,4 +1,4 @@
-ï»¿import {
+import {
 	AppstoreAddOutlined,
 	ArrowUpOutlined,
 	CalendarOutlined,
@@ -211,7 +211,7 @@ export default function DashboardPage() {
 				title: message.subject
 					? `Pesan baru: ${message.subject}`
 					: `Pesan kontak dari ${message.name}`,
-				detail: `${message.name} â€¢ ${formatDateTime(message.created ?? new Date())}`,
+				detail: `${message.name} • ${formatDateTime(message.created ?? new Date())}`,
 				timestamp: toTimestamp(message.created) ?? 0,
 				link: "/admin/pesan",
 				tone: "blue",
@@ -221,7 +221,7 @@ export default function DashboardPage() {
 			items.push({
 				key: `lead-${lead.id}`,
 				title: `Lead kemitraan: ${lead.name}`,
-				detail: `${lead.company ?? "Individu"} â€¢ status ${lead.status}`,
+				detail: `${lead.company ?? "Individu"} • status ${lead.status}`,
 				timestamp: toTimestamp(lead.created) ?? 0,
 				link: "/admin/kemitraan",
 				tone: "teal",
@@ -241,7 +241,7 @@ export default function DashboardPage() {
 			items.push({
 				key: `article-${article.id}`,
 				title: `Artikel diperbarui: ${article.title}`,
-				detail: `Status ${article.status} â€¢ ${formatDateTime(article.updated ?? article.created ?? new Date())}`,
+				detail: `Status ${article.status} • ${formatDateTime(article.updated ?? article.created ?? new Date())}`,
 				timestamp: toTimestamp(article.updated ?? article.created) ?? 0,
 				link: "/admin/blog",
 				tone: "brand",
@@ -320,25 +320,25 @@ export default function DashboardPage() {
 		<div className="space-y-5">
 			<div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
 				<div>
-					<p className="m-0 text-xs font-semibold uppercase tracking-[0.22em] text-mba-subtext dark:text-mba-darkSubtext">
+					<p className="m-0 text-xs font-semibold uppercase tracking-[0.22em] text-neutral-600 dark:text-neutral-300">
 						Dashboard
 					</p>
-					<h1 className="m-0 mt-1 text-[1.7rem] font-extrabold tracking-tight text-mba-text dark:text-mba-darkText">
+					<h1 className="m-0 mt-1 text-[1.7rem] font-extrabold tracking-tight text-neutral-900 dark:text-white">
 						Analytics Operasional
 					</h1>
-					<p className="m-0 mt-1 text-sm font-medium text-mba-subtext dark:text-mba-darkSubtext">{dayString}</p>
+					<p className="m-0 mt-1 text-sm font-medium text-neutral-600 dark:text-neutral-300">{dayString}</p>
 				</div>
 				<div className="flex flex-wrap items-center gap-3">
 					<Link
 						to="/admin/konten-home"
-						className="inline-flex h-10 items-center gap-2 rounded-xl border border-mba-border px-4 text-sm font-bold text-mba-text transition hover:border-brand-300 hover:text-brand-600 dark:border-mba-darkBorder dark:text-mba-darkText dark:hover:border-brand-500/30 dark:hover:text-brand-400"
+						className="inline-flex h-10 items-center gap-2 rounded-xl border border-neutral-200 px-4 text-sm font-bold text-neutral-900 transition hover:border-ruby-300 hover:text-ruby-600 dark:border-neutral-700 dark:text-white dark:hover:border-ruby-500/30 dark:hover:text-ruby-400"
 					>
 						<CalendarOutlined />
 						Konten Home
 					</Link>
 					<Link
 						to="/admin/promo"
-						className="inline-flex h-10 items-center gap-2 rounded-xl bg-gradient-to-r from-brand-600 to-blue-500 px-4 text-sm font-bold text-white shadow-[0_10px_24px_rgba(198,40,40,0.35)] transition hover:-translate-y-0.5"
+						className="inline-flex h-10 items-center gap-2 rounded-xl bg-gradient-to-r from-ruby-600 to-blue-500 px-4 text-sm font-bold text-white shadow-[0_10px_24px_rgba(198,40,40,0.35)] transition hover:-translate-y-0.5"
 					>
 						<PlusOutlined />
 						Tambah Promo
@@ -373,7 +373,7 @@ export default function DashboardPage() {
 					{
 						label: "Cabang Aktif",
 						value: branchItems.length,
-						helper: `${openBranches} buka â€¢ ${busyBranches} ramai â€¢ ${closedBranches} tutup`,
+						helper: `${openBranches} buka • ${busyBranches} ramai • ${closedBranches} tutup`,
 						icon: <ShopOutlined />,
 						iconClass: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
 					},
@@ -395,17 +395,17 @@ export default function DashboardPage() {
 					<div key={item.label} className={panelClass}>
 						<div className="flex items-start justify-between p-5">
 							<div className="min-w-0">
-								<p className="m-0 text-[11px] font-bold uppercase tracking-[0.18em] text-mba-subtext dark:text-mba-darkSubtext">
+								<p className="m-0 text-[11px] font-bold uppercase tracking-[0.18em] text-neutral-600 dark:text-neutral-300">
 									{item.label}
 								</p>
-								<div className="mt-2 text-[2rem] font-black leading-none text-mba-text tabular-nums dark:text-mba-darkText">
+								<div className="mt-2 text-[2rem] font-black leading-none text-neutral-900 tabular-nums dark:text-white">
 									{isLoadingDashboard ? (
 										<Skeleton.Input active size="small" style={{ width: 78, height: 34 }} />
 									) : (
 										formatNumber(item.value)
 									)}
 								</div>
-								<p className="m-0 mt-2 truncate text-xs font-medium text-mba-subtext dark:text-mba-darkSubtext">
+								<p className="m-0 mt-2 truncate text-xs font-medium text-neutral-600 dark:text-neutral-300">
 									{item.helper}
 								</p>
 							</div>
@@ -442,9 +442,9 @@ export default function DashboardPage() {
 					</div>
 
 					<div className={panelClass}>
-						<div className="border-b border-mba-border px-5 py-4 dark:border-mba-darkBorder">
-							<h3 className="m-0 text-[15px] font-bold text-mba-text dark:text-mba-darkText">Today's Heroes</h3>
-							<p className="m-0 mt-1 text-xs text-mba-subtext dark:text-mba-darkSubtext">
+						<div className="border-b border-neutral-200 px-5 py-4 dark:border-neutral-700">
+							<h3 className="m-0 text-[15px] font-bold text-neutral-900 dark:text-white">Today's Heroes</h3>
+							<p className="m-0 mt-1 text-xs text-neutral-600 dark:text-neutral-300">
 								Cabang dengan aktivitas operasional hari ini
 							</p>
 						</div>
@@ -453,13 +453,13 @@ export default function DashboardPage() {
 								{branchItems.length > 0 ? (
 									branchItems.slice(0, 8).map((branch) => (
 										<Tooltip key={branch.id} title={branch.name}>
-											<span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-brand-600 to-blue-500 text-xs font-bold text-white">
+											<span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-ruby-600 to-blue-500 text-xs font-bold text-white">
 												{initials(branch.name)}
 											</span>
 										</Tooltip>
 									))
 								) : (
-									<p className="m-0 text-xs font-medium text-mba-subtext dark:text-mba-darkSubtext">Belum ada cabang aktif.</p>
+									<p className="m-0 text-xs font-medium text-neutral-600 dark:text-neutral-300">Belum ada cabang aktif.</p>
 								)}
 							</div>
 						</div>
@@ -468,25 +468,25 @@ export default function DashboardPage() {
 
 				<div className="space-y-5 xl:col-span-3">
 					<div className={panelClass}>
-						<div className="border-b border-mba-border px-5 py-4 dark:border-mba-darkBorder">
-							<h3 className="m-0 text-[15px] font-bold text-mba-text dark:text-mba-darkText">Operasional Hari Ini</h3>
+						<div className="border-b border-neutral-200 px-5 py-4 dark:border-neutral-700">
+							<h3 className="m-0 text-[15px] font-bold text-neutral-900 dark:text-white">Operasional Hari Ini</h3>
 						</div>
 						<div className="space-y-4 p-5">
 							<div className="rounded-xl bg-slate-50 p-3 dark:bg-white/5">
-								<p className="m-0 text-xs font-semibold text-mba-subtext dark:text-mba-darkSubtext">Pesan masuk hari ini</p>
-								<p className="m-0 mt-1 text-xl font-bold text-mba-text tabular-nums dark:text-mba-darkText">
+								<p className="m-0 text-xs font-semibold text-neutral-600 dark:text-neutral-300">Pesan masuk hari ini</p>
+								<p className="m-0 mt-1 text-xl font-bold text-neutral-900 tabular-nums dark:text-white">
 									{formatNumber(newMessagesToday.length)}
 								</p>
 							</div>
 							<div className="rounded-xl bg-slate-50 p-3 dark:bg-white/5">
-								<p className="m-0 text-xs font-semibold text-mba-subtext dark:text-mba-darkSubtext">Lead kemitraan hari ini</p>
-								<p className="m-0 mt-1 text-xl font-bold text-mba-text tabular-nums dark:text-mba-darkText">
+								<p className="m-0 text-xs font-semibold text-neutral-600 dark:text-neutral-300">Lead kemitraan hari ini</p>
+								<p className="m-0 mt-1 text-xl font-bold text-neutral-900 tabular-nums dark:text-white">
 									{formatNumber(newPartnershipsToday.length)}
 								</p>
 							</div>
 							<div className="rounded-xl bg-slate-50 p-3 dark:bg-white/5">
-								<p className="m-0 text-xs font-semibold text-mba-subtext dark:text-mba-darkSubtext">Subscriber promo</p>
-								<p className="m-0 mt-1 text-xl font-bold text-mba-text tabular-nums dark:text-mba-darkText">
+								<p className="m-0 text-xs font-semibold text-neutral-600 dark:text-neutral-300">Subscriber promo</p>
+								<p className="m-0 mt-1 text-xl font-bold text-neutral-900 tabular-nums dark:text-white">
 									{formatNumber(subscribers.length)}
 								</p>
 							</div>
@@ -494,8 +494,8 @@ export default function DashboardPage() {
 					</div>
 
 					<div className={panelClass}>
-						<div className="border-b border-mba-border px-5 py-4 dark:border-mba-darkBorder">
-							<h3 className="m-0 text-[15px] font-bold text-mba-text dark:text-mba-darkText">Quick Links</h3>
+						<div className="border-b border-neutral-200 px-5 py-4 dark:border-neutral-700">
+							<h3 className="m-0 text-[15px] font-bold text-neutral-900 dark:text-white">Quick Links</h3>
 						</div>
 						<div className="space-y-3 p-5">
 							{[
@@ -507,7 +507,7 @@ export default function DashboardPage() {
 								<Link
 									key={item.to}
 									to={item.to}
-									className="flex items-center justify-between rounded-xl border border-mba-border px-4 py-3 text-sm font-semibold text-mba-text transition hover:border-brand-300 hover:text-brand-600 dark:border-mba-darkBorder dark:text-mba-darkText dark:hover:border-brand-500/30 dark:hover:text-brand-400"
+									className="flex items-center justify-between rounded-xl border border-neutral-200 px-4 py-3 text-sm font-semibold text-neutral-900 transition hover:border-ruby-300 hover:text-ruby-600 dark:border-neutral-700 dark:text-white dark:hover:border-ruby-500/30 dark:hover:text-ruby-400"
 								>
 									<span className="flex items-center gap-2">
 										{item.icon} {item.label}
@@ -543,7 +543,7 @@ export default function DashboardPage() {
 										Avg Response
 									</p>
 									<div className="mt-1 flex items-center gap-2">
-										<ClockCircleOutlined className="text-brand-600 dark:text-brand-400" />
+										<ClockCircleOutlined className="text-ruby-600 dark:text-ruby-400" />
 										<span className="text-lg font-black text-slate-900 dark:text-white">12m</span>
 									</div>
 								</div>
@@ -575,7 +575,7 @@ export default function DashboardPage() {
 								</Link>
 								<Link
 									to="/admin/konten-home"
-									className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-300 px-4 text-sm font-bold text-slate-900 transition hover:border-brand-500 hover:text-brand-600 dark:border-white/25 dark:text-white dark:hover:border-brand-500"
+									className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-300 px-4 text-sm font-bold text-slate-900 transition hover:border-ruby-500 hover:text-ruby-600 dark:border-white/25 dark:text-white dark:hover:border-ruby-500"
 								>
 									Edit Konten Home
 								</Link>
@@ -587,10 +587,10 @@ export default function DashboardPage() {
 
 			<div className="grid gap-5 xl:grid-cols-12">
 				<div className={`${panelClass} xl:col-span-7`}>
-					<div className="flex flex-wrap items-start justify-between gap-4 border-b border-mba-border px-6 py-5 dark:border-mba-darkBorder">
+					<div className="flex flex-wrap items-start justify-between gap-4 border-b border-neutral-200 px-6 py-5 dark:border-neutral-700">
 						<div>
-							<h3 className="m-0 text-[16px] font-bold text-mba-text dark:text-mba-darkText">Performance Overview</h3>
-							<p className="m-0 mt-1 text-xs text-mba-subtext dark:text-mba-darkSubtext">
+							<h3 className="m-0 text-[16px] font-bold text-neutral-900 dark:text-white">Performance Overview</h3>
+							<p className="m-0 mt-1 text-xs text-neutral-600 dark:text-neutral-300">
 								Interaksi dari channel pesan, kemitraan, dan subscribe
 							</p>
 						</div>
@@ -606,8 +606,8 @@ export default function DashboardPage() {
 					</div>
 					<div className="p-6">
 						<div className="mb-6 flex items-center gap-3">
-							<span className="text-sm font-semibold text-mba-subtext dark:text-mba-darkSubtext">Total Interaksi</span>
-							<span className="text-[2rem] leading-none font-black text-mba-text tabular-nums dark:text-mba-darkText">
+							<span className="text-sm font-semibold text-neutral-600 dark:text-neutral-300">Total Interaksi</span>
+							<span className="text-[2rem] leading-none font-black text-neutral-900 tabular-nums dark:text-white">
 								{formatNumber(seriesTotal)}
 							</span>
 						</div>
@@ -620,16 +620,16 @@ export default function DashboardPage() {
 										<div className="group relative h-44 rounded-xl bg-slate-100/80 p-1 dark:bg-white/5">
 											<div className="absolute inset-x-1 bottom-1">
 												<div
-													className="relative w-full rounded-lg bg-gradient-to-t from-brand-600 via-blue-500 to-teal-400 transition-all duration-300"
+													className="relative w-full rounded-lg bg-gradient-to-t from-ruby-600 via-blue-500 to-teal-400 transition-all duration-300"
 													style={{ height: `${heightPercent}%` }}
 												>
-													<span className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-bold text-mba-text opacity-0 transition group-hover:opacity-100 dark:text-white">
+													<span className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-bold text-neutral-900 opacity-0 transition group-hover:opacity-100 dark:text-white">
 														{point.value}
 													</span>
 												</div>
 											</div>
 										</div>
-										<p className="m-0 mt-2 text-center text-xs font-semibold uppercase tracking-[0.08em] text-mba-subtext dark:text-mba-darkSubtext">
+										<p className="m-0 mt-2 text-center text-xs font-semibold uppercase tracking-[0.08em] text-neutral-600 dark:text-neutral-300">
 											{point.label}
 										</p>
 									</div>
@@ -640,11 +640,11 @@ export default function DashboardPage() {
 				</div>
 
 				<div className={`${panelClass} xl:col-span-5`}>
-					<div className="flex items-center justify-between border-b border-mba-border px-6 py-5 dark:border-mba-darkBorder">
-						<h3 className="m-0 text-[16px] font-bold text-mba-text dark:text-mba-darkText">Recent Activity</h3>
+					<div className="flex items-center justify-between border-b border-neutral-200 px-6 py-5 dark:border-neutral-700">
+						<h3 className="m-0 text-[16px] font-bold text-neutral-900 dark:text-white">Recent Activity</h3>
 						<Link
 							to="/admin/pesan"
-							className="text-xs font-bold uppercase tracking-[0.14em] text-brand-600 hover:text-brand-500 dark:text-brand-400 dark:hover:text-brand-300"
+							className="text-xs font-bold uppercase tracking-[0.14em] text-ruby-600 hover:text-ruby-500 dark:text-ruby-400 dark:hover:text-ruby-300"
 						>
 							View all
 						</Link>
@@ -656,12 +656,12 @@ export default function DashboardPage() {
 									<Link
 										key={item.key}
 										to={item.link}
-										className="flex items-start gap-3 rounded-xl border border-mba-border/70 px-4 py-3 transition hover:border-brand-300 hover:bg-brand-50/30 dark:border-white/10 dark:hover:border-brand-500/30 dark:hover:bg-brand-500/10"
+										className="flex items-start gap-3 rounded-xl border border-neutral-200/70 px-4 py-3 transition hover:border-ruby-300 hover:bg-ruby-50/30 dark:border-white/10 dark:hover:border-ruby-500/30 dark:hover:bg-ruby-500/10"
 									>
 										<span className={`mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full ${activityToneClass[item.tone]}`} />
 										<span className="min-w-0">
-											<span className="block truncate text-sm font-bold text-mba-text dark:text-mba-darkText">{item.title}</span>
-											<span className="block truncate text-xs font-medium text-mba-subtext dark:text-mba-darkSubtext">
+											<span className="block truncate text-sm font-bold text-neutral-900 dark:text-white">{item.title}</span>
+											<span className="block truncate text-xs font-medium text-neutral-600 dark:text-neutral-300">
 												{item.detail}
 											</span>
 										</span>
@@ -680,8 +680,8 @@ export default function DashboardPage() {
 
 			<div className="grid gap-5 xl:grid-cols-12">
 				<div className={`${panelClass} xl:col-span-8`}>
-					<div className="flex items-center justify-between border-b border-mba-border px-6 py-5 dark:border-mba-darkBorder">
-						<h3 className="m-0 text-[16px] font-bold text-mba-text dark:text-mba-darkText">Prioritas Operasional</h3>
+					<div className="flex items-center justify-between border-b border-neutral-200 px-6 py-5 dark:border-neutral-700">
+						<h3 className="m-0 text-[16px] font-bold text-neutral-900 dark:text-white">Prioritas Operasional</h3>
 						<span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.12em] text-slate-700 dark:bg-white/10 dark:text-slate-200">
 							<AppstoreAddOutlined />
 							Live
@@ -689,13 +689,13 @@ export default function DashboardPage() {
 					</div>
 					<div className="space-y-4 p-6">
 						{priorityItems.map((item) => (
-							<div key={item.label} className="rounded-xl border border-mba-border/70 p-4 dark:border-white/10">
+							<div key={item.label} className="rounded-xl border border-neutral-200/70 p-4 dark:border-white/10">
 								<div className="mb-2 flex items-center justify-between gap-3">
 									<div className="min-w-0">
-										<p className="m-0 truncate text-sm font-bold text-mba-text dark:text-mba-darkText">{item.label}</p>
-										<p className="m-0 truncate text-xs text-mba-subtext dark:text-mba-darkSubtext">{item.description}</p>
+										<p className="m-0 truncate text-sm font-bold text-neutral-900 dark:text-white">{item.label}</p>
+										<p className="m-0 truncate text-xs text-neutral-600 dark:text-neutral-300">{item.description}</p>
 									</div>
-									<p className="m-0 text-sm font-black text-mba-text tabular-nums dark:text-mba-darkText">{item.progress}%</p>
+									<p className="m-0 text-sm font-black text-neutral-900 tabular-nums dark:text-white">{item.progress}%</p>
 								</div>
 								<div className="h-2 rounded-full bg-slate-100 dark:bg-white/10">
 									<div
@@ -737,31 +737,31 @@ export default function DashboardPage() {
 					) : null}
 
 					<div className={panelClass}>
-						<div className="border-b border-mba-border px-5 py-4 dark:border-mba-darkBorder">
-							<h3 className="m-0 text-[15px] font-bold text-mba-text dark:text-mba-darkText">Quick Actions</h3>
+						<div className="border-b border-neutral-200 px-5 py-4 dark:border-neutral-700">
+							<h3 className="m-0 text-[15px] font-bold text-neutral-900 dark:text-white">Quick Actions</h3>
 						</div>
 						<div className="grid gap-3 p-5">
 							<Link
 								to="/admin/promo"
-								className="flex items-center gap-3 rounded-xl bg-brand-50 px-4 py-3 text-sm font-bold text-brand-700 transition hover:bg-brand-600 hover:text-white dark:bg-brand-500/10 dark:text-brand-400 dark:hover:bg-brand-500"
+								className="flex items-center gap-3 rounded-xl bg-ruby-50 px-4 py-3 text-sm font-bold text-ruby-700 transition hover:bg-ruby-600 hover:text-white dark:bg-ruby-500/10 dark:text-ruby-400 dark:hover:bg-ruby-500"
 							>
 								<GiftOutlined /> Tambah Promo
 							</Link>
 							<Link
 								to="/admin/blog"
-								className="flex items-center gap-3 rounded-xl border border-mba-border px-4 py-3 text-sm font-bold text-mba-text transition hover:border-brand-300 hover:text-brand-600 dark:border-mba-darkBorder dark:text-mba-darkText dark:hover:border-brand-500/30 dark:hover:text-brand-400"
+								className="flex items-center gap-3 rounded-xl border border-neutral-200 px-4 py-3 text-sm font-bold text-neutral-900 transition hover:border-ruby-300 hover:text-ruby-600 dark:border-neutral-700 dark:text-white dark:hover:border-ruby-500/30 dark:hover:text-ruby-400"
 							>
 								<ReadOutlined /> Tambah Artikel
 							</Link>
 							<Link
 								to="/admin/cabang"
-								className="flex items-center gap-3 rounded-xl border border-mba-border px-4 py-3 text-sm font-bold text-mba-text transition hover:border-brand-300 hover:text-brand-600 dark:border-mba-darkBorder dark:text-mba-darkText dark:hover:border-brand-500/30 dark:hover:text-brand-400"
+								className="flex items-center gap-3 rounded-xl border border-neutral-200 px-4 py-3 text-sm font-bold text-neutral-900 transition hover:border-ruby-300 hover:text-ruby-600 dark:border-neutral-700 dark:text-white dark:hover:border-ruby-500/30 dark:hover:text-ruby-400"
 							>
 								<ShopOutlined /> Atur Cabang
 							</Link>
 							<Link
 								to="/admin/pengaturan"
-								className="flex items-center gap-3 rounded-xl border border-mba-border px-4 py-3 text-sm font-bold text-mba-text transition hover:border-brand-300 hover:text-brand-600 dark:border-mba-darkBorder dark:text-mba-darkText dark:hover:border-brand-500/30 dark:hover:text-brand-400"
+								className="flex items-center gap-3 rounded-xl border border-neutral-200 px-4 py-3 text-sm font-bold text-neutral-900 transition hover:border-ruby-300 hover:text-ruby-600 dark:border-neutral-700 dark:text-white dark:hover:border-ruby-500/30 dark:hover:text-ruby-400"
 							>
 								<CalendarOutlined /> Pengaturan
 							</Link>
@@ -778,3 +778,4 @@ export default function DashboardPage() {
 		</div>
 	);
 }
+

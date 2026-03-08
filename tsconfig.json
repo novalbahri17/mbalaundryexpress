@@ -36,6 +36,7 @@
 			"@/router/*": ["src/router/*"],
 			"@/store/*": ["src/store/*"],
 			"@/types/*": ["src/types/*"],
+			"@/utils": ["src/utils/index.ts"],
 			"@/utils/*": ["src/utils/*"],
 			"#/*": ["src/types/*"]
 		}
@@ -50,14 +51,14 @@
 		"src/pages/admin/**/*",
 		"src/components/public/**/*",
 		"src/components/admin/**/*",
+		"src/components/ui/**/*",
 		"src/api/*.api.ts",
 		"src/api/pocketbase.ts",
 		"src/hooks/**/*",
-		"src/store/userStore.ts",
-		"src/store/themeStore.ts",
-		"src/store/settingsStore.ts",
+		"src/store/**/*",
 		"src/types/database.types.ts",
 		"src/utils/**/*",
+		"src/styles/**/*",
 		"tailwind.config.ts",
 		"vite.config.ts"
 	],

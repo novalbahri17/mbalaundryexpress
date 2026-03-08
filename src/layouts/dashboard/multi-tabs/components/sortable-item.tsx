@@ -1,4 +1,4 @@
-import { cn } from "@/utils";
+import { cn } from "@/utils/index";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useMultiTabsContext } from "../providers/multi-tabs-provider";
@@ -40,3 +40,4 @@ export const SortableItem = ({ tab, onClick }: Props) => {
 		</li>
 	);
 };
+

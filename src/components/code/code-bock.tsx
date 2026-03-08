@@ -1,7 +1,7 @@
 import { Button } from "@/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/ui/collapsible";
-import { cn } from "@/utils";
+import { cn } from "@/utils/index";
 import { useState } from "react";
 import { type CodeBlockProps, HighlightCode } from ".";
 import { Icon } from "../icon";
@@ -31,3 +31,4 @@ export function CodeBlock({ title, description, children, code, options, classNa
 		</Card>
 	);
 }
+

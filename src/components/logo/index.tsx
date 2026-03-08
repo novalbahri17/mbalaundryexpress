@@ -1,4 +1,4 @@
-import { cn } from "@/utils";
+import { cn } from "@/utils/index";
 import { NavLink } from "react-router";
 import { Icon } from "../icon";
 
@@ -15,3 +15,4 @@ function Logo({ size = 50, className }: Props) {
 }
 
 export default Logo;
+

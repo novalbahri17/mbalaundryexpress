@@ -1,7 +1,7 @@
 import { Icon } from "@/components/icon";
 import useLocale from "@/locales/use-locale";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/ui/collapsible";
-import { cn } from "@/utils";
+import { cn } from "@/utils/index";
 import { useToggle } from "react-use";
 import type { NavGroupProps } from "../types";
 import { NavList } from "./nav-list";
@@ -48,3 +48,4 @@ function Group({ name, open, onClick }: { name?: string; open: boolean; onClick:
 		)
 	);
 }
+

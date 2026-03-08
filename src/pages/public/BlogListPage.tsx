@@ -46,7 +46,7 @@ export default function BlogListPage() {
 									loading="lazy"
 								/>
 								<div className="p-4">
-									<p className="inline-flex rounded-full bg-brand-soft px-2.5 py-1 text-xs font-semibold capitalize text-slate-700 dark:text-slate-200">
+									<p className="inline-flex rounded-full bg-ruby-100/80 px-2.5 py-1 text-xs font-semibold capitalize text-slate-700 dark:text-slate-200">
 										{article.category}
 									</p>
 									<p className="mt-2 line-clamp-2 text-lg font-bold">{article.title}</p>
@@ -64,3 +64,4 @@ export default function BlogListPage() {
 		</section>
 	);
 }
+

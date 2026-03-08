@@ -1,4 +1,4 @@
-import { cn } from "@/utils";
+import { cn } from "@/utils/index";
 import { Icon as IconifyIcon } from "@iconify/react";
 import type { IconProps as IconifyIconProps } from "@iconify/react";
 import type { CSSProperties } from "react";
@@ -53,3 +53,4 @@ export default function Icon({ icon, size = "1em", color = "currentColor", class
 		/>
 	);
 }
+

@@ -1,10 +1,16 @@
-import { useEffect, useRef, useState } from "react";
+import type { CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Outlet, useLocation } from "react-router-dom";
 import { BottomNav } from "@/components/public/layout/BottomNav";
 import { FloatingWA } from "@/components/public/layout/FloatingWA";
+import { FloatingCTA } from "@/components/public/layout/FloatingCTA";
 import { Footer } from "@/components/public/layout/Footer";
 import { Navbar } from "@/components/public/layout/Navbar";
+import { PublicSeo } from "@/components/public/layout/PublicSeo";
 import { usePageContentMap } from "@/hooks/usePageContent";
+import { useSiteSettingsMap } from "@/hooks/useSiteSettings";
+import { normalizeHexColor } from "@/utils/validation";
 
 function ScrollProgress() {
 	const [progress, setProgress] = useState(0);
@@ -69,22 +75,62 @@ function CursorFollower() {
 
 export function PublicLayout() {
 	const { data: content = {} } = usePageContentMap();
+	const { data: siteSettings = {} } = useSiteSettingsMap();
 	const location = useLocation();
+
+	const landingBgLight = normalizeHexColor(
+		content.landing_bg_color_light ?? siteSettings.landing_bg_color_light,
+		"#FAFAFA",
+	);
+	const landingBgDark = normalizeHexColor(
+		content.landing_bg_color_dark ?? siteSettings.landing_bg_color_dark,
+		"#0A0A0F",
+	);
+
+	const publicStyle = useMemo(
+		() =>
+			({
+				"--landing-bg-light": landingBgLight,
+				"--landing-bg-dark": landingBgDark,
+			}) as CSSProperties,
+		[landingBgDark, landingBgLight],
+	);
 
 	useEffect(() => {
 		window.scrollTo({ top: 0, behavior: "auto" });
 	}, [location.pathname]);
 
 	return (
-		<div className="relative min-h-screen bg-[var(--bg)] text-[var(--text-main)]">
+		<div
+			style={publicStyle}
+			className="relative min-h-screen bg-[var(--landing-bg-light)] text-[var(--text-main)] dark:bg-[var(--landing-bg-dark)]"
+		>
+			<PublicSeo />
+			<a
+				href="#main-content"
+				className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[90] focus:rounded-lg focus:bg-sapphire-700 focus:px-3 focus:py-2 focus:text-xs focus:font-semibold focus:text-white"
+			>
+				Skip to content
+			</a>
 			<ScrollProgress />
 			<CursorFollower />
 			<Navbar whatsapp={content.whatsapp_cs} />
-			<main>
-				<Outlet />
+			<main id="main-content">
+				<AnimatePresence mode="wait">
+					<motion.div
+						key={location.pathname}
+						initial={{ opacity: 0, y: 8 }}
+						animate={{ opacity: 1, y: 0 }}
+						exit={{ opacity: 0, y: -8 }}
+						transition={{ duration: 0.22, ease: "easeOut" }}
+					>
+						<Outlet />
+					</motion.div>
+				</AnimatePresence>
 			</main>
 			<Footer />
 			<FloatingWA phone={content.whatsapp_cs} />
+			<FloatingCTA />
 			<BottomNav />
 		</div>
 	);

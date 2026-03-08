@@ -4,7 +4,7 @@ import { TooltipContent } from "@/ui/tooltip";
 import { Tooltip } from "@/ui/tooltip";
 import { TooltipTrigger } from "@/ui/tooltip";
 import { TooltipProvider } from "@/ui/tooltip";
-import { cn } from "@/utils";
+import { cn } from "@/utils/index";
 import { NavItemRenderer } from "../components";
 import { navItemClasses, navItemStyles } from "../styles";
 import type { NavItemProps } from "../types";
@@ -71,3 +71,4 @@ export function NavItem(item: NavItemProps) {
 		</NavItemRenderer>
 	);
 }
+

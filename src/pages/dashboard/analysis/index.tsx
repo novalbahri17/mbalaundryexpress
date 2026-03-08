@@ -6,7 +6,7 @@ import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/ui/card"
 import { Progress } from "@/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
 import { Text, Title } from "@/ui/typography";
-import { cn } from "@/utils";
+import { cn } from "@/utils/index";
 import { useState } from "react";
 
 // ---------------------- 数据区 ----------------------
@@ -542,3 +542,4 @@ export default function Analysis() {
 		</div>
 	);
 }
+

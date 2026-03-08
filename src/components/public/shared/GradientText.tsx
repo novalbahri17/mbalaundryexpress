@@ -1,5 +1,5 @@
-﻿import type { PropsWithChildren } from "react";
-import { cn } from "@/utils";
+import type { PropsWithChildren } from "react";
+import { cn } from "@/utils/index";
 
 type GradientTextProps = PropsWithChildren<{
 	className?: string;
@@ -8,4 +8,5 @@ type GradientTextProps = PropsWithChildren<{
 export function GradientText({ children, className }: GradientTextProps) {
 	return <span className={cn("gradient-text", className)}>{children}</span>;
 }
+
 

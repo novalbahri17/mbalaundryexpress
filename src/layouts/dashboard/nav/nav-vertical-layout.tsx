@@ -7,7 +7,7 @@ import { useSettingActions, useSettings } from "@/store/settingStore";
 import { ThemeLayout } from "@/types/enum";
 import { Button } from "@/ui/button";
 import { ScrollArea } from "@/ui/scroll-area";
-import { cn } from "@/utils";
+import { cn } from "@/utils/index";
 
 type Props = {
 	data: NavProps["data"];
@@ -65,3 +65,4 @@ export function NavVerticalLayout({ data, className }: Props) {
 		</nav>
 	);
 }
+

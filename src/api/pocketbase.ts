@@ -61,7 +61,8 @@ export const escapeFilterValue = (value: string): string =>
 	value
 		.replace(/\\/g, "\\\\")
 		.replace(/"/g, '\\"')
-		.replace(/[\u0000-\u001F\u007F]/g, "");
+		// biome-ignore lint/suspicious/noControlCharactersInRegex: intentionally stripping control characters from filter values
+		.replace(/[\u0000-\u001F\u007F]/gu, "");
 
 const sanitizeFileSegment = (value: string): string => value.replace(/[^\w.-]/g, "");
 

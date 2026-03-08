@@ -1,4 +1,4 @@
-import { cn } from "@/utils";
+import { cn } from "@/utils/index";
 import { VariantProps, cva } from "class-variance-authority";
 import { HTMLAttributes, forwardRef } from "react";
 
@@ -120,6 +120,7 @@ Title.displayName = "Title";
 Text.displayName = "Text";
 
 export { Title, Text, titleVariants, textVariants };
+
 
 
 

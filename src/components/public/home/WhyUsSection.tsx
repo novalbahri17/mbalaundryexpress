@@ -1,64 +1,70 @@
-import { Droplets, MapPin, Sparkles, Zap } from "lucide-react";
-import { GradientText } from "@/components/public/shared/GradientText";
-import { ScrollReveal } from "@/components/public/shared/ScrollReveal";
+import { Droplet, MapPin, Tag, Zap } from "lucide-react";
 
-const reasons = [
+const features = [
 	{
 		title: "Harga Transparan",
-		desc: "Tidak ada biaya tersembunyi. Tarif per layanan tampil jelas dan selalu update.",
-		icon: Sparkles,
-		colors: { bg: "bg-brand-100/90 dark:bg-brand-500/18", text: "text-brand-600 dark:text-brand-300" },
+		desc: "Tidak ada biaya tambahan. Tarif per layanan tampil jelas dan selalu update.",
+		icon: Tag,
+		colorClass: "text-ruby-500",
+		bgClass: "bg-ruby-100",
+		gridClass: "md:col-span-2 md:row-span-1",
 	},
 	{
 		title: "Mesin Selalu Bersih",
 		desc: "Perawatan rutin harian dengan standar kebersihan tinggi untuk setiap drum mesin.",
-		icon: Droplets,
-		colors: {
-			bg: "bg-sapphire-100/90 dark:bg-sapphire-500/18",
-			text: "text-sapphire-600 dark:text-sapphire-300",
-		},
+		icon: Droplet,
+		colorClass: "text-sapphire-500",
+		bgClass: "bg-sapphire-100",
+		gridClass: "md:col-span-1 md:row-span-2",
 	},
 	{
 		title: "Proses Super Cepat",
 		desc: "Siklus cuci dan kering yang efisien untuk jadwal harian yang padat.",
 		icon: Zap,
-		colors: { bg: "bg-amber-100/90 dark:bg-amber-500/18", text: "text-amber-600 dark:text-amber-300" },
+		colorClass: "text-amber-500",
+		bgClass: "bg-amber-100",
+		gridClass: "md:col-span-1 md:row-span-1",
 	},
 	{
 		title: "Lokasi Strategis",
-		desc: "Dekat area kampus, kos, dan pusat aktivitas agar akses laundry makin praktis.",
+		desc: "Dekat area kampus, kos, dan pusat aktivitas agar laundry makin praktis.",
 		icon: MapPin,
-		colors: { bg: "bg-teal-100/90 dark:bg-teal-500/18", text: "text-teal-600 dark:text-teal-300" },
+		colorClass: "text-teal-500",
+		bgClass: "bg-teal-100",
+		gridClass: "md:col-span-1 md:row-span-1",
 	},
 ];
 
 export function WhyUsSection() {
 	return (
-		<section className="section-wrap mt-24">
-			<ScrollReveal className="mb-10 text-center">
-				<p className="section-kicker">Keunggulan</p>
-				<h2 className="section-title">
-					Kenapa Pilih <GradientText>MBA Laundry?</GradientText>
+		<section className="bg-gradient-to-b from-neutral-50 to-white px-6 py-24 md:px-12 md:py-32">
+			<div className="mx-auto flex max-w-[1200px] flex-col items-center">
+				{/* HEADER */}
+				<span className="rounded-full bg-teal-500 px-4 py-2 text-[12px] font-bold uppercase tracking-wide text-white">
+					Keunggulan
+				</span>
+				<h2 className="mt-3 text-center text-[32px] font-bold leading-[1.2] text-neutral-900 md:text-[40px]">
+					Kenapa Pilih MBA Laundry?
 				</h2>
-			</ScrollReveal>
 
-			<div className="grid gap-5 sm:grid-cols-2">
-				{reasons.map((item, index) => {
-					const Icon = item.icon;
-					return (
-						<ScrollReveal key={item.title} delay={index * 0.08}>
-							<div className="glass-card h-full rounded-3xl p-7 transition hover:-translate-y-1.5 hover:shadow-brand-glow">
-								<div className={`mb-5 inline-flex h-14 w-14 items-center justify-center rounded-2xl ${item.colors.bg}`}>
-									<Icon className={`h-6 w-6 ${item.colors.text}`} />
+				{/* CONTENT */}
+				<div className="mt-16 grid w-full grid-cols-1 gap-6 md:grid-cols-3">
+					{features.map((item) => {
+						const Icon = item.icon;
+						return (
+							<div
+								key={item.title}
+								className={`group flex flex-col rounded-[24px] border border-neutral-200 bg-white p-8 transition-all duration-250 hover:-translate-y-[2px] hover:border-ruby-500 hover:shadow-md ${item.gridClass}`}
+							>
+								<div className={`flex h-[64px] w-[64px] items-center justify-center rounded-full ${item.bgClass}`}>
+									<Icon className={`h-[32px] w-[32px] ${item.colorClass}`} />
 								</div>
-								<h3 className="text-xl font-bold text-mba-text dark:text-white">{item.title}</h3>
-								<p className="mt-3 text-sm leading-7 text-mba-subtext dark:text-mba-darkSubtext">
-									{item.desc}
-								</p>
+								<h3 className="mt-5 text-[20px] font-semibold text-neutral-900">{item.title}</h3>
+								<p className="mt-3 text-[16px] leading-[1.75] text-neutral-600">{item.desc}</p>
 							</div>
-						</ScrollReveal>
-					);
-				})}
+						);
+					})}
+				</div>
 			</div>
 		</section>
 	);

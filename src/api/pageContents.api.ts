@@ -1,4 +1,4 @@
-import { createRecord, escapeFilterValue, listRecords, updateRecord } from "@/api/pocketbase";
+import { createRecord, deleteRecord, escapeFilterValue, listRecords, updateRecord } from "@/api/pocketbase";
 import type { PageContent } from "@/types/database.types";
 
 export const getPageContents = async (group?: string): Promise<PageContent[]> => {
@@ -36,9 +36,11 @@ export const upsertPageContent = async (payload: Partial<PageContent>): Promise<
 };
 
 export const saveBulkPageContents = async (rows: Array<Partial<PageContent>>): Promise<void> => {
-	for (const row of rows) {
-		await upsertPageContent(row);
-	}
+	await Promise.all(rows.map((row) => upsertPageContent(row)));
+};
+
+export const deletePageContent = async (id: string): Promise<void> => {
+	await deleteRecord("page_contents", id);
 };
 
 

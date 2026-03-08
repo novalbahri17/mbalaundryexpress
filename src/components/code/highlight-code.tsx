@@ -2,7 +2,7 @@ import { Icon } from "@/components/icon";
 import { useCopyToClipboard } from "@/hooks";
 import { useSettings } from "@/store/settingStore";
 import { Button } from "@/ui/button";
-import { cn } from "@/utils";
+import { cn } from "@/utils/index";
 import { useState } from "react";
 import { createHighlighter } from "shiki/bundle/web";
 import type { HighlightCodeProps } from ".";
@@ -44,3 +44,4 @@ export function HighlightCode({ code, options, className, withCopy = true }: Hig
 		</div>
 	);
 }
+

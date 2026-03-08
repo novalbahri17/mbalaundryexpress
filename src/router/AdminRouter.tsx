@@ -18,8 +18,7 @@ const TestimoniPage = lazy(() => import("@/pages/admin/testimoni"));
 const FaqPage = lazy(() => import("@/pages/admin/faq"));
 const GaleriPage = lazy(() => import("@/pages/admin/galeri"));
 const KontenHomePage = lazy(() => import("@/pages/admin/konten-home"));
-const SpinPage = lazy(() => import("@/pages/admin/spin"));
-const LoyalitasPage = lazy(() => import("@/pages/admin/loyalitas"));
+
 const SubscribersPage = lazy(() => import("@/pages/admin/subscribers"));
 const KemitraanPage = lazy(() => import("@/pages/admin/kemitraan"));
 const PesanPage = lazy(() => import("@/pages/admin/pesan"));
@@ -70,8 +69,7 @@ export const adminRoutes: RouteObject = {
 						{ path: "faq", element: <FaqPage /> },
 						{ path: "galeri", element: <GaleriPage /> },
 						{ path: "konten-home", element: <KontenHomePage /> },
-						{ path: "spin", element: <SpinPage /> },
-						{ path: "loyalitas", element: <LoyalitasPage /> },
+
 						{ path: "subscribers", element: <SubscribersPage /> },
 						{ path: "kemitraan", element: <KemitraanPage /> },
 						{ path: "pesan", element: <PesanPage /> },

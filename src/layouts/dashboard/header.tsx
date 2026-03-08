@@ -1,8 +1,8 @@
-﻿import { Icon } from "@/components/icon";
+import { Icon } from "@/components/icon";
 import LocalePicker from "@/components/locale-picker";
 import { useSettings } from "@/store/settingStore";
 import { Button } from "@/ui/button";
-import { cn } from "@/utils";
+import { cn } from "@/utils/index";
 import type { ReactNode } from "react";
 import AccountDropdown from "../components/account-dropdown";
 import BreadCrumb from "../components/bread-crumb";
@@ -58,4 +58,5 @@ export default function Header({ leftSlot }: HeaderProps) {
 		</header>
 	);
 }
+
 
