@@ -431,13 +431,19 @@ async function findCollection(name) {
 }
 
 async function createCollection(definition) {
+	const finalFields = [
+		...definition.fields,
+		{ name: "created", type: "autodate", onCreate: true, onUpdate: false },
+		{ name: "updated", type: "autodate", onCreate: true, onUpdate: true }
+	];
+
 	await api("/api/collections", {
 		method: "POST",
 		body: JSON.stringify({
 			type: "base",
 			name: definition.name,
-			schema: definition.fields,
-			fields: definition.fields,
+			schema: finalFields,
+			fields: finalFields,
 			indexes: definition.indexes ?? [],
 			listRule: definition.listRule ?? null,
 			viewRule: definition.viewRule ?? null,
