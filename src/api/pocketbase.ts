@@ -161,8 +161,8 @@ const loginWithSuperuser = async (payload: AdminLoginPayload): Promise<AdminSess
 		}),
 	});
 
-	// Fallback for older PocketBase versions
-	if (res.status === 404 || res.status === 400) {
+	// Fallback for older PocketBase versions ONLY if the endpoint is missing
+	if (res.status === 404) {
 		const fallbackUrl = `${baseUrl}/api/admins/auth-with-password`;
 		const fallbackRes = await fetch(fallbackUrl, {
 			method: "POST",

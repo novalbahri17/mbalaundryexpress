@@ -437,6 +437,7 @@ async function createCollection(definition) {
 			type: "base",
 			name: definition.name,
 			schema: definition.fields,
+			fields: definition.fields,
 			indexes: definition.indexes ?? [],
 			listRule: definition.listRule ?? null,
 			viewRule: definition.viewRule ?? null,
