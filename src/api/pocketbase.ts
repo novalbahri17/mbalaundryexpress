@@ -1,4 +1,4 @@
-﻿import PocketBase, { type RecordModel } from "pocketbase";
+import PocketBase, { type RecordModel } from "pocketbase";
 import type { CollectionName, CollectionRecord, PaginatedResponse } from "@/types/database.types";
 
 const baseUrl = import.meta.env.VITE_POCKETBASE_BASE_PATH || "/pb-api";
@@ -148,26 +148,46 @@ export interface AdminSession {
 }
 
 const loginWithSuperuser = async (payload: AdminLoginPayload): Promise<AdminSession> => {
-	// PocketBase v0.22+ uses /api/admins/auth-with-password
+	// Support both v0.23+ (_superusers) and v0.22- (admins) auth endpoints
 	pb.authStore.clear();
-	const url = `${baseUrl}/api/admins/auth-with-password`;
-	const res = await fetch(url, {
+
+	let url = `${baseUrl}/api/collections/_superusers/auth-with-password`;
+	let res = await fetch(url, {
 		method: "POST",
-		headers: {
-			"Content-Type": "application/json",
-		},
+		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({
 			identity: payload.email,
 			password: payload.password,
 		}),
 	});
 
+	// Fallback for older PocketBase versions
+	if (res.status === 404 || res.status === 400) {
+		const fallbackUrl = `${baseUrl}/api/admins/auth-with-password`;
+		const fallbackRes = await fetch(fallbackUrl, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				identity: payload.email,
+				password: payload.password,
+			}),
+		});
+		
+		if (fallbackRes.ok || (fallbackRes.status !== 404 && res.status === 404)) {
+			res = fallbackRes;
+		}
+	}
+
 	if (!res.ok) {
 		throw new Error("Admin login failed");
 	}
 
 	const data = await res.json();
-	pb.authStore.save(data.token, data.admin);
+	// v0.23 uses `record`, v0.22 uses `admin`
+	const modelData = data.record || data.admin;
+	
+	pb.authStore.save(data.token, modelData);
+	
 	if (!isAdminSession()) {
 		pb.authStore.clear();
 		throw new Error("Admin session is invalid");
@@ -175,7 +195,7 @@ const loginWithSuperuser = async (payload: AdminLoginPayload): Promise<AdminSess
 
 	return {
 		token: data.token,
-		model: data.admin,
+		model: modelData,
 	};
 };
 
