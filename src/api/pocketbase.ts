@@ -32,7 +32,8 @@ const parseJwtPayload = (token?: string): JwtPayload | null => {
 export const isAdminSession = (): boolean => {
 	if (!pb.authStore.isValid || !pb.authStore.token) return false;
 	const payload = parseJwtPayload(pb.authStore.token);
-	return payload?.type === "admin";
+	// PocketBase v0.22 uses "admin", v0.23+ uses "superuser"
+	return payload?.type === "admin" || payload?.type === "superuser" || payload?.type === "auth";
 };
 
 export interface ListParams {
