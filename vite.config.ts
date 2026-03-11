@@ -84,7 +84,7 @@ export default defineConfig(({ mode }) => {
 			port: 3000,
 			proxy: {
 				"/pb-api": {
-					target: "http://127.0.0.1:8090",
+					target: env.POCKETBASE_URL || "http://43.156.144.127:8091",
 					changeOrigin: true,
 					secure: false,
 					rewrite: (path) => path.replace(/^\/pb-api/, ""),
