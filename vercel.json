@@ -1,12 +1,36 @@
 {
-	"rewrites": [
+	"version": 2,
+	"buildCommand": "pnpm run build",
+	"installCommand": "pnpm install --frozen-lockfile",
+	"framework": "vite",
+	"outputDirectory": "dist",
+	"builds": [
 		{
-			"source": "/pb-api/:path*",
-			"destination": "http://43.156.144.127:8091/:path*"
+			"src": "package.json",
+			"use": "@vercel/static-build",
+			"config": {
+				"distDir": "dist"
+			}
+		}
+	],
+	"routes": [
+		{
+			"src": "/pb-api/(.*)",
+			"dest": "http://your-pocketbase-server.com/pb-api/$1"
 		},
 		{
-			"source": "/(.*)",
-			"destination": "/"
+			"src": "/(.*)",
+			"dest": "/$1"
+		},
+		{
+			"handle": "filesystem"
+		},
+		{
+			"src": "/(.*)",
+			"dest": "/index.html"
 		}
-	]
+	],
+	"env": {
+		"NODE_VERSION": "20.x"
+	}
 }

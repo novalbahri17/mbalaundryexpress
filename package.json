@@ -8,8 +8,7 @@
 		"dev": "vite",
 		"build": "tsc && vite build",
 		"preview": "vite preview",
-		"pb:bootstrap": "node scripts/bootstrap-pocketbase.mjs",
-		"preinstall": "lefthook install"
+		"pb:bootstrap": "node scripts/bootstrap-pocketbase.mjs"
 	},
 	"dependencies": {
 		"@ant-design/cssinjs": "^1.22.0",
