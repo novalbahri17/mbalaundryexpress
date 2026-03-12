@@ -1,4 +1,4 @@
-﻿import type { ColumnsType } from "antd/es/table";
+import type { ColumnsType } from "antd/es/table";
 import { CrudManager } from "@/components/admin/CrudManager";
 import { createFaq, deleteFaq, getFaqs, updateFaq } from "@/api/faqs.api";
 import type { Faq } from "@/types/database.types";
@@ -27,7 +27,10 @@ export default function FaqAdminPage() {
 					name: "category",
 					label: "Kategori",
 					type: "select",
-					options: ["harga", "mesin", "waktu", "pembayaran", "keamanan", "barang-hilang", "umum"].map((value) => ({ value, label: value })),
+					options: ["harga", "mesin", "waktu", "pembayaran", "keamanan", "barang-hilang", "umum"].map((value) => ({
+						value,
+						label: value,
+					})),
 					required: true,
 				},
 				{ name: "sort_order", label: "Urutan", type: "number" },
@@ -36,4 +39,3 @@ export default function FaqAdminPage() {
 		/>
 	);
 }
-

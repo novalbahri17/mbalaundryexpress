@@ -1,4 +1,4 @@
-﻿import { useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getJobById } from "@/api/jobs.api";
 import { PageHeader } from "@/components/public/shared/PageHeader";
@@ -29,23 +29,30 @@ export default function KarirDetailPage() {
 						className="h-56 w-full object-cover md:h-72"
 					/>
 					<div className="p-5 md:p-6">
-					<p className="text-sm font-semibold">Deskripsi</p>
-					<p className="mt-2 text-sm text-[var(--text-muted)]">{job.description}</p>
-					<p className="mt-5 text-sm font-semibold">Kualifikasi</p>
-					<p className="mt-2 text-sm text-[var(--text-muted)]">{job.requirements}</p>
-					<p className="mt-5 text-sm font-semibold">Benefit</p>
-					<p className="mt-2 text-sm text-[var(--text-muted)]">{job.benefits}</p>
-					{job.show_salary ? <p className="mt-5 text-sm text-red-600 dark:text-red-300">Range gaji: {formatRupiah(job.salary_min ?? 0)} - {formatRupiah(job.salary_max ?? 0)}</p> : null}
-					{job.whatsapp_apply ? (
-						<a href={toWhatsappLink(job.whatsapp_apply, `Halo, saya ingin melamar posisi ${job.title}`)} target="_blank" rel="noreferrer" className="btn-primary mt-6 inline-flex rounded-full px-5 py-2.5 text-sm font-semibold">
-							Lamar via WhatsApp
-						</a>
-					) : null}
+						<p className="text-sm font-semibold">Deskripsi</p>
+						<p className="mt-2 text-sm text-[var(--text-muted)]">{job.description}</p>
+						<p className="mt-5 text-sm font-semibold">Kualifikasi</p>
+						<p className="mt-2 text-sm text-[var(--text-muted)]">{job.requirements}</p>
+						<p className="mt-5 text-sm font-semibold">Benefit</p>
+						<p className="mt-2 text-sm text-[var(--text-muted)]">{job.benefits}</p>
+						{job.show_salary ? (
+							<p className="mt-5 text-sm text-red-600 dark:text-red-300">
+								Range gaji: {formatRupiah(job.salary_min ?? 0)} - {formatRupiah(job.salary_max ?? 0)}
+							</p>
+						) : null}
+						{job.whatsapp_apply ? (
+							<a
+								href={toWhatsappLink(job.whatsapp_apply, `Halo, saya ingin melamar posisi ${job.title}`)}
+								target="_blank"
+								rel="noreferrer"
+								className="btn-primary mt-6 inline-flex rounded-full px-5 py-2.5 text-sm font-semibold"
+							>
+								Lamar via WhatsApp
+							</a>
+						) : null}
 					</div>
 				</GlassCard>
 			</div>
 		</section>
 	);
 }
-
-

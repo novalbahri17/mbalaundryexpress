@@ -1,4 +1,4 @@
-﻿import { Navigate, createBrowserRouter } from "react-router-dom";
+import { Navigate, createBrowserRouter } from "react-router-dom";
 import { adminRoutes } from "@/router/AdminRouter";
 import { publicRoutes } from "@/router/PublicRouter";
 
@@ -7,4 +7,3 @@ export const appRouter = createBrowserRouter([
 	adminRoutes,
 	{ path: "*", element: <Navigate to="/" replace /> },
 ]);
-

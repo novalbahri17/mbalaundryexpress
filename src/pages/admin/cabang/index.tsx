@@ -7,19 +7,7 @@ import {
 	AppstoreOutlined,
 	PictureOutlined,
 } from "@ant-design/icons";
-import {
-	Button,
-	Form,
-	Input,
-	InputNumber,
-	Modal,
-	Popconfirm,
-	Select,
-	Space,
-	Switch,
-	Table,
-	Tag,
-} from "antd";
+import { Button, Form, Input, InputNumber, Modal, Popconfirm, Select, Space, Switch, Table, Tag } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useMemo, useState } from "react";
 import toast from "react-hot-toast";
@@ -372,7 +360,13 @@ export default function CabangAdminPage() {
 			</div>
 
 			<div className="admin-page-body admin-data-table">
-				<Table rowKey="id" loading={isLoading} columns={columns} dataSource={rows} pagination={{ pageSize: 10, showSizeChanger: false }} />
+				<Table
+					rowKey="id"
+					loading={isLoading}
+					columns={columns}
+					dataSource={rows}
+					pagination={{ pageSize: 10, showSizeChanger: false }}
+				/>
 			</div>
 
 			<Modal
@@ -385,7 +379,7 @@ export default function CabangAdminPage() {
 				cancelText="Batal"
 				okButtonProps={{ className: "admin-soft-btn" }}
 				cancelButtonProps={{ className: "admin-soft-btn" }}
-				destroyOnHidden
+				destroyOnClose
 				width={920}
 			>
 				<Form
@@ -488,8 +482,7 @@ export default function CabangAdminPage() {
 							]);
 							return (
 								<div className="mb-4 rounded-xl border border-dashed border-neutral-300 bg-neutral-50 px-3 py-2 text-xs text-neutral-600 dark:border-neutral-700 dark:bg-neutral-900/50 dark:text-neutral-300">
-									<span className="font-semibold">Preview Alamat Tersimpan:</span>{" "}
-									{previewAddress || "-"}
+									<span className="font-semibold">Preview Alamat Tersimpan:</span> {previewAddress || "-"}
 								</div>
 							);
 						}}
@@ -512,7 +505,18 @@ export default function CabangAdminPage() {
 						>
 							<Input placeholder="https://maps.app.goo.gl/..." />
 						</Form.Item>
-						<Form.Item label="WhatsApp Cabang" name="whatsapp" rules={[{ validator: (_, value: string | undefined) => (!value || validatePhone(value) ? Promise.resolve() : Promise.reject(new Error("Format WA tidak valid"))) }]}>
+						<Form.Item
+							label="WhatsApp Cabang"
+							name="whatsapp"
+							rules={[
+								{
+									validator: (_, value: string | undefined) =>
+										!value || validatePhone(value)
+											? Promise.resolve()
+											: Promise.reject(new Error("Format WA tidak valid")),
+								},
+							]}
+						>
 							<Input placeholder="08xxxx / 628xxxx" />
 						</Form.Item>
 					</div>
@@ -521,7 +525,18 @@ export default function CabangAdminPage() {
 						<Input.TextArea rows={3} placeholder="<iframe ...></iframe>" />
 					</Form.Item>
 
-					<Form.Item label="Email Cabang" name="email" rules={[{ validator: (_, value: string | undefined) => (!value || validateEmail(value) ? Promise.resolve() : Promise.reject(new Error("Format email tidak valid"))) }]}>
+					<Form.Item
+						label="Email Cabang"
+						name="email"
+						rules={[
+							{
+								validator: (_, value: string | undefined) =>
+									!value || validateEmail(value)
+										? Promise.resolve()
+										: Promise.reject(new Error("Format email tidak valid")),
+							},
+						]}
+					>
 						<Input type="email" />
 					</Form.Item>
 
@@ -558,4 +573,3 @@ export default function CabangAdminPage() {
 		</div>
 	);
 }
-

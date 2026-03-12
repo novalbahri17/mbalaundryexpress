@@ -1,4 +1,4 @@
-﻿export function SkeletonCard() {
+export function SkeletonCard() {
 	return (
 		<div className="glass-card animate-pulse rounded-2xl border border-white/20 p-4">
 			<div className="h-40 rounded-xl bg-slate-200/60 dark:bg-slate-700/40" />
@@ -7,4 +7,3 @@
 		</div>
 	);
 }
-

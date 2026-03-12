@@ -1,4 +1,4 @@
-﻿import { InboxOutlined } from "@ant-design/icons";
+import { InboxOutlined } from "@ant-design/icons";
 import { message } from "antd";
 import { useCallback, useMemo } from "react";
 import { useDropzone } from "react-dropzone";
@@ -10,7 +10,12 @@ type ImageUploadProps = {
 	accept?: string[];
 };
 
-export function ImageUpload({ value, onChange, previewUrl, accept = ["image/png", "image/jpeg", "image/webp"] }: ImageUploadProps) {
+export function ImageUpload({
+	value,
+	onChange,
+	previewUrl,
+	accept = ["image/png", "image/jpeg", "image/webp"],
+}: ImageUploadProps) {
 	const onDrop = useCallback(
 		(files: File[]) => {
 			const file = files[0];
@@ -52,4 +57,3 @@ export function ImageUpload({ value, onChange, previewUrl, accept = ["image/png"
 		</div>
 	);
 }
-

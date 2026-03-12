@@ -1,4 +1,4 @@
-﻿import { Suspense, useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { ConfigProvider, App as AntdApp, theme as antdTheme } from "antd";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Helmet, HelmetProvider } from "react-helmet-async";
@@ -85,7 +85,11 @@ function ThemeSync() {
 			}}
 		>
 			<AntdApp>
-				<Suspense fallback={<div className="grid min-h-screen place-items-center text-sm text-slate-500">Memuat halaman...</div>}>
+				<Suspense
+					fallback={
+						<div className="grid min-h-screen place-items-center text-sm text-slate-500">Memuat halaman...</div>
+					}
+				>
 					<RouterProvider router={appRouter} future={{ v7_startTransition: true }} />
 				</Suspense>
 			</AntdApp>
@@ -134,4 +138,3 @@ export default function App() {
 		</HelmetProvider>
 	);
 }
-

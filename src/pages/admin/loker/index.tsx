@@ -237,9 +237,7 @@ export default function LokerAdminPage() {
 			<div className="admin-page-head">
 				<div>
 					<h1 className="admin-page-title">Lowongan Kerja</h1>
-					<p className="admin-page-subtitle">
-						Kelola loker dengan mudah. Gambar bisa dari upload file lokal atau URL.
-					</p>
+					<p className="admin-page-subtitle">Kelola loker dengan mudah. Gambar bisa dari upload file lokal atau URL.</p>
 				</div>
 				<Button type="primary" icon={<PlusOutlined />} size="large" onClick={openCreateModal}>
 					Tambah Loker
@@ -294,7 +292,7 @@ export default function LokerAdminPage() {
 				onOk={() => void onSubmit()}
 				okText={editing ? "Simpan Perubahan" : "Simpan"}
 				cancelText="Batal"
-				destroyOnHidden
+				destroyOnClose
 				width={700}
 			>
 				<Form
@@ -318,9 +316,7 @@ export default function LokerAdminPage() {
 									onChange={setImageFile}
 									previewUrl={editing?.image ? resolveImageUrl(editing.image, editing.title) : undefined}
 								/>
-								<p className="mt-2 text-xs text-gray-500">
-									Tips: ukuran gambar 1200x630px untuk tampilan terbaik.
-								</p>
+								<p className="mt-2 text-xs text-gray-500">Tips: ukuran gambar 1200x630px untuk tampilan terbaik.</p>
 							</>
 						) : (
 							<div className="space-y-3">
@@ -363,7 +359,11 @@ export default function LokerAdminPage() {
 						</Form.Item>
 					</div>
 
-					<Form.Item label="Deskripsi Pekerjaan" name="description" rules={[{ required: true, message: "Deskripsi wajib diisi" }]}>
+					<Form.Item
+						label="Deskripsi Pekerjaan"
+						name="description"
+						rules={[{ required: true, message: "Deskripsi wajib diisi" }]}
+					>
 						<Input.TextArea rows={4} placeholder="Jelaskan tugas dan tanggung jawab pekerjaan..." />
 					</Form.Item>
 

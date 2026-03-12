@@ -1,4 +1,4 @@
-﻿import { lazy } from "react";
+import { lazy } from "react";
 import type { RouteObject } from "react-router-dom";
 import { PublicLayout } from "@/components/public/layout/PublicLayout";
 

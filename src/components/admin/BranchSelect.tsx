@@ -1,4 +1,4 @@
-﻿import { Select } from "antd";
+import { Select } from "antd";
 import { useBranches } from "@/hooks/useBranches";
 
 type BranchSelectProps = {
@@ -25,4 +25,3 @@ export function BranchSelect({ value, onChange, allowAll = true, placeholder }: 
 		/>
 	);
 }
-

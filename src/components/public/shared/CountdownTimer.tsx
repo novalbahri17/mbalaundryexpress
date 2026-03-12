@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type CountdownTimerProps = {
 	endDate: string;
@@ -47,5 +47,3 @@ export function CountdownTimer({ endDate, className }: CountdownTimerProps) {
 
 	return <p className={className ?? (urgent ? "text-red-500" : "text-slate-500")}>Countdown: {text}</p>;
 }
-
-

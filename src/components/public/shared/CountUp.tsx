@@ -1,4 +1,4 @@
-﻿import CountUpPrimitive from "react-countup";
+import CountUpPrimitive from "react-countup";
 import { useInView } from "framer-motion";
 import { useRef } from "react";
 
@@ -16,8 +16,11 @@ export function CountUp({ value, prefix = "", suffix = "", className, duration =
 
 	return (
 		<span ref={ref} className={className}>
-			{inView ? <CountUpPrimitive end={value} duration={duration} separator="." prefix={prefix} suffix={suffix} /> : `${prefix}0${suffix}`}
+			{inView ? (
+				<CountUpPrimitive end={value} duration={duration} separator="." prefix={prefix} suffix={suffix} />
+			) : (
+				`${prefix}0${suffix}`
+			)}
 		</span>
 	);
 }
-

@@ -1,4 +1,4 @@
-﻿import { CaraPakaiSection } from "@/components/public/home/CaraPakaiSection";
+import { CaraPakaiSection } from "@/components/public/home/CaraPakaiSection";
 import { CTABanner } from "@/components/public/home/CTABanner";
 import { PageHeader } from "@/components/public/shared/PageHeader";
 
@@ -16,5 +16,3 @@ export default function CaraPakaiPage() {
 		</section>
 	);
 }
-
-

@@ -1,4 +1,4 @@
-﻿import { Button, Space, Table, Tag } from "antd";
+import { Button, Space, Table, Tag } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { deleteSubscriber, getSubscribers, unsubscribePromo } from "@/api/subscribers.api";
@@ -12,20 +12,35 @@ export default function SubscribersAdminPage() {
 		{ title: "Phone", dataIndex: "phone" },
 		{ title: "Branch", dataIndex: "branch_id" },
 		{ title: "Source", dataIndex: "source" },
-		{ title: "Status", dataIndex: "is_active", render: (value: boolean) => (value ? <Tag color="green">Aktif</Tag> : <Tag>Nonaktif</Tag>) },
+		{
+			title: "Status",
+			dataIndex: "is_active",
+			render: (value: boolean) => (value ? <Tag color="green">Aktif</Tag> : <Tag>Nonaktif</Tag>),
+		},
 		{ title: "Created", dataIndex: "created" },
 		{
 			title: "Aksi",
 			render: (_, record) => (
 				<Space>
-					<Button type="link" onClick={async () => {
-						await unsubscribePromo(record.id);
-						await queryClient.invalidateQueries({ queryKey: ["admin-subscribers"] });
-					}}>Nonaktifkan</Button>
-					<Button type="link" danger onClick={async () => {
-						await deleteSubscriber(record.id);
-						await queryClient.invalidateQueries({ queryKey: ["admin-subscribers"] });
-					}}>Hapus</Button>
+					<Button
+						type="link"
+						onClick={async () => {
+							await unsubscribePromo(record.id);
+							await queryClient.invalidateQueries({ queryKey: ["admin-subscribers"] });
+						}}
+					>
+						Nonaktifkan
+					</Button>
+					<Button
+						type="link"
+						danger
+						onClick={async () => {
+							await deleteSubscriber(record.id);
+							await queryClient.invalidateQueries({ queryKey: ["admin-subscribers"] });
+						}}
+					>
+						Hapus
+					</Button>
 				</Space>
 			),
 		},
@@ -38,4 +53,3 @@ export default function SubscribersAdminPage() {
 		</div>
 	);
 }
-

@@ -177,7 +177,7 @@ export function CrudManager<T extends { id: string }>({
 				cancelText="Batal"
 				okButtonProps={{ className: "admin-soft-btn" }}
 				cancelButtonProps={{ className: "admin-soft-btn" }}
-				destroyOnHidden
+				destroyOnClose
 			>
 				<Form form={form} layout="vertical" autoComplete="off">
 					{fields.map((field) => (
@@ -188,9 +188,7 @@ export function CrudManager<T extends { id: string }>({
 							valuePropName={field.type === "switch" ? "checked" : "value"}
 							rules={field.required ? [{ required: true, message: `${field.label} wajib diisi` }] : undefined}
 						>
-							{field.type === "textarea" ? (
-								<Input.TextArea rows={4} />
-							) : null}
+							{field.type === "textarea" ? <Input.TextArea rows={4} /> : null}
 							{field.type === "text" ? <Input /> : null}
 							{field.type === "number" ? <InputNumber className="w-full" /> : null}
 							{field.type === "switch" ? <Switch /> : null}

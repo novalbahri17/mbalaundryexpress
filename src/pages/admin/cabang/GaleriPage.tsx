@@ -113,9 +113,7 @@ export default function CabangGaleriPage() {
 						title: "Tipe",
 						dataIndex: "type",
 						render: (value: GalleryType) => (
-							<Tag>
-								{galleryTypes.find((item) => item.value === value)?.label || value}
-							</Tag>
+							<Tag>{galleryTypes.find((item) => item.value === value)?.label || value}</Tag>
 						),
 					},
 					{ title: "Urutan", dataIndex: "sort_order" },
@@ -163,7 +161,7 @@ export default function CabangGaleriPage() {
 				open={open}
 				onCancel={() => setOpen(false)}
 				onOk={() => void onSubmit()}
-				destroyOnHidden
+				destroyOnClose
 			>
 				<Form layout="vertical" form={form} initialValues={{ type: "umum", sort_order: 0 }}>
 					<Form.Item label="Gambar">

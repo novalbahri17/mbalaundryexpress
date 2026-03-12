@@ -4,80 +4,85 @@ import { visualizer } from "rollup-plugin-visualizer";
 import { defineConfig, loadEnv } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 import tsconfigPaths from "vite-tsconfig-paths";
+import type { PluginOption } from "vite";
 
 export default defineConfig(({ mode }) => {
 	const env = loadEnv(mode, process.cwd(), "");
 	const base = env.VITE_APP_PUBLIC_PATH || env.VITE_PUBLIC_PATH || "/";
 	const isProduction = mode === "production";
 
+	const plugins: PluginOption[] = [
+		react(),
+		vanillaExtractPlugin({
+			identifiers: ({ debugId }) => `${debugId}`,
+		}),
+		tsconfigPaths(),
+		VitePWA({
+			registerType: "autoUpdate",
+			includeAssets: ["favicon.ico", "apple-touch-icon.png", "masked-icon.svg"],
+			manifest: {
+				name: "MBA Laundry Express",
+				short_name: "MBA Laundry",
+				description: "Admin panel dan landing page MBA Laundry Express",
+				theme_color: "#C62828",
+				background_color: "#FAFAFA",
+				display: "standalone",
+				start_url: "/",
+				icons: [
+					{
+						src: "/pwa-192x192.png",
+						sizes: "192x192",
+						type: "image/png",
+					},
+					{
+						src: "/pwa-512x512.png",
+						sizes: "512x512",
+						type: "image/png",
+					},
+				],
+			},
+			workbox: {
+				globPatterns: ["**/*.{js,css,html,svg,png,webp,woff2}"],
+				runtimeCaching: [
+					{
+						urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+						handler: "CacheFirst",
+						options: {
+							cacheName: "google-fonts-stylesheets",
+							expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
+						},
+					},
+					{
+						urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+						handler: "CacheFirst",
+						options: {
+							cacheName: "google-fonts-webfonts",
+							expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
+							cacheableResponse: { statuses: [0, 200] },
+						},
+					},
+				],
+			},
+			devOptions: {
+				enabled: false,
+			},
+		}),
+	];
+
+	if (isProduction) {
+		plugins.push(
+			visualizer({
+				open: false,
+				gzipSize: true,
+				brotliSize: true,
+				template: "treemap",
+			})
+		);
+	}
+
 	return {
 		base,
-		plugins: [
-			react(),
-			vanillaExtractPlugin({
-				identifiers: ({ debugId }) => `${debugId}`,
-			}),
-			tsconfigPaths(),
-			VitePWA({
-				registerType: "autoUpdate",
-				includeAssets: ["favicon.ico", "apple-touch-icon.png", "masked-icon.svg"],
-				manifest: {
-					name: "MBA Laundry Express",
-					short_name: "MBA Laundry",
-					description: "Admin panel dan landing page MBA Laundry Express",
-					theme_color: "#C62828",
-					background_color: "#FAFAFA",
-					display: "standalone",
-					start_url: "/",
-					icons: [
-						{
-							src: "/pwa-192x192.png",
-							sizes: "192x192",
-							type: "image/png",
-						},
-						{
-							src: "/pwa-512x512.png",
-							sizes: "512x512",
-							type: "image/png",
-						},
-					],
-				},
-				workbox: {
-					globPatterns: ["**/*.{js,css,html,svg,png,webp,woff2}"],
-					runtimeCaching: [
-						{
-							urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-							handler: "CacheFirst",
-							options: {
-								cacheName: "google-fonts-stylesheets",
-								expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
-							},
-						},
-						{
-							urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-							handler: "CacheFirst",
-							options: {
-								cacheName: "google-fonts-webfonts",
-								expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
-								cacheableResponse: { statuses: [0, 200] },
-							},
-						},
-					],
-				},
-				devOptions: {
-					enabled: false,
-				},
-			}),
-
-			isProduction &&
-				visualizer({
-					open: false,
-					gzipSize: true,
-					brotliSize: true,
-					template: "treemap",
-				}),
-		].filter(Boolean),
-
+		plugins,
 		server: {
 			open: true,
 			host: true,
@@ -96,7 +101,6 @@ export default defineConfig(({ mode }) => {
 				},
 			},
 		},
-
 		build: {
 			target: "esnext",
 			minify: "esbuild",
@@ -114,12 +118,10 @@ export default defineConfig(({ mode }) => {
 				},
 			},
 		},
-
 		optimizeDeps: {
 			include: ["react", "react-dom", "react-router-dom", "antd", "axios"],
 			exclude: ["@iconify/react"],
 		},
-
 		esbuild: {
 			drop: isProduction ? ["console", "debugger"] : [],
 			legalComments: "none",
@@ -127,4 +129,3 @@ export default defineConfig(({ mode }) => {
 		},
 	};
 });
-

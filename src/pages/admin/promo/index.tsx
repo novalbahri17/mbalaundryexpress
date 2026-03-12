@@ -1,5 +1,19 @@
-﻿import { EyeOutlined, PlusOutlined } from "@ant-design/icons";
-import { Button, DatePicker, Form, Input, InputNumber, Modal, Radio, Select, Space, Switch, Table, Tag, message } from "antd";
+import { EyeOutlined, PlusOutlined } from "@ant-design/icons";
+import {
+	Button,
+	DatePicker,
+	Form,
+	Input,
+	InputNumber,
+	Modal,
+	Radio,
+	Select,
+	Space,
+	Switch,
+	Table,
+	Tag,
+	message,
+} from "antd";
 import type { ColumnsType } from "antd/es/table";
 import dayjs from "dayjs";
 import { useState } from "react";
@@ -31,10 +45,20 @@ export default function PromoAdminPage() {
 
 	const columns: ColumnsType<Promo> = [
 		{ title: "Judul", dataIndex: "title" },
-		{ title: "Status", dataIndex: "status", render: (value: Promo["status"]) => <Tag color={value === "published" ? "green" : value === "draft" ? "orange" : "default"}>{value}</Tag> },
+		{
+			title: "Status",
+			dataIndex: "status",
+			render: (value: Promo["status"]) => (
+				<Tag color={value === "published" ? "green" : value === "draft" ? "orange" : "default"}>{value}</Tag>
+			),
+		},
 		{ title: "Global", dataIndex: "is_global", render: (value: boolean) => (value ? "Ya" : "Tidak") },
 		{ title: "Prioritas", dataIndex: "priority" },
-		{ title: "Periode", render: (_, record) => `${dayjs(record.start_date).format("DD/MM/YYYY HH:mm")} - ${dayjs(record.end_date).format("DD/MM/YYYY HH:mm")}` },
+		{
+			title: "Periode",
+			render: (_, record) =>
+				`${dayjs(record.start_date).format("DD/MM/YYYY HH:mm")} - ${dayjs(record.end_date).format("DD/MM/YYYY HH:mm")}`,
+		},
 		{
 			title: "Aksi",
 			render: (_, record) => (
@@ -57,7 +81,9 @@ export default function PromoAdminPage() {
 					>
 						Edit
 					</Button>
-					<Button type="link" icon={<EyeOutlined />}>Preview</Button>
+					<Button type="link" icon={<EyeOutlined />}>
+						Preview
+					</Button>
 					<Button
 						type="link"
 						danger
@@ -149,7 +175,13 @@ export default function PromoAdminPage() {
 						setIsGlobal(true);
 						setSelectedBranches([]);
 						setImageFile(null);
-						form.setFieldsValue({ priority: 0, show_on_home: true, is_active: true, distribution_mode: "global", status: "draft" });
+						form.setFieldsValue({
+							priority: 0,
+							show_on_home: true,
+							is_active: true,
+							distribution_mode: "global",
+							status: "draft",
+						});
 						setOpen(true);
 					}}
 				>
@@ -158,16 +190,42 @@ export default function PromoAdminPage() {
 			</div>
 
 			<div className="admin-page-body admin-data-table">
-				<Table rowKey="id" columns={columns} dataSource={promos} loading={isLoading} pagination={{ pageSize: 10, showSizeChanger: false }} />
+				<Table
+					rowKey="id"
+					columns={columns}
+					dataSource={promos}
+					loading={isLoading}
+					pagination={{ pageSize: 10, showSizeChanger: false }}
+				/>
 			</div>
 
-			<Modal title={editing ? "Edit Promo" : "Tambah Promo"} open={open} className="admin-modal" onCancel={() => setOpen(false)} footer={null} width={920} destroyOnHidden>
-				<Form form={form} layout="vertical" initialValues={{ priority: 0, show_on_home: true, is_active: true, distribution_mode: "global", status: "draft" }}>
+			<Modal
+				title={editing ? "Edit Promo" : "Tambah Promo"}
+				open={open}
+				className="admin-modal"
+				onCancel={() => setOpen(false)}
+				footer={null}
+				width={920}
+				destroyOnClose
+			>
+				<Form
+					form={form}
+					layout="vertical"
+					initialValues={{
+						priority: 0,
+						show_on_home: true,
+						is_active: true,
+						distribution_mode: "global",
+						status: "draft",
+					}}
+				>
 					<div className="grid gap-3 md:grid-cols-2">
 						<Form.Item label="Judul" name="title" rules={[{ required: true }]}>
 							<Input onChange={(event) => form.setFieldValue("slug", slugify(event.target.value))} />
 						</Form.Item>
-						<Form.Item label="Slug" name="slug" rules={[{ required: true }]}><Input /></Form.Item>
+						<Form.Item label="Slug" name="slug" rules={[{ required: true }]}>
+							<Input />
+						</Form.Item>
 					</div>
 
 					<Form.Item label="Gambar Promo">
@@ -177,18 +235,30 @@ export default function PromoAdminPage() {
 					<Form.Item label="Deskripsi" name="description" rules={[{ required: true }]}>
 						<RichTextEditor />
 					</Form.Item>
-					<Form.Item label="Syarat & Ketentuan" name="terms"><Input.TextArea rows={4} /></Form.Item>
+					<Form.Item label="Syarat & Ketentuan" name="terms">
+						<Input.TextArea rows={4} />
+					</Form.Item>
 
 					<div className="grid gap-3 md:grid-cols-2">
-						<Form.Item label="Tanggal Mulai" name="start_date" rules={[{ required: true }]}><DatePicker showTime className="w-full" /></Form.Item>
-						<Form.Item label="Tanggal Berakhir" name="end_date" rules={[{ required: true }]}><DatePicker showTime className="w-full" /></Form.Item>
+						<Form.Item label="Tanggal Mulai" name="start_date" rules={[{ required: true }]}>
+							<DatePicker showTime className="w-full" />
+						</Form.Item>
+						<Form.Item label="Tanggal Berakhir" name="end_date" rules={[{ required: true }]}>
+							<DatePicker showTime className="w-full" />
+						</Form.Item>
 					</div>
 
-					<Form.Item label="Priority" name="priority"><InputNumber className="w-full" min={0} /></Form.Item>
+					<Form.Item label="Priority" name="priority">
+						<InputNumber className="w-full" min={0} />
+					</Form.Item>
 
 					<div className="grid gap-3 md:grid-cols-2">
-						<Form.Item label="Tampilkan di Home" name="show_on_home" valuePropName="checked"><Switch /></Form.Item>
-						<Form.Item label="Status Aktif" name="is_active" valuePropName="checked"><Switch /></Form.Item>
+						<Form.Item label="Tampilkan di Home" name="show_on_home" valuePropName="checked">
+							<Switch />
+						</Form.Item>
+						<Form.Item label="Status Aktif" name="is_active" valuePropName="checked">
+							<Switch />
+						</Form.Item>
 					</div>
 
 					<Form.Item label="Distribusi Cabang" name="distribution_mode">
@@ -216,12 +286,20 @@ export default function PromoAdminPage() {
 						</Form.Item>
 					) : null}
 
-					<Form.Item name="status" hidden><Input /></Form.Item>
+					<Form.Item name="status" hidden>
+						<Input />
+					</Form.Item>
 
 					<div className="flex flex-wrap justify-end gap-2">
-						<Button className="admin-soft-btn" onClick={() => void savePromo("draft")}>Simpan Draft</Button>
-						<Button className="admin-soft-btn" type="default" icon={<EyeOutlined />}>Preview</Button>
-						<Button className="admin-soft-btn" type="primary" onClick={() => void savePromo("published")}>Publish Sekarang</Button>
+						<Button className="admin-soft-btn" onClick={() => void savePromo("draft")}>
+							Simpan Draft
+						</Button>
+						<Button className="admin-soft-btn" type="default" icon={<EyeOutlined />}>
+							Preview
+						</Button>
+						<Button className="admin-soft-btn" type="primary" onClick={() => void savePromo("published")}>
+							Publish Sekarang
+						</Button>
 					</div>
 				</Form>
 			</Modal>

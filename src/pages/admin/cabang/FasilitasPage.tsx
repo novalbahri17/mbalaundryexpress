@@ -123,7 +123,7 @@ export default function CabangFasilitasPage() {
 				open={open}
 				onCancel={() => setOpen(false)}
 				onOk={() => void onSubmit()}
-				destroyOnHidden
+				destroyOnClose
 			>
 				<Form layout="vertical" form={form} initialValues={{ sort_order: 0 }}>
 					<Form.Item label="Nama" name="name" rules={[{ required: true, message: "Nama fasilitas wajib diisi" }]}>

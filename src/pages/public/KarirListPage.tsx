@@ -1,4 +1,4 @@
-﻿import { Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { getJobs } from "@/api/jobs.api";
 import { PageHeader } from "@/components/public/shared/PageHeader";
@@ -13,7 +13,12 @@ export default function KarirListPage() {
 
 	return (
 		<section className="pb-20">
-			<PageHeader kicker="Karir" title="Bergabung" highlight="Bersama Kami" description="Lowongan aktif dari seluruh cabang MBA Laundry Express." />
+			<PageHeader
+				kicker="Karir"
+				title="Bergabung"
+				highlight="Bersama Kami"
+				description="Lowongan aktif dari seluruh cabang MBA Laundry Express."
+			/>
 			<div className="mx-auto grid max-w-6xl gap-4 px-4 md:px-8">
 				{jobs.map((job) => (
 					<GlassCard key={job.id} className="overflow-hidden p-0">
@@ -49,10 +54,10 @@ export default function KarirListPage() {
 						</div>
 					</GlassCard>
 				))}
-				{jobs.length === 0 ? <p className="text-sm text-[var(--text-muted)]">Saat ini belum ada lowongan terbuka.</p> : null}
+				{jobs.length === 0 ? (
+					<p className="text-sm text-[var(--text-muted)]">Saat ini belum ada lowongan terbuka.</p>
+				) : null}
 			</div>
 		</section>
 	);
 }
-
-

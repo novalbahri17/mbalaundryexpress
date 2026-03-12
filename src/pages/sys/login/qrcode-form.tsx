@@ -1,4 +1,4 @@
-﻿import { QRCodeSVG } from "qrcode.react";
+import { QRCodeSVG } from "qrcode.react";
 import { useTranslation } from "react-i18next";
 import { ReturnButton } from "./components/ReturnButton";
 import { LoginStateEnum, useLoginStateContext } from "./providers/login-provider";
@@ -24,4 +24,3 @@ function QrCodeFrom() {
 }
 
 export default QrCodeFrom;
-

@@ -1,4 +1,4 @@
-﻿import { FormEvent, useState } from "react";
+import { FormEvent, useState } from "react";
 import toast from "react-hot-toast";
 import { createPartnership } from "@/api/settings.api";
 import { PageHeader } from "@/components/public/shared/PageHeader";
@@ -46,20 +46,61 @@ export default function KemitraanPage() {
 
 	return (
 		<section className="pb-20">
-			<PageHeader kicker="Kemitraan" title="Program" highlight="Kemitraan" description="Buka peluang kerja sama laundry satelit, corporate wash, dan co-branding area kampus/kost." />
+			<PageHeader
+				kicker="Kemitraan"
+				title="Program"
+				highlight="Kemitraan"
+				description="Buka peluang kerja sama laundry satelit, corporate wash, dan co-branding area kampus/kost."
+			/>
 			<form onSubmit={submit} className="mx-auto grid max-w-3xl gap-4 px-4 md:px-8">
-				<input required value={form.name} onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))} placeholder="Nama" className="glass-card h-12 rounded-xl px-4" />
-				<input required value={form.company} onChange={(event) => setForm((prev) => ({ ...prev, company: event.target.value }))} placeholder="Nama usaha/perusahaan" className="glass-card h-12 rounded-xl px-4" />
-				<input required value={form.phone} onChange={(event) => setForm((prev) => ({ ...prev, phone: event.target.value }))} placeholder="Nomor WhatsApp" className="glass-card h-12 rounded-xl px-4" />
-				<input value={form.email} onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))} placeholder="Email" className="glass-card h-12 rounded-xl px-4" />
-				<input value={form.city} onChange={(event) => setForm((prev) => ({ ...prev, city: event.target.value }))} placeholder="Kota" className="glass-card h-12 rounded-xl px-4" />
-				<textarea rows={4} value={form.notes} onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))} placeholder="Catatan kebutuhan" className="glass-card rounded-xl px-4 py-3" />
-				<button type="submit" disabled={loading} className="btn-primary rounded-xl px-6 py-3 text-sm font-semibold disabled:opacity-60">
+				<input
+					required
+					value={form.name}
+					onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
+					placeholder="Nama"
+					className="glass-card h-12 rounded-xl px-4"
+				/>
+				<input
+					required
+					value={form.company}
+					onChange={(event) => setForm((prev) => ({ ...prev, company: event.target.value }))}
+					placeholder="Nama usaha/perusahaan"
+					className="glass-card h-12 rounded-xl px-4"
+				/>
+				<input
+					required
+					value={form.phone}
+					onChange={(event) => setForm((prev) => ({ ...prev, phone: event.target.value }))}
+					placeholder="Nomor WhatsApp"
+					className="glass-card h-12 rounded-xl px-4"
+				/>
+				<input
+					value={form.email}
+					onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}
+					placeholder="Email"
+					className="glass-card h-12 rounded-xl px-4"
+				/>
+				<input
+					value={form.city}
+					onChange={(event) => setForm((prev) => ({ ...prev, city: event.target.value }))}
+					placeholder="Kota"
+					className="glass-card h-12 rounded-xl px-4"
+				/>
+				<textarea
+					rows={4}
+					value={form.notes}
+					onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))}
+					placeholder="Catatan kebutuhan"
+					className="glass-card rounded-xl px-4 py-3"
+				/>
+				<button
+					type="submit"
+					disabled={loading}
+					className="btn-primary rounded-xl px-6 py-3 text-sm font-semibold disabled:opacity-60"
+				>
 					{loading ? "Mengirim..." : "Kirim Pengajuan"}
 				</button>
 			</form>
 		</section>
 	);
 }
-
-

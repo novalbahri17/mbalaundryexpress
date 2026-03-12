@@ -1,4 +1,4 @@
-﻿import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { isAuthenticated } from "@/api/pocketbase";
@@ -43,15 +43,35 @@ export default function LoginPage() {
 					<h1 className="mt-2 text-2xl font-extrabold">Masuk Dashboard</h1>
 					<p className="mt-2 text-sm text-[var(--text-muted)]">Kelola cabang, promo, konten, dan data operasional.</p>
 
-					{guard.isLocked ? <p className="mt-4 rounded-xl bg-red-50 px-3 py-2 text-xs text-red-700 dark:bg-red-500/10 dark:text-red-300">Akun terkunci sementara karena 5x gagal login. Coba lagi beberapa menit.</p> : null}
+					{guard.isLocked ? (
+						<p className="mt-4 rounded-xl bg-red-50 px-3 py-2 text-xs text-red-700 dark:bg-red-500/10 dark:text-red-300">
+							Akun terkunci sementara karena 5x gagal login. Coba lagi beberapa menit.
+						</p>
+					) : null}
 
 					<label className="mt-5 block text-sm font-semibold">Email</label>
-					<input type="email" required value={email} onChange={(event) => setEmail(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 dark:border-slate-700 dark:bg-slate-900" />
+					<input
+						type="email"
+						required
+						value={email}
+						onChange={(event) => setEmail(event.target.value)}
+						className="mt-1 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 dark:border-slate-700 dark:bg-slate-900"
+					/>
 
 					<label className="mt-4 block text-sm font-semibold">Password</label>
-					<input type="password" required value={password} onChange={(event) => setPassword(event.target.value)} className="mt-1 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 dark:border-slate-700 dark:bg-slate-900" />
+					<input
+						type="password"
+						required
+						value={password}
+						onChange={(event) => setPassword(event.target.value)}
+						className="mt-1 h-11 w-full rounded-xl border border-slate-200 bg-white px-3 dark:border-slate-700 dark:bg-slate-900"
+					/>
 
-					<button disabled={loading || guard.isLocked} type="submit" className="btn-primary mt-6 h-11 w-full rounded-xl text-sm font-semibold disabled:opacity-60">
+					<button
+						disabled={loading || guard.isLocked}
+						type="submit"
+						className="btn-primary mt-6 h-11 w-full rounded-xl text-sm font-semibold disabled:opacity-60"
+					>
 						{loading ? "Memproses..." : "Masuk"}
 					</button>
 				</form>

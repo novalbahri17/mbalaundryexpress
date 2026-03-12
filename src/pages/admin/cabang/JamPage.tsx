@@ -80,7 +80,11 @@ export default function CabangJamPage() {
 				loading={isLoading}
 				dataSource={data}
 				columns={[
-					{ title: "Hari", dataIndex: "day", render: (value: DayName) => value.charAt(0).toUpperCase() + value.slice(1) },
+					{
+						title: "Hari",
+						dataIndex: "day",
+						render: (value: DayName) => value.charAt(0).toUpperCase() + value.slice(1),
+					},
 					{ title: "Buka", dataIndex: "open_time", render: (value?: string) => value?.slice(0, 5) ?? "-" },
 					{ title: "Tutup", dataIndex: "close_time", render: (value?: string) => value?.slice(0, 5) ?? "-" },
 					{ title: "Status", dataIndex: "is_closed", render: (value: boolean) => (value ? "Tutup" : "Buka") },
@@ -129,7 +133,7 @@ export default function CabangJamPage() {
 				open={open}
 				onCancel={() => setOpen(false)}
 				onOk={() => void onSubmit()}
-				destroyOnHidden
+				destroyOnClose
 			>
 				<Form layout="vertical" form={form} initialValues={{ day: "senin", is_closed: false }}>
 					<Form.Item label="Hari" name="day" rules={[{ required: true }]}>

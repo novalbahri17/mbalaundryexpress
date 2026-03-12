@@ -1,4 +1,4 @@
-﻿import type { ColumnsType } from "antd/es/table";
+import type { ColumnsType } from "antd/es/table";
 import { CrudManager } from "@/components/admin/CrudManager";
 import { createPartnership, deletePartnership, getPartnerships, updatePartnership } from "@/api/settings.api";
 import type { Partnership } from "@/types/database.types";
@@ -28,9 +28,14 @@ export default function KemitraanAdminPage() {
 				{ name: "email", label: "Email", type: "text" },
 				{ name: "city", label: "Kota", type: "text" },
 				{ name: "notes", label: "Catatan", type: "textarea" },
-				{ name: "status", label: "Status", type: "select", options: ["new", "contacted", "qualified", "closed", "rejected"].map((value) => ({ value, label: value })), required: true },
+				{
+					name: "status",
+					label: "Status",
+					type: "select",
+					options: ["new", "contacted", "qualified", "closed", "rejected"].map((value) => ({ value, label: value })),
+					required: true,
+				},
 			]}
 		/>
 	);
 }
-

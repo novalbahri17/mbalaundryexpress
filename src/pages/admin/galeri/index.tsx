@@ -217,7 +217,7 @@ export default function GaleriAdminPage() {
 				open={open}
 				onCancel={resetModalState}
 				onOk={() => void onSubmit()}
-				destroyOnHidden
+				destroyOnClose
 			>
 				<Form form={form} layout="vertical" initialValues={{ type: "umum", sort_order: 0 }}>
 					<Form.Item label="Sumber Gambar">
@@ -261,11 +261,7 @@ export default function GaleriAdminPage() {
 						<Input.TextArea rows={3} />
 					</Form.Item>
 
-					<Form.Item
-						label="Tipe"
-						name="type"
-						rules={[{ required: true, message: "Tipe wajib dipilih" }]}
-					>
+					<Form.Item label="Tipe" name="type" rules={[{ required: true, message: "Tipe wajib dipilih" }]}>
 						<Select options={galleryTypeOptions} />
 					</Form.Item>
 
