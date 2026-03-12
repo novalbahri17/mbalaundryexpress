@@ -1,6 +1,10 @@
 {
 	"rewrites": [
 		{
+			"source": "/pb-api/:path*",
+			"destination": "http://43.156.144.127:8091/:path*"
+		},
+		{
 			"source": "/(.*)",
 			"destination": "/"
 		}
