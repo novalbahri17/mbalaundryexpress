@@ -5,7 +5,7 @@ import { defineConfig, loadEnv } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 import tsconfigPaths from "vite-tsconfig-paths";
 
-// @ts-ignore - Disable strict type checking for config
+// @ts-ignore
 export default defineConfig(({ mode }) => {
 	const env = loadEnv(mode, process.cwd(), "");
 	const base = env.VITE_APP_PUBLIC_PATH || env.VITE_PUBLIC_PATH || "/";
@@ -104,6 +104,7 @@ export default defineConfig(({ mode }) => {
 			cssCodeSplit: true,
 			chunkSizeWarningLimit: 1500,
 			rollupOptions: {
+				external: [],
 				output: {
 					manualChunks: {
 						"vendor-core": ["react", "react-dom", "react-router-dom"],
@@ -116,7 +117,7 @@ export default defineConfig(({ mode }) => {
 		},
 
 		optimizeDeps: {
-			include: ["react", "react-dom", "react-router-dom", "antd", "axios", "@ant-design/icons"],
+			include: ["react", "react-dom", "react-router-dom", "antd", "axios", "@ant-design/icons", "workbox-window"],
 			exclude: ["@iconify/react"],
 		},
 
