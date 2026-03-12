@@ -211,7 +211,7 @@ export default function DashboardPage() {
 				title: message.subject
 					? `Pesan baru: ${message.subject}`
 					: `Pesan kontak dari ${message.name}`,
-				detail: `${message.name} • ${formatDateTime(message.created ?? new Date())}`,
+				detail: `${message.name} ï¿½ ${formatDateTime(message.created ?? new Date())}`,
 				timestamp: toTimestamp(message.created) ?? 0,
 				link: "/admin/pesan",
 				tone: "blue",
@@ -221,7 +221,7 @@ export default function DashboardPage() {
 			items.push({
 				key: `lead-${lead.id}`,
 				title: `Lead kemitraan: ${lead.name}`,
-				detail: `${lead.company ?? "Individu"} • status ${lead.status}`,
+				detail: `${lead.company ?? "Individu"} ï¿½ status ${lead.status}`,
 				timestamp: toTimestamp(lead.created) ?? 0,
 				link: "/admin/kemitraan",
 				tone: "teal",
@@ -241,7 +241,7 @@ export default function DashboardPage() {
 			items.push({
 				key: `article-${article.id}`,
 				title: `Artikel diperbarui: ${article.title}`,
-				detail: `Status ${article.status} • ${formatDateTime(article.updated ?? article.created ?? new Date())}`,
+				detail: `Status ${article.status} ï¿½ ${formatDateTime(article.updated ?? article.created ?? new Date())}`,
 				timestamp: toTimestamp(article.updated ?? article.created) ?? 0,
 				link: "/admin/blog",
 				tone: "brand",
@@ -329,13 +329,7 @@ export default function DashboardPage() {
 					<p className="m-0 mt-1 text-sm font-medium text-neutral-600 dark:text-neutral-300">{dayString}</p>
 				</div>
 				<div className="flex flex-wrap items-center gap-3">
-					<Link
-						to="/admin/konten-home"
-						className="inline-flex h-10 items-center gap-2 rounded-xl border border-neutral-200 px-4 text-sm font-bold text-neutral-900 transition hover:border-ruby-300 hover:text-ruby-600 dark:border-neutral-700 dark:text-white dark:hover:border-ruby-500/30 dark:hover:text-ruby-400"
-					>
-						<CalendarOutlined />
-						Konten Home
-					</Link>
+
 					<Link
 						to="/admin/promo"
 						className="inline-flex h-10 items-center gap-2 rounded-xl bg-gradient-to-r from-ruby-600 to-blue-500 px-4 text-sm font-bold text-white shadow-[0_10px_24px_rgba(198,40,40,0.35)] transition hover:-translate-y-0.5"
@@ -373,7 +367,7 @@ export default function DashboardPage() {
 					{
 						label: "Cabang Aktif",
 						value: branchItems.length,
-						helper: `${openBranches} buka • ${busyBranches} ramai • ${closedBranches} tutup`,
+						helper: `${openBranches} buka ï¿½ ${busyBranches} ramai ï¿½ ${closedBranches} tutup`,
 						icon: <ShopOutlined />,
 						iconClass: "bg-blue-50 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400",
 					},

@@ -70,7 +70,6 @@ const menuEntries: AdminMenuEntry[] = [
 	{ key: "/admin/testimoni", icon: <StarOutlined />, label: "Testimoni", group: "group-konten" },
 	{ key: "/admin/faq", icon: <QuestionCircleOutlined />, label: "FAQ", group: "group-konten" },
 	{ key: "/admin/galeri", icon: <PictureOutlined />, label: "Galeri", group: "group-konten" },
-	{ key: "/admin/konten-home", icon: <MessageOutlined />, label: "Konten Home", group: "group-konten" },
 	{ key: "/admin/subscribers", icon: <BellOutlined />, label: "Subscribers", group: "group-program" },
 	{ key: "/admin/kemitraan", icon: <HomeOutlined />, label: "Kemitraan", group: "group-komunikasi" },
 	{ key: "/admin/pesan", icon: <MailOutlined />, label: "Pesan", group: "group-komunikasi" },

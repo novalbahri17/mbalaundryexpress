@@ -1,4 +1,4 @@
-﻿import { lazy, useEffect } from "react";
+import { lazy, useEffect } from "react";
 import type { RouteObject } from "react-router-dom";
 import { Navigate, Outlet } from "react-router-dom";
 import { isAuthenticated } from "@/api/pocketbase";
@@ -17,7 +17,6 @@ const BlogPage = lazy(() => import("@/pages/admin/blog"));
 const TestimoniPage = lazy(() => import("@/pages/admin/testimoni"));
 const FaqPage = lazy(() => import("@/pages/admin/faq"));
 const GaleriPage = lazy(() => import("@/pages/admin/galeri"));
-const KontenHomePage = lazy(() => import("@/pages/admin/konten-home"));
 
 const SubscribersPage = lazy(() => import("@/pages/admin/subscribers"));
 const KemitraanPage = lazy(() => import("@/pages/admin/kemitraan"));
@@ -68,8 +67,6 @@ export const adminRoutes: RouteObject = {
 						{ path: "testimoni", element: <TestimoniPage /> },
 						{ path: "faq", element: <FaqPage /> },
 						{ path: "galeri", element: <GaleriPage /> },
-						{ path: "konten-home", element: <KontenHomePage /> },
-
 						{ path: "subscribers", element: <SubscribersPage /> },
 						{ path: "kemitraan", element: <KemitraanPage /> },
 						{ path: "pesan", element: <PesanPage /> },
