@@ -1,7 +1,7 @@
 import PocketBase, { type RecordModel } from "pocketbase";
 import type { CollectionName, CollectionRecord, PaginatedResponse } from "@/types/database.types";
 
-const baseUrl = import.meta.env.VITE_POCKETBASE_BASE_PATH || "/pb-api";
+const baseUrl = import.meta.env.VITE_POCKETBASE_BASE_PATH || "https://pb.mbalaundryexpress.com";
 
 export const pb = new PocketBase(baseUrl);
 pb.autoCancellation(false);
@@ -173,7 +173,7 @@ const loginWithSuperuser = async (payload: AdminLoginPayload): Promise<AdminSess
 				password: payload.password,
 			}),
 		});
-		
+
 		if (fallbackRes.ok || (fallbackRes.status !== 404 && res.status === 404)) {
 			res = fallbackRes;
 		}
@@ -186,9 +186,9 @@ const loginWithSuperuser = async (payload: AdminLoginPayload): Promise<AdminSess
 	const data = await res.json();
 	// v0.23 uses `record`, v0.22 uses `admin`
 	const modelData = data.record || data.admin;
-	
+
 	pb.authStore.save(data.token, modelData);
-	
+
 	if (!isAdminSession()) {
 		pb.authStore.clear();
 		throw new Error("Admin session is invalid");
