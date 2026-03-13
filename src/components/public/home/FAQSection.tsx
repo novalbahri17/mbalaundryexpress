@@ -23,26 +23,26 @@ export function FAQSection() {
 	};
 
 	return (
-		<section className="bg-white px-6 py-24 md:px-12 md:py-32">
+		<section className="bg-white px-6 py-24 md:px-12 md:py-32 dark:bg-neutral-950">
 			<div className="mx-auto flex max-w-[800px] flex-col items-center">
 				{/* HEADER */}
 				<span className="rounded-full bg-ruby-500 px-4 py-2 text-[12px] font-bold uppercase tracking-wide text-white">
 					FAQ
 				</span>
-				<h2 className="mt-3 text-center text-[32px] font-bold leading-[1.2] text-neutral-900 md:text-[40px]">
+				<h2 className="mt-3 text-center text-[32px] font-bold leading-[1.2] text-neutral-900 md:text-[40px] dark:text-white">
 					Pertanyaan yang paling sering ditanyakan
 				</h2>
 
 				{/* SEARCH BAR */}
 				<div className="mt-10 w-full max-w-[600px]">
 					<div className="relative flex w-full items-center">
-						<Search className="absolute left-4 h-5 w-5 text-neutral-500" />
+						<Search className="absolute left-4 h-5 w-5 text-neutral-500 dark:text-neutral-400" />
 						<input
 							type="text"
 							placeholder="Cari pertanyaan..."
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
-							className="w-full rounded-[12px] border-2 border-neutral-200 bg-neutral-50 py-[14px] pl-[44px] pr-[20px] text-[16px] text-neutral-900 placeholder-neutral-500 outline-none transition-all focus:border-ruby-500 focus:bg-white focus:shadow-[0_0_8px_rgba(239,83,80,0.2)]"
+							className="w-full rounded-[12px] border-2 border-neutral-200 bg-neutral-50 py-[14px] pl-[44px] pr-[20px] text-[16px] text-neutral-900 placeholder-neutral-500 outline-none transition-all focus:border-ruby-500 focus:bg-white focus:shadow-[0_0_8px_rgba(239,83,80,0.2)] dark:border-neutral-700 dark:bg-neutral-900 dark:text-white dark:placeholder-neutral-400 dark:focus:bg-neutral-900"
 						/>
 					</div>
 				</div>
@@ -50,7 +50,7 @@ export function FAQSection() {
 				{/* ACCORDION */}
 				<div className="mt-12 flex w-full flex-col gap-4">
 					{isLoading ? (
-						<p className="text-center text-neutral-500">Memuat FAQ...</p>
+						<p className="text-center text-neutral-500 dark:text-neutral-400">Memuat FAQ...</p>
 					) : filteredFaq.length > 0 ? (
 						filteredFaq.map((item, index) => {
 							const isOpen = openIndex === index;
@@ -68,7 +68,7 @@ export function FAQSection() {
 										onClick={() => toggleFaq(index)}
 										className="flex w-full items-center justify-between px-6 py-5 text-left"
 									>
-										<span className="text-[18px] font-semibold text-neutral-900">{item.question}</span>
+										<span className="text-[18px] font-semibold text-neutral-900 dark:text-white">{item.question}</span>
 										<ChevronDown
 											className={`h-6 w-6 shrink-0 text-neutral-500 transition-transform duration-300 ${
 												isOpen ? "rotate-180" : ""
@@ -82,7 +82,7 @@ export function FAQSection() {
 									>
 										<div className="overflow-hidden">
 											<div
-												className="prose prose-sm border-t border-ruby-100 px-6 pb-6 pt-4 text-[16px] leading-[1.75] text-neutral-600 prose-p:my-1"
+												className="prose prose-sm border-t border-ruby-100 px-6 pb-6 pt-4 text-[16px] leading-[1.75] text-neutral-600 prose-p:my-1 dark:border-ruby-900/30 dark:text-neutral-300"
 												// biome-ignore lint/security/noDangerouslySetInnerHtml: FAQ content from dashboard may contain safe HTML tags
 												dangerouslySetInnerHTML={{ __html: item.answer }}
 											/>
@@ -92,13 +92,13 @@ export function FAQSection() {
 							);
 						})
 					) : (
-						<p className="text-center text-neutral-500">Pertanyaan tidak ditemukan.</p>
+						<p className="text-center text-neutral-500 dark:text-neutral-400">Pertanyaan tidak ditemukan.</p>
 					)}
 				</div>
 
 				{/* BOTTOM CTA */}
 				<div className="mt-12 flex flex-col items-center">
-					<p className="text-[16px] text-neutral-500">Masih ada pertanyaan?</p>
+					<p className="text-[16px] text-neutral-500 dark:text-neutral-400">Masih ada pertanyaan?</p>
 					<a
 						href="https://wa.me/628123456789"
 						target="_blank"

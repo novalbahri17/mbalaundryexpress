@@ -27,13 +27,13 @@ export function TestimonialsSection() {
 	if (isLoading || testimonials.length === 0) return null;
 
 	return (
-		<section className="overflow-hidden bg-white px-6 py-24 md:px-12 md:py-32">
+		<section className="overflow-hidden bg-white px-6 py-24 md:px-12 md:py-32 dark:bg-neutral-950">
 			<div className="mx-auto flex max-w-[1400px] flex-col items-center">
 				{/* HEADER */}
 				<span className="rounded-full bg-sapphire-500 px-4 py-2 text-[12px] font-bold uppercase tracking-wide text-white">
 					Testimoni
 				</span>
-				<h2 className="mt-3 text-center text-[32px] font-bold leading-[1.2] text-neutral-900 md:text-[40px]">
+				<h2 className="mt-3 text-center text-[32px] font-bold leading-[1.2] text-neutral-900 md:text-[40px] dark:text-white">
 					Review Pelanggan Kami
 				</h2>
 
@@ -44,7 +44,7 @@ export function TestimonialsSection() {
 							{testimonials.map((item) => (
 								<div
 									key={item.id}
-									className="flex w-[85vw] max-w-[360px] snap-center shrink-0 flex-col rounded-[24px] border border-neutral-200 bg-white p-8 transition-all hover:border-ruby-200 hover:shadow-lg"
+									className="flex w-[85vw] max-w-[360px] snap-center shrink-0 flex-col rounded-[24px] border border-neutral-200 bg-white p-8 transition-all hover:border-ruby-200 hover:shadow-lg dark:border-neutral-700 dark:bg-neutral-800"
 									style={{ minHeight: "280px" }}
 								>
 									<Quote className="h-8 w-8 text-ruby-500" />
@@ -53,9 +53,9 @@ export function TestimonialsSection() {
 											<Star key={`${item.id}-star-${idx}`} className="h-5 w-5 fill-amber-400 text-amber-400" />
 										))}
 									</div>
-									<p className="mt-4 text-[18px] leading-[1.75] text-neutral-700">"{item.comment}"</p>
+									<p className="mt-4 text-[18px] leading-[1.75] text-neutral-700 dark:text-neutral-300">"{item.comment}"</p>
 
-									<hr className="mb-6 mt-auto border-neutral-200" />
+									<hr className="mb-6 mt-auto border-neutral-200 dark:border-neutral-700" />
 
 									<div className="flex items-center gap-4">
 										{item.photo ? (
@@ -66,8 +66,8 @@ export function TestimonialsSection() {
 											</div>
 										)}
 										<div className="flex flex-col">
-											<span className="text-[16px] font-semibold text-neutral-900">{item.customer_name}</span>
-											<span className="max-w-[150px] truncate text-[14px] capitalize text-neutral-500">
+											<span className="text-[16px] font-semibold text-neutral-900 dark:text-white">{item.customer_name}</span>
+											<span className="max-w-[150px] truncate text-[14px] capitalize text-neutral-500 dark:text-neutral-400">
 												{item.source || "Pelanggan"}
 											</span>
 										</div>
@@ -83,7 +83,7 @@ export function TestimonialsSection() {
 							<button
 								type="button"
 								onClick={prevSlide}
-								className="absolute -left-6 top-[40%] z-10 flex h-14 w-14 items-center justify-center rounded-full bg-white text-ruby-500 shadow-xl transition-all hover:scale-110 hover:bg-ruby-50"
+								className="absolute -left-6 top-[40%] z-10 flex h-14 w-14 items-center justify-center rounded-full bg-white text-ruby-500 shadow-xl transition-all hover:scale-110 hover:bg-ruby-50 dark:bg-neutral-800 dark:hover:bg-neutral-700"
 								aria-label="Previous testimonial"
 							>
 								<ArrowLeft className="h-6 w-6" />
@@ -91,7 +91,7 @@ export function TestimonialsSection() {
 							<button
 								type="button"
 								onClick={nextSlide}
-								className="absolute -right-6 top-[40%] z-10 flex h-14 w-14 items-center justify-center rounded-full bg-white text-ruby-500 shadow-xl transition-all hover:scale-110 hover:bg-ruby-50"
+								className="absolute -right-6 top-[40%] z-10 flex h-14 w-14 items-center justify-center rounded-full bg-white text-ruby-500 shadow-xl transition-all hover:scale-110 hover:bg-ruby-50 dark:bg-neutral-800 dark:hover:bg-neutral-700"
 								aria-label="Next testimonial"
 							>
 								<ArrowRight className="h-6 w-6" />

@@ -33,10 +33,10 @@ function GalleryImage({ src, alt, className }: { src?: string; alt: string; clas
 
 	if (error || !src) {
 		return (
-			<div className={`flex items-center justify-center bg-neutral-200 ${className}`}>
+			<div className={`flex items-center justify-center bg-neutral-200 dark:bg-neutral-800 ${className}`}>
 				<div className="text-center">
-					<PictureOutlined className="h-12 w-12 text-neutral-400" />
-					<p className="mt-2 text-sm text-neutral-500">Gambar tidak tersedia</p>
+					<PictureOutlined className="h-12 w-12 text-neutral-400 dark:text-neutral-600" />
+					<p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">Gambar tidak tersedia</p>
 				</div>
 			</div>
 		);
@@ -44,7 +44,7 @@ function GalleryImage({ src, alt, className }: { src?: string; alt: string; clas
 
 	return (
 		<>
-			{!loaded && <div className={`absolute inset-0 animate-pulse bg-neutral-200 ${className}`} />}
+			{!loaded && <div className={`absolute inset-0 animate-pulse bg-neutral-200 dark:bg-neutral-800 ${className}`} />}
 			<img
 				src={src}
 				alt={alt}
@@ -66,7 +66,7 @@ export function GallerySection() {
 	const galleryItems = (data ?? []).filter((item) => Boolean(item.image && item.image.trim() !== "")).slice(0, 6);
 
 	return (
-		<section className="relative overflow-hidden bg-neutral-50 px-6 py-24 md:px-12 md:py-32">
+		<section className="relative overflow-hidden bg-neutral-50 px-6 py-24 md:px-12 md:py-32 dark:bg-neutral-900">
 			<div className="pointer-events-none absolute inset-0">
 				<div className="absolute -left-20 top-1/3 h-[300px] w-[300px] rounded-full bg-sapphire-200/30 blur-[100px]" />
 				<div className="absolute -right-20 bottom-1/3 h-[300px] w-[300px] rounded-full bg-ruby-200/30 blur-[100px]" />
@@ -80,13 +80,13 @@ export function GallerySection() {
 				</ScrollReveal>
 
 				<ScrollReveal delay={0.1}>
-					<h2 className="mt-3 text-center text-[32px] font-bold leading-[1.2] text-neutral-900 md:text-[40px]">
+					<h2 className="mt-3 text-center text-[32px] font-bold leading-[1.2] text-neutral-900 md:text-[40px] dark:text-white">
 						Intip Keseruan Cuci di Sini!
 					</h2>
 				</ScrollReveal>
 
 				<ScrollReveal delay={0.2}>
-					<p className="mt-4 max-w-[600px] text-center text-[16px] leading-[1.6] text-neutral-600">
+					<p className="mt-4 max-w-[600px] text-center text-[16px] leading-[1.6] text-neutral-600 dark:text-neutral-300">
 						Didesain untuk kenyamanan optimal Anda, setiap outlet kami bersih, terang, dan ber-AC penuh sambil menunggu
 						cucian selesai.
 					</p>
@@ -99,7 +99,7 @@ export function GallerySection() {
 								key={skeletonId}
 								initial={{ opacity: 0 }}
 								animate={{ opacity: 1 }}
-								className="aspect-[4/3] w-full animate-pulse rounded-[20px] bg-neutral-200"
+								className="aspect-[4/3] w-full animate-pulse rounded-[20px] bg-neutral-200 dark:bg-neutral-800"
 							/>
 						))}
 
@@ -116,7 +116,7 @@ export function GallerySection() {
 								<motion.div
 									whileHover={{ y: -8, scale: 1.02 }}
 									transition={{ duration: 0.3 }}
-									className="group relative aspect-[4/3] w-full overflow-hidden rounded-[20px] bg-neutral-200 shadow-lg"
+									className="group relative aspect-[4/3] w-full overflow-hidden rounded-[20px] bg-neutral-200 shadow-lg dark:bg-neutral-800"
 								>
 									<GalleryImage
 										src={item.image}
@@ -148,11 +148,11 @@ export function GallerySection() {
 						<motion.div
 							initial={{ opacity: 0, y: 20 }}
 							animate={{ opacity: 1, y: 0 }}
-							className="col-span-full rounded-[20px] border border-neutral-200 bg-white px-6 py-16 text-center"
+							className="col-span-full rounded-[20px] border border-neutral-200 bg-white px-6 py-16 text-center dark:border-neutral-700 dark:bg-neutral-800"
 						>
-							<PictureOutlined className="mx-auto h-16 w-16 text-neutral-300" />
-							<p className="mt-4 text-neutral-600">Belum ada foto galeri outlet.</p>
-							<p className="text-sm text-neutral-400">Silakan upload dari dashboard admin.</p>
+							<PictureOutlined className="mx-auto h-16 w-16 text-neutral-300 dark:text-neutral-600" />
+							<p className="mt-4 text-neutral-600 dark:text-neutral-300">Belum ada foto galeri outlet.</p>
+							<p className="text-sm text-neutral-400 dark:text-neutral-500">Silakan upload dari dashboard admin.</p>
 						</motion.div>
 					)}
 				</div>
@@ -170,7 +170,7 @@ export function GallerySection() {
 				<ScrollReveal delay={0.5}>
 					<Link
 						to="/galeri"
-						className="group mt-12 inline-flex items-center justify-center gap-2 rounded-xl border-2 border-neutral-200 bg-white px-8 py-4 text-[16px] font-semibold text-neutral-700 shadow-sm transition-all hover:border-sapphire-300 hover:bg-sapphire-50 hover:text-sapphire-700"
+						className="group mt-12 inline-flex items-center justify-center gap-2 rounded-xl border-2 border-neutral-200 bg-white px-8 py-4 text-[16px] font-semibold text-neutral-700 shadow-sm transition-all hover:border-sapphire-300 hover:bg-sapphire-50 hover:text-sapphire-700 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:border-sapphire-500 dark:hover:bg-sapphire-900/20 dark:hover:text-sapphire-400"
 					>
 						Lihat Semua Galeri
 						<ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />

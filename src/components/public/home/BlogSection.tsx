@@ -20,16 +20,16 @@ export function BlogSection() {
 	};
 
 	return (
-		<section className="bg-neutral-50 px-6 py-24 md:px-12 md:py-32">
+		<section className="bg-neutral-50 px-6 py-24 md:px-12 md:py-32 dark:bg-neutral-900">
 			<div className="mx-auto flex max-w-[1200px] flex-col items-center">
 				{/* HEADER */}
 				<span className="rounded-full bg-sapphire-500 px-4 py-2 text-[12px] font-bold uppercase tracking-wide text-white">
 					Blog & Tips
 				</span>
-				<h2 className="mt-3 text-center text-[32px] font-bold leading-[1.2] text-neutral-900 md:text-[40px]">
+				<h2 className="mt-3 text-center text-[32px] font-bold leading-[1.2] text-neutral-900 md:text-[40px] dark:text-white">
 					Tips Merawat Pakaian
 				</h2>
-				<p className="mt-4 max-w-[600px] text-center text-[18px] leading-[1.5] text-neutral-600">
+				<p className="mt-4 max-w-[600px] text-center text-[18px] leading-[1.5] text-neutral-600 dark:text-neutral-300">
 					Dapatkan informasi terbaru seputar cara mencuci yang benar dan tips merawat mesin.
 				</p>
 
@@ -39,7 +39,7 @@ export function BlogSection() {
 						<Link
 							key={article.id}
 							to={`/blog/${article.slug}`}
-							className="group flex flex-col overflow-hidden rounded-[20px] bg-white border border-neutral-200 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+							className="group flex flex-col overflow-hidden rounded-[20px] bg-white border border-neutral-200 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg dark:bg-neutral-800 dark:border-neutral-700"
 						>
 							<div className="relative aspect-[16/10] w-full overflow-hidden">
 								<img
@@ -50,19 +50,19 @@ export function BlogSection() {
 									alt={article.title}
 									className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
 								/>
-								<div className="absolute left-4 top-4 rounded-full bg-white/90 backdrop-blur-sm px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-sapphire-600 shadow-sm">
+								<div className="absolute left-4 top-4 rounded-full bg-white/90 backdrop-blur-sm px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-sapphire-600 shadow-sm dark:bg-neutral-900/90 dark:text-sapphire-400">
 									{article.category || "Tips"}
 								</div>
 							</div>
 
 							<div className="flex flex-1 flex-col p-6">
-								<h3 className="line-clamp-2 text-[20px] font-bold leading-[1.4] text-neutral-900 group-hover:text-sapphire-600 transition-colors">
+								<h3 className="line-clamp-2 text-[20px] font-bold leading-[1.4] text-neutral-900 group-hover:text-sapphire-600 transition-colors dark:text-white dark:group-hover:text-sapphire-400">
 									{article.title}
 								</h3>
-								<p className="mt-3 line-clamp-3 text-[14px] leading-[1.6] text-neutral-600">{article.excerpt}</p>
+								<p className="mt-3 line-clamp-3 text-[14px] leading-[1.6] text-neutral-600 dark:text-neutral-300">{article.excerpt}</p>
 
-								<div className="mt-auto pt-6 flex items-center justify-between border-t border-neutral-100">
-									<span className="text-[12px] font-medium text-neutral-500">
+								<div className="mt-auto pt-6 flex items-center justify-between border-t border-neutral-100 dark:border-neutral-700">
+									<span className="text-[12px] font-medium text-neutral-500 dark:text-neutral-400">
 										{formatDate(article.published_at || article.created || new Date().toISOString())}
 									</span>
 									<span className="flex items-center text-[12px] font-bold text-sapphire-600">
@@ -77,7 +77,7 @@ export function BlogSection() {
 				{/* BOTTOM CTA */}
 				<Link
 					to="/blog"
-					className="mt-12 inline-flex items-center justify-center rounded-xl border-2 border-sapphire-500 bg-transparent px-8 py-3 text-[16px] font-semibold text-sapphire-600 transition-colors hover:bg-sapphire-50"
+					className="mt-12 inline-flex items-center justify-center rounded-xl border-2 border-sapphire-500 bg-transparent px-8 py-3 text-[16px] font-semibold text-sapphire-600 transition-colors hover:bg-sapphire-50 dark:border-sapphire-400 dark:text-sapphire-400 dark:hover:bg-sapphire-900/20"
 				>
 					Lihat Semua Artikel
 				</Link>

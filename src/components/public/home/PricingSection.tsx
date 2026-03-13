@@ -27,7 +27,7 @@ export function PricingSection() {
 	const total = washCount * pricePerWash + dryCount * pricePerDry;
 
 	return (
-		<section className="relative overflow-hidden bg-white px-6 py-24 md:px-12 md:py-32">
+		<section className="relative overflow-hidden bg-white px-6 py-24 md:px-12 md:py-32 dark:bg-neutral-950">
 			{/* Decorative background */}
 			<div className="pointer-events-none absolute inset-0">
 				<div className="absolute -right-40 top-20 h-[400px] w-[400px] rounded-full bg-ruby-100/50 blur-[100px]" />
@@ -46,7 +46,7 @@ export function PricingSection() {
 				</ScrollReveal>
 
 				<ScrollReveal delay={0.1}>
-					<h2 className="mt-3 text-center text-[32px] font-bold leading-[1.2] text-neutral-900 md:text-[40px]">
+					<h2 className="mt-3 text-center text-[32px] font-bold leading-[1.2] text-neutral-900 md:text-[40px] dark:text-white">
 						Harga Jelas,{" "}
 						<span className="bg-gradient-to-r from-ruby-500 to-ruby-600 bg-clip-text text-transparent">
 							Tanpa Biaya Tersembunyi
@@ -55,7 +55,7 @@ export function PricingSection() {
 				</ScrollReveal>
 
 				<ScrollReveal delay={0.2}>
-					<p className="mt-4 max-w-[700px] text-center text-[18px] leading-[1.5] text-neutral-600">
+					<p className="mt-4 max-w-[700px] text-center text-[18px] leading-[1.5] text-neutral-600 dark:text-neutral-300">
 						Bayar sesuai yang kamu pakai. Tarif otomatis mengikuti data cabang aktif agar selalu update.
 					</p>
 				</ScrollReveal>
@@ -69,7 +69,7 @@ export function PricingSection() {
 					<StaggerItem className="h-full">
 						<motion.div
 							whileHover={{ y: -8 }}
-							className="group relative flex h-full w-full flex-col items-center overflow-hidden rounded-[28px] border-2 border-neutral-100 bg-white p-8 shadow-lg transition-all hover:border-ruby-200 hover:shadow-2xl md:p-12"
+							className="group relative flex h-full w-full flex-col items-center overflow-hidden rounded-[28px] border-2 border-neutral-100 bg-white p-8 shadow-lg transition-all hover:border-ruby-200 hover:shadow-2xl md:p-12 dark:border-neutral-800 dark:bg-neutral-900"
 						>
 							<motion.div
 								whileHover={{ scale: 1.1, rotate: -5 }}
@@ -81,15 +81,15 @@ export function PricingSection() {
 							<span className="mt-6 text-[16px] font-bold uppercase tracking-wide text-ruby-600">Mencuci</span>
 
 							<div className="mt-2 flex items-baseline gap-1">
-								<span className="text-[24px] font-bold text-neutral-400">Rp</span>
-								<span className="text-[56px] font-bold leading-none text-neutral-900 md:text-[64px]">10.000</span>
+								<span className="text-[24px] font-bold text-neutral-400 dark:text-neutral-500">Rp</span>
+								<span className="text-[56px] font-bold leading-none text-neutral-900 md:text-[64px] dark:text-white">10.000</span>
 							</div>
 
-							<p className="mt-2 text-[14px] text-neutral-500">Estimasi 30-40 Menit</p>
+							<p className="mt-2 text-[14px] text-neutral-500 dark:text-neutral-400">Estimasi 30-40 Menit</p>
 
-							<hr className="my-8 w-full border-neutral-100" />
+							<hr className="my-8 w-full border-neutral-100 dark:border-neutral-800" />
 
-							<ul className="flex w-full flex-col gap-4 text-[16px] text-neutral-700">
+							<ul className="flex w-full flex-col gap-4 text-[16px] text-neutral-700 dark:text-neutral-300">
 								{washFeatures.map((feature, index) => (
 									<motion.li
 										key={feature}
@@ -113,7 +113,7 @@ export function PricingSection() {
 					<StaggerItem className="h-full">
 						<motion.div
 							whileHover={{ y: -8 }}
-							className="group relative flex h-full w-full flex-col items-center overflow-hidden rounded-[28px] border-2 border-neutral-100 bg-white p-8 shadow-lg transition-all hover:border-sapphire-200 hover:shadow-2xl md:p-12"
+							className="group relative flex h-full w-full flex-col items-center overflow-hidden rounded-[28px] border-2 border-neutral-100 bg-white p-8 shadow-lg transition-all hover:border-sapphire-200 hover:shadow-2xl md:p-12 dark:border-neutral-800 dark:bg-neutral-900"
 						>
 							<motion.div
 								whileHover={{ scale: 1.1, rotate: 5 }}
@@ -125,15 +125,15 @@ export function PricingSection() {
 							<span className="mt-6 text-[16px] font-bold uppercase tracking-wide text-sapphire-600">Mengeringkan</span>
 
 							<div className="mt-2 flex items-baseline gap-1">
-								<span className="text-[24px] font-bold text-neutral-400">Rp</span>
-								<span className="text-[56px] font-bold leading-none text-neutral-900 md:text-[64px]">10.000</span>
+								<span className="text-[24px] font-bold text-neutral-400 dark:text-neutral-500">Rp</span>
+								<span className="text-[56px] font-bold leading-none text-neutral-900 md:text-[64px] dark:text-white">10.000</span>
 							</div>
 
-							<p className="mt-2 text-[14px] text-neutral-500">Estimasi 20-30 Menit</p>
+							<p className="mt-2 text-[14px] text-neutral-500 dark:text-neutral-400">Estimasi 20-30 Menit</p>
 
-							<hr className="my-8 w-full border-neutral-100" />
+							<hr className="my-8 w-full border-neutral-100 dark:border-neutral-800" />
 
-							<ul className="flex w-full flex-col gap-4 text-[16px] text-neutral-700">
+							<ul className="flex w-full flex-col gap-4 text-[16px] text-neutral-700 dark:text-neutral-300">
 								{dryFeatures.map((feature, index) => (
 									<motion.li
 										key={feature}
@@ -158,22 +158,22 @@ export function PricingSection() {
 				<ScrollReveal delay={0.4}>
 					<motion.div
 						whileHover={{ scale: 1.01 }}
-						className="mt-16 w-full max-w-[800px] overflow-hidden rounded-[28px] bg-gradient-to-br from-neutral-50 to-white p-8 shadow-xl ring-1 ring-neutral-100 md:p-10"
+						className="mt-16 w-full max-w-[800px] overflow-hidden rounded-[28px] bg-gradient-to-br from-neutral-50 to-white p-8 shadow-xl ring-1 ring-neutral-100 md:p-10 dark:from-neutral-900 dark:to-neutral-950 dark:ring-neutral-800"
 					>
 						<div className="flex items-center gap-3">
 							<div className="flex h-10 w-10 items-center justify-center rounded-full bg-ruby-100">
 								<Sparkles className="h-5 w-5 text-ruby-600" />
 							</div>
-							<h3 className="text-[20px] font-bold text-neutral-900">Hitung Estimasi Biaya</h3>
+							<h3 className="text-[20px] font-bold text-neutral-900 dark:text-white">Hitung Estimasi Biaya</h3>
 						</div>
 
 						<div className="mt-8 flex flex-col items-center justify-between gap-8 md:flex-row">
 							{/* Inputs */}
 							<div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-								<span className="min-w-[100px] text-[16px] font-medium text-neutral-700">Jumlah pakai:</span>
+								<span className="min-w-[100px] text-[16px] font-medium text-neutral-700 dark:text-neutral-300">Jumlah pakai:</span>
 
 								<div className="flex items-center gap-4">
-									<div className="flex items-center gap-2 rounded-xl bg-white p-2 shadow-sm ring-1 ring-neutral-200">
+									<div className="flex items-center gap-2 rounded-xl bg-white p-2 shadow-sm ring-1 ring-neutral-200 dark:bg-neutral-800 dark:ring-neutral-700">
 										<motion.button
 											whileTap={{ scale: 0.9 }}
 											type="button"
@@ -182,7 +182,7 @@ export function PricingSection() {
 										>
 											<Minus className="h-4 w-4" />
 										</motion.button>
-										<span className="w-10 text-center text-[18px] font-bold text-neutral-900">{washCount}</span>
+										<span className="w-10 text-center text-[18px] font-bold text-neutral-900 dark:text-white">{washCount}</span>
 										<motion.button
 											whileTap={{ scale: 0.9 }}
 											type="button"
@@ -192,11 +192,11 @@ export function PricingSection() {
 											<Plus className="h-4 w-4" />
 										</motion.button>
 									</div>
-									<span className="text-[14px] text-neutral-600">Load cuci</span>
+									<span className="text-[14px] text-neutral-600 dark:text-neutral-400">Load cuci</span>
 								</div>
 
 								<div className="flex items-center gap-4">
-									<div className="flex items-center gap-2 rounded-xl bg-white p-2 shadow-sm ring-1 ring-neutral-200">
+									<div className="flex items-center gap-2 rounded-xl bg-white p-2 shadow-sm ring-1 ring-neutral-200 dark:bg-neutral-800 dark:ring-neutral-700">
 										<motion.button
 											whileTap={{ scale: 0.9 }}
 											type="button"
@@ -205,7 +205,7 @@ export function PricingSection() {
 										>
 											<Minus className="h-4 w-4" />
 										</motion.button>
-										<span className="w-10 text-center text-[18px] font-bold text-neutral-900">{dryCount}</span>
+										<span className="w-10 text-center text-[18px] font-bold text-neutral-900 dark:text-white">{dryCount}</span>
 										<motion.button
 											whileTap={{ scale: 0.9 }}
 											type="button"
@@ -215,13 +215,13 @@ export function PricingSection() {
 											<Plus className="h-4 w-4" />
 										</motion.button>
 									</div>
-									<span className="text-[14px] text-neutral-600">Load kering</span>
+									<span className="text-[14px] text-neutral-600 dark:text-neutral-400">Load kering</span>
 								</div>
 							</div>
 
 							{/* Total */}
-							<div className="flex w-full flex-col items-center border-t border-neutral-200 pt-6 md:w-auto md:border-none md:pt-0">
-								<span className="text-[12px] font-bold uppercase tracking-wider text-neutral-500">Estimasi Total</span>
+							<div className="flex w-full flex-col items-center border-t border-neutral-200 pt-6 md:w-auto md:border-none md:pt-0 dark:border-neutral-700">
+								<span className="text-[12px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">Estimasi Total</span>
 								<motion.span
 									key={total}
 									initial={{ scale: 1.2, color: "#dc2626" }}
@@ -230,7 +230,7 @@ export function PricingSection() {
 								>
 									Rp {total.toLocaleString("id-ID")}
 								</motion.span>
-								<span className="mt-1 text-[14px] text-neutral-500">
+								<span className="mt-1 text-[14px] text-neutral-500 dark:text-neutral-400">
 									{washCount} cuci + {dryCount} kering
 								</span>
 							</div>

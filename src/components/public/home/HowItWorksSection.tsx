@@ -38,7 +38,7 @@ const steps = [
 
 export function HowItWorksSection() {
 	return (
-		<section className="relative overflow-hidden bg-neutral-50 px-6 py-24 md:px-12 md:py-32">
+		<section className="relative overflow-hidden bg-neutral-50 px-6 py-24 md:px-12 md:py-32 dark:bg-neutral-900">
 			{/* Background Pattern */}
 			<div className="pointer-events-none absolute inset-0 opacity-[0.03]">
 				<div
@@ -59,13 +59,13 @@ export function HowItWorksSection() {
 				</ScrollReveal>
 
 				<ScrollReveal delay={0.1}>
-					<h2 className="mt-3 text-center text-[32px] font-bold leading-[1.2] text-neutral-900 md:text-[40px]">
+					<h2 className="mt-3 text-center text-[32px] font-bold leading-[1.2] text-neutral-900 md:text-[40px] dark:text-white">
 						Mudah! Cukup 3 Langkah
 					</h2>
 				</ScrollReveal>
 
 				<ScrollReveal delay={0.2}>
-					<p className="mt-4 text-center text-[18px] leading-[1.5] text-neutral-600">
+					<p className="mt-4 text-center text-[18px] leading-[1.5] text-neutral-600 dark:text-neutral-300">
 						Proses laundry mandiri yang simple dan cepat
 					</p>
 				</ScrollReveal>
@@ -78,7 +78,7 @@ export function HowItWorksSection() {
 								<motion.div
 									whileHover={{ y: -8 }}
 									transition={{ duration: 0.3 }}
-									className="group relative flex flex-col items-center rounded-[24px] border border-neutral-200 bg-white p-8 shadow-sm transition-all duration-300 hover:border-transparent hover:shadow-2xl md:p-10"
+									className="group relative flex flex-col items-center rounded-[24px] border border-neutral-200 bg-white p-8 shadow-sm transition-all duration-300 hover:border-transparent hover:shadow-2xl md:p-10 dark:border-neutral-700 dark:bg-neutral-800"
 									style={{
 										background:
 											"linear-gradient(white, white) padding-box, linear-gradient(to bottom right, var(--tw-gradient-from), var(--tw-gradient-to)) border-box",
@@ -100,14 +100,14 @@ export function HowItWorksSection() {
 									</motion.div>
 
 									{/* Content */}
-									<h3 className="mt-6 text-center text-[22px] font-bold text-neutral-900 transition-colors group-hover:text-ruby-600">
+									<h3 className="mt-6 text-center text-[22px] font-bold text-neutral-900 transition-colors group-hover:text-ruby-600 dark:text-white dark:group-hover:text-ruby-400">
 										{step.title}
 									</h3>
-									<p className="mt-3 text-center text-[16px] leading-[1.75] text-neutral-600">{step.description}</p>
+									<p className="mt-3 text-center text-[16px] leading-[1.75] text-neutral-600 dark:text-neutral-300">{step.description}</p>
 
 									{/* Arrow indicator */}
 									{index < steps.length - 1 && (
-										<div className="absolute -right-4 top-1/2 hidden -translate-y-1/2 text-neutral-300 md:block">
+										<div className="absolute -right-4 top-1/2 hidden -translate-y-1/2 text-neutral-300 dark:text-neutral-600 md:block">
 											<ArrowRight className="h-8 w-8" />
 										</div>
 									)}
@@ -122,7 +122,7 @@ export function HowItWorksSection() {
 					<div className="mt-16 text-center">
 						<Link
 							to="/cara-pakai"
-							className="group inline-flex items-center justify-center gap-2 rounded-xl bg-white px-8 py-4 text-[16px] font-semibold text-ruby-500 shadow-lg transition-all hover:gap-3 hover:bg-ruby-50 hover:shadow-xl"
+							className="group inline-flex items-center justify-center gap-2 rounded-xl bg-white px-8 py-4 text-[16px] font-semibold text-ruby-500 shadow-lg transition-all hover:gap-3 hover:bg-ruby-50 hover:shadow-xl dark:bg-neutral-800 dark:text-ruby-400 dark:hover:bg-ruby-900/20"
 						>
 							Panduan Lengkap
 							<ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />

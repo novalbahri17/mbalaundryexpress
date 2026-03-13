@@ -24,23 +24,23 @@ export function LocationsSection() {
 	};
 
 	return (
-		<section className="bg-neutral-50 px-6 py-24 md:px-12 md:py-32">
+		<section className="bg-neutral-50 px-6 py-24 md:px-12 md:py-32 dark:bg-neutral-900">
 			<div className="mx-auto flex max-w-[1200px] flex-col items-center">
 				<span className="rounded-full bg-teal-500 px-4 py-2 text-[12px] font-bold uppercase tracking-wide text-white">
 					Lokasi
 				</span>
-				<h2 className="mt-3 text-center text-[32px] font-bold leading-[1.2] text-neutral-900 md:text-[40px]">
+				<h2 className="mt-3 text-center text-[32px] font-bold leading-[1.2] text-neutral-900 md:text-[40px] dark:text-white">
 					Lokasi Kami, Satu Standar Kualitas
 				</h2>
-				<p className="mt-4 max-w-[700px] text-center text-[18px] leading-[1.5] text-neutral-600">
+				<p className="mt-4 max-w-[700px] text-center text-[18px] leading-[1.5] text-neutral-600 dark:text-neutral-300">
 					Setiap cabang MBA Laundry dilengkapi mesin modern dan standar kebersihan tinggi.
 				</p>
 
 				<div className="mt-16 w-full">
 					{isLoading ? (
-						<p className="text-center text-neutral-500">Memuat cabang...</p>
+						<p className="text-center text-neutral-500 dark:text-neutral-400">Memuat cabang...</p>
 					) : branches.length === 0 ? (
-						<p className="text-center text-neutral-500">Belum ada cabang aktif saat ini.</p>
+						<p className="text-center text-neutral-500 dark:text-neutral-400">Belum ada cabang aktif saat ini.</p>
 					) : (
 						<>
 							<div className="mb-4 flex items-center justify-between gap-3">
@@ -71,7 +71,7 @@ export function LocationsSection() {
 								{branches.map((branch) => (
 									<article
 										key={branch.id}
-										className="flex w-[86vw] shrink-0 snap-start flex-col overflow-hidden rounded-[24px] border border-neutral-200 bg-white shadow-[0_8px_32px_rgba(0,0,0,0.08)] transition-all hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(239,83,80,0.12)] sm:w-[360px] lg:w-[380px]"
+										className="flex w-[86vw] shrink-0 snap-start flex-col overflow-hidden rounded-[24px] border border-neutral-200 bg-white shadow-[0_8px_32px_rgba(0,0,0,0.08)] transition-all hover:-translate-y-1 hover:shadow-[0_12px_40px_rgba(239,83,80,0.12)] sm:w-[360px] lg:w-[380px] dark:border-neutral-700 dark:bg-neutral-800"
 									>
 										<div className="relative h-[220px] w-full overflow-hidden">
 											<SafeImage
@@ -84,22 +84,22 @@ export function LocationsSection() {
 										</div>
 
 										<div className="flex flex-1 flex-col p-6 sm:p-7">
-											<h3 className="line-clamp-1 text-[24px] font-bold text-neutral-900">{branch.name}</h3>
+											<h3 className="line-clamp-1 text-[24px] font-bold text-neutral-900 dark:text-white">{branch.name}</h3>
 											<div className="mt-3 flex items-start gap-2">
 												<MapPin className="mt-1 h-5 w-5 shrink-0 text-ruby-500" />
-												<p className="line-clamp-2 text-[16px] text-neutral-600">{branch.address}</p>
+												<p className="line-clamp-2 text-[16px] text-neutral-600 dark:text-neutral-300">{branch.address}</p>
 											</div>
 
-											<hr className="my-5 border-neutral-200" />
+											<hr className="my-5 border-neutral-200 dark:border-neutral-700" />
 
 											<div className="flex flex-col gap-3">
 												<div className="flex items-start gap-2">
 													<Clock className="mt-0.5 h-4 w-4 shrink-0 text-neutral-400" />
-													<span className="text-[14px] font-medium text-neutral-800">07:00 - 23:00</span>
+													<span className="text-[14px] font-medium text-neutral-800 dark:text-neutral-200">07:00 - 23:00</span>
 												</div>
 												<div className="flex items-center gap-2">
 													<Phone className="h-4 w-4 shrink-0 text-neutral-400" />
-													<span className="line-clamp-1 text-[14px] font-medium text-neutral-800">
+													<span className="line-clamp-1 text-[14px] font-medium text-neutral-800 dark:text-neutral-200">
 														{branch.whatsapp || "Tidak ada telepon"}
 													</span>
 												</div>
@@ -108,7 +108,7 @@ export function LocationsSection() {
 											<div className="mt-7">
 												<Link
 													to={`/cabang/${branch.slug}`}
-													className="flex w-full items-center justify-center rounded-xl border-2 border-ruby-500 bg-transparent py-3 text-[16px] font-semibold text-ruby-500 transition-colors hover:bg-ruby-50"
+													className="flex w-full items-center justify-center rounded-xl border-2 border-ruby-500 bg-transparent py-3 text-[16px] font-semibold text-ruby-500 transition-colors hover:bg-ruby-50 dark:border-ruby-400 dark:text-ruby-400 dark:hover:bg-ruby-900/20"
 												>
 													Lihat Detail Cabang
 												</Link>

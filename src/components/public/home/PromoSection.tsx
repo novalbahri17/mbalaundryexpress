@@ -25,13 +25,13 @@ export function PromoSection() {
 	if (isLoading || visiblePromos.length === 0) return null;
 
 	return (
-		<section className="overflow-hidden bg-neutral-50 px-6 py-20 md:px-12 md:py-24">
+		<section className="overflow-hidden bg-neutral-50 px-6 py-20 md:px-12 md:py-24 dark:bg-neutral-900">
 			<div className="mx-auto flex max-w-[1200px] flex-col items-center">
 				{/* HEADER */}
 				<span className="rounded-full bg-ruby-500 px-4 py-2 text-[12px] font-bold uppercase tracking-wide text-white">
 					Promo Terbaru
 				</span>
-				<h2 className="mt-3 text-center text-[32px] font-bold leading-[1.2] text-neutral-900 md:text-[40px]">
+				<h2 className="mt-3 text-center text-[32px] font-bold leading-[1.2] text-neutral-900 md:text-[40px] dark:text-white">
 					Diskon & Penawaran Spesial
 				</h2>
 
@@ -45,7 +45,7 @@ export function PromoSection() {
 								return (
 									<div
 										key={promo.id}
-										className="w-[85vw] max-w-[400px] snap-center shrink-0 overflow-hidden rounded-[24px] border border-neutral-200 bg-white shadow-xl transition-all hover:-translate-y-1 hover:shadow-2xl"
+										className="w-[85vw] max-w-[400px] snap-center shrink-0 overflow-hidden rounded-[24px] border border-neutral-200 bg-white shadow-xl transition-all hover:-translate-y-1 hover:shadow-2xl dark:border-neutral-700 dark:bg-neutral-800"
 									>
 										<div className="relative h-56 w-full md:h-64">
 											<img
@@ -62,11 +62,11 @@ export function PromoSection() {
 										</div>
 
 										<div className="space-y-4 p-5 md:p-6">
-											<h3 className="line-clamp-2 text-[20px] font-bold text-neutral-900 md:text-[24px]">
+											<h3 className="line-clamp-2 text-[20px] font-bold text-neutral-900 md:text-[24px] dark:text-white">
 												{promo.title}
 											</h3>
 											{plainDescription ? (
-												<p className="line-clamp-2 text-sm text-neutral-600">{plainDescription}</p>
+												<p className="line-clamp-2 text-sm text-neutral-600 dark:text-neutral-300">{plainDescription}</p>
 											) : null}
 
 											{/* COUNTDOWN */}
@@ -78,12 +78,12 @@ export function PromoSection() {
 												].map((item) => (
 													<div
 														key={item.label}
-														className="flex flex-1 flex-col items-center justify-center rounded-[16px] border border-neutral-200 bg-neutral-50 px-3 py-3 shadow-sm"
+														className="flex flex-1 flex-col items-center justify-center rounded-[16px] border border-neutral-200 bg-neutral-50 px-3 py-3 shadow-sm dark:border-neutral-600 dark:bg-neutral-700"
 													>
-														<span className="text-[20px] font-bold tabular-nums leading-none text-neutral-900">
+														<span className="text-[20px] font-bold tabular-nums leading-none text-neutral-900 dark:text-white">
 															{item.value}
 														</span>
-														<span className="mt-1 text-[11px] font-bold uppercase tracking-wider text-neutral-500">
+														<span className="mt-1 text-[11px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-300">
 															{item.label}
 														</span>
 													</div>
@@ -101,7 +101,7 @@ export function PromoSection() {
 				<div className="mt-12 flex items-center justify-center gap-4">
 					<Link
 						to="/promo"
-						className="inline-flex items-center justify-center rounded-xl border-2 border-neutral-200 bg-transparent px-8 py-3 text-[16px] font-semibold text-neutral-700 transition-colors hover:bg-neutral-50"
+						className="inline-flex items-center justify-center rounded-xl border-2 border-neutral-200 bg-transparent px-8 py-3 text-[16px] font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-800"
 					>
 						Lihat Semua Promo
 					</Link>

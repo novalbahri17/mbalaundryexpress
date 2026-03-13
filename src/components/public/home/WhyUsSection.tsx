@@ -37,13 +37,13 @@ const features = [
 
 export function WhyUsSection() {
 	return (
-		<section className="bg-gradient-to-b from-neutral-50 to-white px-6 py-24 md:px-12 md:py-32">
+		<section className="bg-gradient-to-b from-neutral-50 to-white px-6 py-24 md:px-12 md:py-32 dark:from-neutral-900 dark:to-neutral-950">
 			<div className="mx-auto flex max-w-[1200px] flex-col items-center">
 				{/* HEADER */}
 				<span className="rounded-full bg-teal-500 px-4 py-2 text-[12px] font-bold uppercase tracking-wide text-white">
 					Keunggulan
 				</span>
-				<h2 className="mt-3 text-center text-[32px] font-bold leading-[1.2] text-neutral-900 md:text-[40px]">
+				<h2 className="mt-3 text-center text-[32px] font-bold leading-[1.2] text-neutral-900 md:text-[40px] dark:text-white">
 					Kenapa Pilih MBA Laundry?
 				</h2>
 
@@ -54,13 +54,13 @@ export function WhyUsSection() {
 						return (
 							<div
 								key={item.title}
-								className={`group flex flex-col rounded-[24px] border border-neutral-200 bg-white p-8 transition-all duration-250 hover:-translate-y-[2px] hover:border-ruby-500 hover:shadow-md ${item.gridClass}`}
+								className={`group flex flex-col rounded-[24px] border border-neutral-200 bg-white p-8 transition-all duration-250 hover:-translate-y-[2px] hover:border-ruby-500 hover:shadow-md dark:border-neutral-700 dark:bg-neutral-800 ${item.gridClass}`}
 							>
 								<div className={`flex h-[64px] w-[64px] items-center justify-center rounded-full ${item.bgClass}`}>
 									<Icon className={`h-[32px] w-[32px] ${item.colorClass}`} />
 								</div>
-								<h3 className="mt-5 text-[20px] font-semibold text-neutral-900">{item.title}</h3>
-								<p className="mt-3 text-[16px] leading-[1.75] text-neutral-600">{item.desc}</p>
+								<h3 className="mt-5 text-[20px] font-semibold text-neutral-900 dark:text-white">{item.title}</h3>
+								<p className="mt-3 text-[16px] leading-[1.75] text-neutral-600 dark:text-neutral-300">{item.desc}</p>
 							</div>
 						);
 					})}
