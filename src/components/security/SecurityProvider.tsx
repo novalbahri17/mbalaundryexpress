@@ -5,12 +5,16 @@
 
 import { useEffect, type ReactNode } from 'react';
 import { useClickjackingProtection, useDevtoolsDetection, useBotDetection } from '@/hooks/useSecurity';
+import { useAntiDetection } from '@/hooks/useAntiDetection';
 
 interface SecurityProviderProps {
 	children: ReactNode;
 }
 
 export function SecurityProvider({ children }: SecurityProviderProps) {
+	// Anti-detection (Wappalyzer, BuiltWith, etc)
+	useAntiDetection();
+	
 	// Apply clickjacking protection
 	useClickjackingProtection();
 	

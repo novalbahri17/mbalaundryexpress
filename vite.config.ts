@@ -106,11 +106,17 @@ export default defineConfig(({ mode }) => {
 			rollupOptions: {
 				external: [],
 				output: {
+					// Obfuscate chunk names
+					entryFileNames: 'assets/[hash].js',
+					chunkFileNames: 'assets/[hash].js',
+					assetFileNames: 'assets/[hash][extname]',
 					manualChunks: {
-						"vendor-core": ["react", "react-dom", "react-router-dom"],
-						"vendor-ui": ["antd", "@ant-design/cssinjs"],
-						"vendor-utils": ["axios", "date-fns", "zustand", "@tanstack/react-query"],
-						"vendor-charts": ["apexcharts", "react-apexcharts"],
+						"a": ["react", "react-dom"],
+						"b": ["react-router-dom"],
+						"c": ["antd", "@ant-design/cssinjs"],
+						"d": ["axios", "date-fns"],
+						"e": ["zustand", "@tanstack/react-query"],
+						"f": ["apexcharts", "react-apexcharts"],
 					},
 				},
 			},
