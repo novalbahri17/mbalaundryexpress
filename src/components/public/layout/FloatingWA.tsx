@@ -10,7 +10,7 @@ export function FloatingWA({ phone }: { phone?: string }) {
 			rel="noreferrer"
 			whileHover={{ scale: 1.04 }}
 			whileTap={{ scale: 0.97 }}
-			className="group fixed bottom-20 right-4 z-50 md:bottom-6 md:right-6"
+			className="group fixed bottom-24 right-4 z-50 md:bottom-6 md:right-6"
 			aria-label="Chat WhatsApp"
 		>
 			<div className="btn-primary grid h-14 w-14 place-items-center rounded-full shadow-ruby-glow">

@@ -4,13 +4,13 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Outlet, useLocation } from "react-router-dom";
 import { BottomNav } from "@/components/public/layout/BottomNav";
 import { FloatingWA } from "@/components/public/layout/FloatingWA";
-import { FloatingCTA } from "@/components/public/layout/FloatingCTA";
 import { Footer } from "@/components/public/layout/Footer";
 import { Navbar } from "@/components/public/layout/Navbar";
 import { PublicSeo } from "@/components/public/layout/PublicSeo";
 import { usePageContentMap } from "@/hooks/usePageContent";
 import { useSiteSettingsMap } from "@/hooks/useSiteSettings";
 import { normalizeHexColor } from "@/utils/validation";
+import { ToastContainer } from "@/design-system";
 
 function ScrollProgress() {
 	const [progress, setProgress] = useState(0);
@@ -115,7 +115,7 @@ export function PublicLayout() {
 			<ScrollProgress />
 			<CursorFollower />
 			<Navbar whatsapp={content.whatsapp_cs} />
-			<main id="main-content">
+			<main id="main-content" className="pb-20 md:pb-0">
 				<AnimatePresence mode="wait">
 					<motion.div
 						key={location.pathname}
@@ -130,8 +130,8 @@ export function PublicLayout() {
 			</main>
 			<Footer />
 			<FloatingWA phone={content.whatsapp_cs} />
-			<FloatingCTA />
 			<BottomNav />
+			<ToastContainer position="top-right" />
 		</div>
 	);
 }

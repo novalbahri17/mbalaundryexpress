@@ -15,9 +15,9 @@ function ThemeSync() {
 	const setMode = useThemeStore((state) => state.setMode);
 
 	useEffect(() => {
-		const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+		// Always default to light mode if no preference saved
 		if (!window.localStorage.getItem("mba-theme")) {
-			setMode(prefersDark ? "dark" : "light");
+			setMode("light");
 		}
 	}, [setMode]);
 

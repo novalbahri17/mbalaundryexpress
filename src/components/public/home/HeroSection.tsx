@@ -1,12 +1,14 @@
-import { CheckCircle2, Clock, MapPin, Star, TrendingUp, Users, Home } from "lucide-react";
+import { CheckCircle2, Clock, MapPin, Star, TrendingUp, Users, Home, ArrowRight, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { useRef } from "react";
+import { Button, Card } from "@/design-system";
 
 const stats = [
-	{ icon: TrendingUp, value: "12.5K+", label: "Cucian Selesai", color: "text-ruby-500" },
-	{ icon: Star, value: "4.9", label: "Rating Google", color: "text-amber-500" },
-	{ icon: Users, value: "500+", label: "Pelanggan Puas", color: "text-sapphire-500" },
-	{ icon: MapPin, value: "2", label: "Cabang Aktif", color: "text-teal-500" },
+	{ icon: TrendingUp, value: "12.5K+", label: "Cucian Selesai", color: "from-ruby-500 to-ruby-600" },
+	{ icon: Star, value: "4.9", label: "Rating Google", color: "from-amber-400 to-amber-500" },
+	{ icon: Users, value: "500+", label: "Pelanggan Puas", color: "from-sapphire-500 to-sapphire-600" },
+	{ icon: MapPin, value: "2", label: "Cabang Aktif", color: "from-teal-500 to-teal-600" },
 ];
 
 const features = [
@@ -17,181 +19,245 @@ const features = [
 ];
 
 export function HeroSection() {
+	const containerRef = useRef<HTMLDivElement>(null);
+	const { scrollYProgress } = useScroll({
+		target: containerRef,
+		offset: ["start start", "end start"],
+	});
+
+	const y = useTransform(scrollYProgress, [0, 1], [0, 100]);
+	const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
+
 	return (
-		<section className="relative overflow-hidden bg-[var(--landing-bg-light)] px-6 py-20 dark:bg-[var(--landing-bg-dark)] md:py-28 lg:px-12">
-			{/* Background Effects */}
-			<div className="pointer-events-none absolute inset-0">
-				<div className="absolute -left-20 -top-20 h-[340px] w-[340px] rounded-full bg-ruby-400/18 blur-[90px] dark:bg-ruby-500/20" />
-				<div className="absolute right-[-80px] top-[12%] h-[380px] w-[380px] rounded-full bg-sapphire-400/18 blur-[95px] dark:bg-sapphire-500/18" />
-				<div className="absolute bottom-[-120px] left-[36%] h-[340px] w-[340px] rounded-full bg-teal-400/14 blur-[95px] dark:bg-teal-500/16" />
-				<div className="absolute inset-0 bg-gradient-to-b from-white/55 via-white/15 to-white/70 dark:from-neutral-950/30 dark:via-neutral-950/8 dark:to-neutral-950/55" />
-				{/* Subtle pattern */}
-				<div 
-					className="absolute inset-0 opacity-[0.015]"
+		<section
+			ref={containerRef}
+			className="relative min-h-[100svh] overflow-hidden bg-gradient-to-b from-neutral-50 via-white to-neutral-50 pt-24 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 sm:pt-28 lg:pt-32"
+		>
+			{/* Animated Background */}
+			<div className="pointer-events-none absolute inset-0 overflow-hidden">
+				<motion.div
+					animate={{
+						x: [0, 20, 0],
+						y: [0, -15, 0],
+						scale: [1, 1.05, 1],
+					}}
+					transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+					className="absolute -left-20 top-10 h-[300px] w-[300px] rounded-full bg-ruby-500/10 blur-[80px] dark:bg-ruby-500/15 sm:h-[400px] sm:w-[400px] lg:h-[600px] lg:w-[600px]"
+				/>
+				<motion.div
+					animate={{
+						x: [0, -15, 0],
+						y: [0, 20, 0],
+						scale: [1, 1.1, 1],
+					}}
+					transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+					className="absolute -right-20 top-20 h-[250px] w-[250px] rounded-full bg-sapphire-500/10 blur-[70px] dark:bg-sapphire-500/15 sm:h-[350px] sm:w-[350px] lg:h-[500px] lg:w-[500px]"
+				/>
+				<motion.div
+					animate={{
+						x: [0, 15, 0],
+						y: [0, 15, 0],
+						scale: [1, 1.03, 1],
+					}}
+					transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+					className="absolute bottom-10 left-1/3 h-[200px] w-[200px] rounded-full bg-teal-500/8 blur-[70px] dark:bg-teal-500/12 sm:h-[300px] sm:w-[300px] lg:h-[400px] lg:w-[400px]"
+				/>
+
+				{/* Grid Pattern */}
+				<div
+					className="absolute inset-0 opacity-[0.02] dark:opacity-[0.03]"
 					style={{
-						backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+						backgroundImage: `linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)`,
+						backgroundSize: "40px 40px",
 					}}
 				/>
 			</div>
 
-			<div className="relative z-10 mx-auto grid max-w-[1280px] grid-cols-1 items-center gap-12 lg:grid-cols-2">
-				{/* Left Content */}
-				<div className="flex flex-col items-start text-left">
-					<motion.span 
-						initial={{ opacity: 0, y: 20 }}
-						animate={{ opacity: 1, y: 0 }}
-						transition={{ duration: 0.5 }}
-						className="rounded-full bg-gradient-to-r from-teal-500 to-teal-600 px-4 py-2 text-[12px] font-bold uppercase tracking-wide text-white shadow-lg"
-					>
-						✨ Self-Service Laundry Modern
-					</motion.span>
+			<motion.div
+				style={{ y, opacity }}
+				className="relative z-10 mx-auto flex min-h-[calc(100svh-6rem)] max-w-[1400px] flex-col justify-center px-4 py-8 sm:px-6 sm:py-12 lg:px-12 lg:py-16"
+			>
+				<div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-2 lg:gap-12">
+					{/* Left Content */}
+					<div className="flex flex-col items-center text-center lg:items-start lg:text-left">
+						{/* Badge */}
+						<motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+							<span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-ruby-100 to-rose-100 px-3 py-1.5 text-xs font-semibold text-ruby-700 dark:from-ruby-950/50 dark:to-rose-950/50 dark:text-ruby-300 sm:gap-2 sm:px-4 sm:py-2 sm:text-sm">
+								<Sparkles className="h-3 w-3 sm:h-4 sm:w-4" />
+								Self-Service Laundry Modern
+							</span>
+						</motion.div>
 
-					<motion.h1 
-						initial={{ opacity: 0, y: 20 }}
-						animate={{ opacity: 1, y: 0 }}
-						transition={{ duration: 0.5, delay: 0.1 }}
-						className="mt-4 text-[40px] font-bold leading-[1.1] text-neutral-900 dark:text-neutral-100 md:text-[48px] lg:text-[56px]"
-					>
-						Laundry Sendiri,{" "}
-						<span className="bg-gradient-to-r from-ruby-500 to-ruby-600 bg-clip-text text-transparent">
-							Hemat Maksimal
-						</span>
-						, Cepat Beres
-					</motion.h1>
-
-					<motion.p 
-						initial={{ opacity: 0, y: 20 }}
-						animate={{ opacity: 1, y: 0 }}
-						transition={{ duration: 0.5, delay: 0.2 }}
-						className="mt-6 max-w-[520px] text-[18px] leading-[1.75] text-neutral-600 dark:text-neutral-300"
-					>
-						Cuci dan kering sendiri dengan mesin modern. Rp 10.000 cuci, Rp 10.000 kering. Lokasi strategis, buka sampai malam.
-					</motion.p>
-
-					{/* CTA Buttons */}
-					<motion.div 
-						initial={{ opacity: 0, y: 20 }}
-						animate={{ opacity: 1, y: 0 }}
-						transition={{ duration: 0.5, delay: 0.3 }}
-						className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center"
-					>
-						<Link
-							to="/cabang"
-							className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-ruby-500 to-ruby-600 px-8 py-4 text-[16px] font-semibold text-white shadow-ruby-glow transition-all hover:scale-105 hover:shadow-xl"
+						{/* Headline */}
+						<motion.h1
+							initial={{ opacity: 0, y: 20 }}
+							animate={{ opacity: 1, y: 0 }}
+							transition={{ duration: 0.5, delay: 0.1 }}
+							className="mt-4 text-3xl font-bold leading-[1.1] tracking-tight text-neutral-900 dark:text-white sm:text-4xl md:text-5xl lg:text-[3.5rem] lg:leading-[1.1]"
 						>
-							<MapPin className="h-5 w-5 transition-transform group-hover:-translate-y-0.5" />
-							Pilih Cabang Terdekat
-						</Link>
-						<Link
-							to="/cara-pakai"
-							className="group inline-flex items-center justify-center gap-2 rounded-xl border-2 border-ruby-500 bg-white/85 px-8 py-4 text-[16px] font-semibold text-ruby-500 transition-all hover:bg-ruby-50 hover:gap-3 dark:bg-neutral-950/70 dark:text-ruby-300 dark:hover:bg-neutral-900"
-						>
-							Lihat Harga & Cara Pakai
-							<span className="transition-transform group-hover:translate-x-1">→</span>
-						</Link>
-					</motion.div>
+							Laundry Sendiri,
+							<br className="hidden sm:block" />
+							<span className="bg-gradient-to-r from-ruby-600 via-rose-500 to-ruby-600 bg-clip-text text-transparent">
+								Hemat Maksimal
+							</span>
+							<span className="text-neutral-400">,</span>
+							<br className="hidden sm:block" />
+							<span className="text-neutral-700 dark:text-neutral-200">Cepat Beres</span>
+						</motion.h1>
 
-					{/* Features */}
-					<motion.div 
-						initial={{ opacity: 0, y: 20 }}
-						animate={{ opacity: 1, y: 0 }}
-						transition={{ duration: 0.5, delay: 0.4 }}
-						className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-4"
-					>
-						{features.map((feature, index) => (
-							<div 
-								key={index}
-								className="flex items-center gap-2 rounded-full bg-white/60 px-3 py-1.5 backdrop-blur-sm dark:bg-neutral-900/40"
-							>
-								<feature.icon className="h-4 w-4 text-ruby-500" />
-								<span className="text-[13px] text-neutral-600 dark:text-neutral-300">{feature.text}</span>
+						{/* Description */}
+						<motion.p
+							initial={{ opacity: 0, y: 20 }}
+							animate={{ opacity: 1, y: 0 }}
+							transition={{ duration: 0.5, delay: 0.2 }}
+							className="mt-4 max-w-md text-base leading-relaxed text-neutral-600 dark:text-neutral-300 sm:mt-6 sm:text-lg lg:max-w-xl"
+						>
+							Cuci dan kering sendiri dengan mesin modern. Hanya Rp 10.000 untuk cuci, Rp 10.000 untuk kering. Lokasi
+							strategis, buka sampai malam.
+						</motion.p>
+
+						{/* CTA Buttons */}
+						<motion.div
+							initial={{ opacity: 0, y: 20 }}
+							animate={{ opacity: 1, y: 0 }}
+							transition={{ duration: 0.5, delay: 0.3 }}
+							className="mt-6 flex w-full flex-col gap-3 sm:mt-8 sm:flex-row sm:justify-center lg:justify-start"
+						>
+							<Link to="/cabang" className="w-full sm:w-auto">
+								<Button
+									size="lg"
+									leftIcon={<MapPin className="h-4 w-4 sm:h-5 sm:w-5" />}
+									rightIcon={<ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />}
+									className="w-full"
+								>
+									Pilih Cabang
+								</Button>
+							</Link>
+							<Link to="/cara-pakai" className="w-full sm:w-auto">
+								<Button variant="outline" size="lg" className="w-full">
+									Lihat Harga
+								</Button>
+							</Link>
+						</motion.div>
+
+						{/* Features - Scrollable on mobile */}
+						<motion.div
+							initial={{ opacity: 0, y: 20 }}
+							animate={{ opacity: 1, y: 0 }}
+							transition={{ duration: 0.5, delay: 0.4 }}
+							className="mt-6 w-full sm:mt-8"
+						>
+							<div className="flex gap-2 overflow-x-auto pb-2 sm:flex-wrap sm:justify-center sm:overflow-visible sm:pb-0 lg:justify-start">
+								{features.map((feature, index) => (
+									<motion.div
+										key={index}
+										initial={{ opacity: 0, scale: 0.9 }}
+										animate={{ opacity: 1, scale: 1 }}
+										transition={{ delay: 0.5 + index * 0.1 }}
+										className="flex shrink-0 items-center gap-1.5 rounded-full border border-neutral-200 bg-white/80 px-3 py-1.5 backdrop-blur-sm dark:border-neutral-700 dark:bg-neutral-800/80 sm:gap-2 sm:px-4"
+									>
+										<feature.icon className="h-3.5 w-3.5 text-ruby-500 sm:h-4 sm:w-4" />
+										<span className="whitespace-nowrap text-xs font-medium text-neutral-700 dark:text-neutral-300 sm:text-sm">
+											{feature.text}
+										</span>
+									</motion.div>
+								))}
 							</div>
-						))}
-					</motion.div>
+						</motion.div>
 
-					{/* Stats Counter */}
-					<motion.div 
-						initial={{ opacity: 0, y: 30 }}
-						animate={{ opacity: 1, y: 0 }}
-						transition={{ duration: 0.6, delay: 0.5 }}
-						className="mt-12 grid grid-cols-2 gap-4 border-t border-neutral-200/60 pt-8 sm:grid-cols-4"
-					>
-						{stats.map((stat, index) => (
-							<motion.div 
-								key={index}
-								initial={{ opacity: 0, scale: 0.8 }}
-								animate={{ opacity: 1, scale: 1 }}
-								transition={{ duration: 0.4, delay: 0.6 + index * 0.1 }}
-								className="group text-center"
-							>
-								<div className="flex justify-center">
-									<div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-sm transition-transform group-hover:scale-110 dark:bg-neutral-800">
-										<stat.icon className={`h-6 w-6 ${stat.color}`} />
+						{/* Stats - 2x2 grid on mobile */}
+						<motion.div
+							initial={{ opacity: 0, y: 20 }}
+							animate={{ opacity: 1, y: 0 }}
+							transition={{ duration: 0.5, delay: 0.6 }}
+							className="mt-8 grid grid-cols-2 gap-4 border-t border-neutral-200/60 pt-6 dark:border-neutral-700/60 sm:mt-10 sm:gap-6 sm:pt-8 lg:grid-cols-4"
+						>
+							{stats.map((stat, index) => (
+								<motion.div
+									key={index}
+									initial={{ opacity: 0, y: 20 }}
+									animate={{ opacity: 1, y: 0 }}
+									transition={{ delay: 0.7 + index * 0.1 }}
+									className="text-center"
+								>
+									<div
+										className={`mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br ${stat.color} shadow-lg sm:h-12 sm:w-12`}
+									>
+										<stat.icon className="h-5 w-5 text-white sm:h-6 sm:w-6" />
 									</div>
-								</div>
-								<p className="mt-3 text-[28px] font-bold leading-none text-neutral-900 dark:text-neutral-100">
-									{stat.value}
-								</p>
-								<p className="mt-1 text-[13px] text-neutral-500">{stat.label}</p>
-							</motion.div>
-						))}
-					</motion.div>
-				</div>
-
-				{/* Right Content - Image */}
-				<motion.div 
-					initial={{ opacity: 0, x: 40 }}
-					animate={{ opacity: 1, x: 0 }}
-					transition={{ duration: 0.7, delay: 0.3 }}
-					className="relative mx-auto mt-8 w-full max-w-lg lg:mt-0 lg:max-w-none"
-				>
-					<div className="relative aspect-[4/3] w-full overflow-hidden rounded-[24px] border border-white/35 shadow-2xl dark:border-white/15">
-						<img
-							src="https://images.unsplash.com/photo-1517677208171-0bc6725a3e60?q=80&w=2070&auto=format&fit=crop"
-							alt="Interior mesin cuci modern"
-							className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
-						/>
-						{/* Overlay gradient */}
-						<div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+									<p className="mt-2 text-xl font-bold text-neutral-900 dark:text-white sm:mt-3 sm:text-2xl">
+										{stat.value}
+									</p>
+									<p className="text-xs text-neutral-500 dark:text-neutral-400 sm:text-sm">{stat.label}</p>
+								</motion.div>
+							))}
+						</motion.div>
 					</div>
 
-					{/* Floating Card 1 */}
-					<motion.div 
-						initial={{ opacity: 0, y: 20 }}
-						animate={{ opacity: 1, y: 0 }}
-						transition={{ duration: 0.5, delay: 0.8 }}
-						className="absolute right-[-10px] top-6 rounded-2xl border border-white/50 bg-white/95 px-5 py-3 shadow-lg backdrop-blur-xl md:right-[-24px] dark:border-white/20 dark:bg-neutral-900/95"
+					{/* Right Content - Image */}
+					<motion.div
+						initial={{ opacity: 0, x: 40 }}
+						animate={{ opacity: 1, x: 0 }}
+						transition={{ duration: 0.7, delay: 0.3 }}
+						className="relative mx-auto w-full max-w-sm sm:max-w-md lg:mx-0 lg:max-w-none"
 					>
-						<div className="flex items-center gap-3">
-							<div className="flex h-10 w-10 items-center justify-center rounded-full bg-ruby-100 dark:bg-ruby-500/20">
-								<Home className="h-6 w-6 text-ruby-500" />
+						{/* Main Image Card */}
+						<Card className="relative overflow-hidden" hoverLift>
+							<div className="aspect-[4/3] w-full overflow-hidden">
+								<img
+									src="https://images.unsplash.com/photo-1517677208171-0bc6725a3e60?q=80&w=2070&auto=format&fit=crop"
+									alt="Interior mesin cuci modern"
+									className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
+								/>
 							</div>
-							<div>
-								<p className="text-[12px] font-semibold uppercase text-neutral-500 dark:text-neutral-300">Mesin Modern</p>
-								<p className="text-[14px] font-bold text-neutral-900 dark:text-neutral-100">7-10kg Kapasitas</p>
-							</div>
-						</div>
-					</motion.div>
+						</Card>
 
-					{/* Floating Card 2 */}
-					<motion.div 
-						initial={{ opacity: 0, y: 20 }}
-						animate={{ opacity: 1, y: 0 }}
-						transition={{ duration: 0.5, delay: 1 }}
-						className="absolute -left-4 bottom-8 rounded-2xl border border-white/50 bg-white/95 px-5 py-3 shadow-lg backdrop-blur-xl md:-left-8 dark:border-white/20 dark:bg-neutral-900/95"
-					>
-						<div className="flex items-center gap-3">
-							<div className="flex h-10 w-10 items-center justify-center rounded-full bg-teal-100 dark:bg-teal-500/20">
-								<Clock className="h-6 w-6 text-teal-500" />
-							</div>
-							<div>
-								<p className="text-[12px] font-semibold uppercase text-neutral-500 dark:text-neutral-300">Cepat & Efisien</p>
-								<p className="text-[14px] font-bold text-neutral-900 dark:text-neutral-100">30-40 Menit</p>
-							</div>
-						</div>
+						{/* Floating Card 1 - Hidden on small mobile */}
+						<motion.div
+							initial={{ opacity: 0, y: 20, x: 20 }}
+							animate={{ opacity: 1, y: 0, x: 0 }}
+							transition={{ duration: 0.5, delay: 0.8 }}
+							className="absolute -right-2 top-4 hidden sm:block sm:-right-4 lg:-right-6"
+						>
+							<Card className="border border-white/50 shadow-xl backdrop-blur-xl dark:border-white/10" size="sm">
+								<div className="flex items-center gap-2 sm:gap-3">
+									<div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-ruby-500 to-rose-500 sm:h-10 sm:w-10">
+										<Home className="h-4 w-4 text-white sm:h-5 sm:w-5" />
+									</div>
+									<div>
+										<p className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400 sm:text-xs">
+											Mesin Modern
+										</p>
+										<p className="text-xs font-bold text-neutral-900 dark:text-white sm:text-sm">7-10kg</p>
+									</div>
+								</div>
+							</Card>
+						</motion.div>
+
+						{/* Floating Card 2 - Hidden on small mobile */}
+						<motion.div
+							initial={{ opacity: 0, y: 20, x: -20 }}
+							animate={{ opacity: 1, y: 0, x: 0 }}
+							transition={{ duration: 0.5, delay: 1 }}
+							className="absolute -left-2 bottom-4 hidden sm:block sm:-left-4 lg:-left-6"
+						>
+							<Card className="border border-white/50 shadow-xl backdrop-blur-xl dark:border-white/10" size="sm">
+								<div className="flex items-center gap-2 sm:gap-3">
+									<div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-teal-500 to-emerald-500 sm:h-10 sm:w-10">
+										<Clock className="h-4 w-4 text-white sm:h-5 sm:w-5" />
+									</div>
+									<div>
+										<p className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400 sm:text-xs">
+											Cepat
+										</p>
+										<p className="text-xs font-bold text-neutral-900 dark:text-white sm:text-sm">30-40 Menit</p>
+									</div>
+								</div>
+							</Card>
+						</motion.div>
 					</motion.div>
-				</motion.div>
-			</div>
+				</div>
+			</motion.div>
 		</section>
 	);
 }

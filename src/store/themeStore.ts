@@ -1,4 +1,4 @@
-﻿import { create } from "zustand";
+import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 type ThemeMode = "light" | "dark";
@@ -12,14 +12,18 @@ type ThemeStore = {
 const applyModeToDom = (mode: ThemeMode) => {
 	if (typeof document === "undefined") return;
 	const root = document.documentElement;
-	root.classList.toggle("dark", mode === "dark");
+	if (mode === "dark") {
+		root.classList.add("dark");
+	} else {
+		root.classList.remove("dark");
+	}
 	root.setAttribute("data-theme", mode);
 };
 
 export const useThemeStore = create<ThemeStore>()(
 	persist(
 		(set) => ({
-			mode: "light",
+			mode: "light", // Default always light
 			toggle: () =>
 				set((state) => {
 					const next = state.mode === "light" ? "dark" : "light";
@@ -32,8 +36,10 @@ export const useThemeStore = create<ThemeStore>()(
 			},
 		}),
 		{
-			name: "mba-theme",
+			name: "mba-theme-storage", // Storage key in localStorage
+			skipHydration: false,
 			onRehydrateStorage: () => (state) => {
+				// Apply theme when store is rehydrated from localStorage
 				if (state?.mode) {
 					applyModeToDom(state.mode);
 				}
@@ -42,3 +48,19 @@ export const useThemeStore = create<ThemeStore>()(
 	),
 );
 
+// Initialize theme on import (for SSR safety)
+if (typeof window !== "undefined") {
+	const saved = localStorage.getItem("mba-theme-storage");
+	if (saved) {
+		try {
+			const parsed = JSON.parse(saved);
+			if (parsed.state?.mode) {
+				applyModeToDom(parsed.state.mode);
+			}
+		} catch {
+			applyModeToDom("light");
+		}
+	} else {
+		applyModeToDom("light");
+	}
+}

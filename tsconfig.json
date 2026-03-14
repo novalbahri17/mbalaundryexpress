@@ -59,6 +59,7 @@
 		"src/types/database.types.ts",
 		"src/utils/**/*",
 		"src/styles/**/*",
+		"src/design-system/**/*",
 		"tailwind.config.ts",
 		"vite.config.ts"
 	],

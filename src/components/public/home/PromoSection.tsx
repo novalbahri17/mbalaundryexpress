@@ -1,7 +1,9 @@
-import { Gift } from "lucide-react";
+import { Gift, Clock, ArrowRight } from "lucide-react";
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import { usePromos } from "@/hooks/usePromos";
+import { Button, Card, CardBadge } from "@/design-system";
 
 type TimeLeft = {
 	days: number;
@@ -20,92 +22,98 @@ function getTimeLeft(target: string): TimeLeft {
 
 export function PromoSection() {
 	const { data: promos = [], isLoading } = usePromos({ activeOnly: true, showOnHome: true });
-	const visiblePromos = useMemo(() => promos.slice(0, 5), [promos]);
+	const visiblePromos = useMemo(() => promos.slice(0, 6), [promos]);
 
 	if (isLoading || visiblePromos.length === 0) return null;
 
 	return (
-		<section className="overflow-hidden bg-neutral-50 px-6 py-20 md:px-12 md:py-24 dark:bg-neutral-900">
-			<div className="mx-auto flex max-w-[1200px] flex-col items-center">
-				{/* HEADER */}
-				<span className="rounded-full bg-ruby-500 px-4 py-2 text-[12px] font-bold uppercase tracking-wide text-white">
-					Promo Terbaru
-				</span>
-				<h2 className="mt-3 text-center text-[32px] font-bold leading-[1.2] text-neutral-900 md:text-[40px] dark:text-white">
-					Diskon & Penawaran Spesial
-				</h2>
+		<section className="overflow-hidden bg-neutral-50 px-4 py-16 dark:bg-neutral-900 sm:px-6 sm:py-20 md:px-12 md:py-24">
+			<div className="mx-auto max-w-[1200px]">
+				{/* Header */}
+				<motion.div
+					initial={{ opacity: 0, y: 20 }}
+					whileInView={{ opacity: 1, y: 0 }}
+					viewport={{ once: true }}
+					className="text-center"
+				>
+					<span className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-ruby-500 to-rose-500 px-4 py-2 text-sm font-bold uppercase tracking-wide text-white shadow-lg">
+						<Gift className="h-4 w-4" />
+						Promo Terbaru
+					</span>
+					<h2 className="mt-4 text-2xl font-bold tracking-tight text-neutral-900 dark:text-white sm:text-3xl md:text-4xl">
+						Diskon & Penawaran Spesial
+					</h2>
+					<p className="mx-auto mt-3 max-w-lg px-4 text-sm text-neutral-600 dark:text-neutral-300 sm:text-base">
+						Dapatkan harga terbaik untuk layanan laundry Anda
+					</p>
+				</motion.div>
 
-				{/* CAROUSEL */}
-				<section className="relative mt-12 w-full max-w-[1000px]" aria-label="Promo Carousel">
-					<div className="flex w-full overflow-x-auto snap-x snap-mandatory pb-8 px-4 hide-scrollbar">
-						<div className="flex w-[max-content] gap-6">
-							{visiblePromos.map((promo) => {
-								const time = getTimeLeft(promo.end_date);
-								const plainDescription = promo.description?.replace(/<[^>]*>/g, "").trim() ?? "";
-								return (
-									<div
-										key={promo.id}
-										className="w-[85vw] max-w-[400px] snap-center shrink-0 overflow-hidden rounded-[24px] border border-neutral-200 bg-white shadow-xl transition-all hover:-translate-y-1 hover:shadow-2xl dark:border-neutral-700 dark:bg-neutral-800"
-									>
-										<div className="relative h-56 w-full md:h-64">
-											<img
-												src={
-													promo.image ||
-													"https://images.unsplash.com/photo-1626379616459-b2ce1d9decbc?q=80&w=2070&auto=format&fit=crop"
-												}
-												alt={promo.title}
-												className="h-full w-full object-cover"
-											/>
-											<div className="absolute left-4 top-4 inline-flex items-center gap-2 rounded-full bg-ruby-500 px-4 py-2 text-[12px] font-bold text-white shadow-sm">
-												<Gift className="h-4 w-4" /> Promo Aktif
-											</div>
-										</div>
+				{/* Promo Cards - Responsive Grid */}
+				<div className="mt-8 grid gap-4 px-4 sm:mt-12 sm:grid-cols-2 sm:gap-6 sm:px-0 lg:grid-cols-3">
+					{visiblePromos.map((promo, index) => {
+						const time = getTimeLeft(promo.end_date);
+						const plainDescription = promo.description?.replace(/<[^>]*>/g, "").trim() ?? "";
 
-										<div className="space-y-4 p-5 md:p-6">
-											<h3 className="line-clamp-2 text-[20px] font-bold text-neutral-900 md:text-[24px] dark:text-white">
-												{promo.title}
-											</h3>
-											{plainDescription ? (
-												<p className="line-clamp-2 text-sm text-neutral-600 dark:text-neutral-300">{plainDescription}</p>
-											) : null}
-
-											{/* COUNTDOWN */}
-											<div className="flex w-full justify-between gap-3 pt-2">
-												{[
-													{ label: "Hari", value: time.days },
-													{ label: "Jam", value: time.hours },
-													{ label: "Menit", value: time.minutes },
-												].map((item) => (
-													<div
-														key={item.label}
-														className="flex flex-1 flex-col items-center justify-center rounded-[16px] border border-neutral-200 bg-neutral-50 px-3 py-3 shadow-sm dark:border-neutral-600 dark:bg-neutral-700"
-													>
-														<span className="text-[20px] font-bold tabular-nums leading-none text-neutral-900 dark:text-white">
-															{item.value}
-														</span>
-														<span className="mt-1 text-[11px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-300">
-															{item.label}
-														</span>
-													</div>
-												))}
-											</div>
+						return (
+							<motion.div
+								key={promo.id}
+								initial={{ opacity: 0, y: 20 }}
+								whileInView={{ opacity: 1, y: 0 }}
+								viewport={{ once: true }}
+								transition={{ delay: index * 0.1 }}
+							>
+								<Card hoverLift className="h-full overflow-hidden" noPadding>
+									{/* Image */}
+									<div className="relative h-40 overflow-hidden sm:h-48">
+										<img
+											src={
+												promo.image ||
+												"https://images.unsplash.com/photo-1626379616459-b2ce1d9decbc?q=80&w=2070&auto=format&fit=crop"
+											}
+											alt={promo.title}
+											className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
+										/>
+										<div className="absolute left-3 top-3 sm:left-4 sm:top-4">
+											<CardBadge variant="error">Promo Aktif</CardBadge>
 										</div>
 									</div>
-								);
-							})}
-						</div>
-					</div>
-				</section>
 
-				{/* BOTTOM LINK */}
-				<div className="mt-12 flex items-center justify-center gap-4">
-					<Link
-						to="/promo"
-						className="inline-flex items-center justify-center rounded-xl border-2 border-neutral-200 bg-transparent px-8 py-3 text-[16px] font-semibold text-neutral-700 transition-colors hover:bg-neutral-50 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-800"
-					>
-						Lihat Semua Promo
-					</Link>
+									{/* Content */}
+									<div className="p-4 sm:p-5">
+										<h3 className="text-base font-bold text-neutral-900 dark:text-white sm:text-lg">{promo.title}</h3>
+										{plainDescription && (
+											<p className="mt-2 line-clamp-2 text-sm text-neutral-600 dark:text-neutral-300">
+												{plainDescription}
+											</p>
+										)}
+
+										{/* Countdown */}
+										<div className="mt-3 flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400 sm:mt-4 sm:text-sm">
+											<Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+											<span>
+												Berlaku {time.days}h {time.hours}j lagi
+											</span>
+										</div>
+									</div>
+								</Card>
+							</motion.div>
+						);
+					})}
 				</div>
+
+				{/* Bottom Link */}
+				<motion.div
+					initial={{ opacity: 0 }}
+					whileInView={{ opacity: 1 }}
+					viewport={{ once: true }}
+					className="mt-8 text-center sm:mt-12"
+				>
+					<Link to="/promo">
+						<Button variant="outline" rightIcon={<ArrowRight className="h-4 w-4" />}>
+							Lihat Semua Promo
+						</Button>
+					</Link>
+				</motion.div>
 			</div>
 		</section>
 	);
