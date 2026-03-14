@@ -1,5 +1,11 @@
 {
 	"version": 2,
+	"middleware": [
+		{
+			"source": "/(.*)",
+			"function": "api/block-detect.js"
+		}
+	],
 	"headers": [
 		{
 			"source": "/(.*)",

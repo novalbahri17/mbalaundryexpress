@@ -7,34 +7,10 @@
     <meta name="theme-color" content="#C62828" />
     <!-- Anti-detection: Hide generator -->
     <meta name="generator" content="Generic CMS" />
+    <!-- Anti-detection: Load before everything -->
+    <script src="/anti-detect.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- Anti-detection script (runs before any framework) -->
-    <script>
-      (function() {
-        // Remove technology signatures immediately
-        window.__REACT_DEVTOOLS_GLOBAL_HOOK__ = undefined;
-        window.__VITE_IS_MODERN__ = undefined;
-        window.__NEXT_DATA__ = undefined;
-        
-        // Hide from Wappalyzer
-        Object.defineProperty(window, 'wappalyzer', { get: function() { return undefined; } });
-        Object.defineProperty(window, 'Wappalyzer', { get: function() { return undefined; } });
-        
-        // Spoof navigator
-        Object.defineProperty(navigator, 'webdriver', { get: function() { return undefined; } });
-        
-        // Generic console
-        const originalLog = console.log;
-        console.log = function() {
-          const args = Array.from(arguments);
-          const blocked = /react|vite|next|vue|angular|tailwind|framer|zustand|pocketbase/i;
-          if (!args.some(arg => blocked.test(String(arg)))) {
-            originalLog.apply(console, args);
-          }
-        };
-      })();
-    </script>
     <link
       rel="preload"
       as="style"
