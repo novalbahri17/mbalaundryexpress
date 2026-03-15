@@ -1,11 +1,5 @@
 {
 	"version": 2,
-	"middleware": [
-		{
-			"source": "/(.*)",
-			"function": "api/block-detect.js"
-		}
-	],
 	"headers": [
 		{
 			"source": "/(.*)",
@@ -49,6 +43,10 @@
 				{
 					"key": "Cross-Origin-Resource-Policy",
 					"value": "same-origin"
+				},
+				{
+					"key": "X-Powered-By",
+					"value": "MBA Server"
 				}
 			]
 		},
