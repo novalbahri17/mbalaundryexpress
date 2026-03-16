@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { getGallery } from "@/api/gallery.api";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 // Simple image dengan lazy loading
 function GridImage({ src, alt }: { src?: string; alt: string }) {
@@ -31,36 +31,46 @@ function GridImage({ src, alt }: { src?: string; alt: string }) {
 	);
 }
 
+// Default images jika galeri kosong
+const defaultImages = [
+	"https://images.unsplash.com/photo-1517677208171-0bc6725a3e60?w=400&h=300&fit=crop",
+	"https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop",
+	"https://images.unsplash.com/photo-1582735689369-4fe89db7114c?w=400&h=300&fit=crop",
+	"https://images.unsplash.com/photo-1604335399105-a0c585fd81a1?w=400&h=300&fit=crop",
+	"https://images.unsplash.com/photo-1545173168-9f1947eebb7c?w=400&h=300&fit=crop",
+	"https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop",
+];
+
 export function HeroImageGrid() {
-	const { data } = useQuery({
+	const { data, isLoading } = useQuery({
 		queryKey: ["hero-gallery"],
 		queryFn: () => getGallery(),
 		staleTime: 5 * 60 * 1000,
 	});
 
-	// Ambil 6 gambar dari galeri
+	// Ambil gambar dari galeri atau gunakan default
 	const galleryItems = (data ?? [])
 		.filter((item) => Boolean(item.image && item.image.trim() !== ""))
 		.slice(0, 6);
 
-	// Jika kurang dari 6, duplicate gambar terakhir
-	const images = [...galleryItems];
-	while (images.length < 6) {
-		images.push(...galleryItems.slice(0, 6 - images.length));
-	}
+	// Buat array 6 gambar
+	const images =
+		galleryItems.length > 0
+			? galleryItems.map((item) => item.image)
+			: defaultImages;
 
-	// Split untuk 2 kolom
-	const leftColumn = images.filter((_, i) => i % 2 === 0).slice(0, 3);
-	const rightColumn = images.filter((_, i) => i % 2 === 1).slice(0, 3);
+	// Split untuk 2 kolom (3 gambar per kolom)
+	const leftColumn = [images[0], images[2], images[4]].filter(Boolean);
+	const rightColumn = [images[1], images[3], images[5]].filter(Boolean);
 
 	// Duplicate untuk animasi seamless
 	const leftItems = [...leftColumn, ...leftColumn];
 	const rightItems = [...rightColumn, ...rightColumn];
 
-	if (galleryItems.length === 0) {
+	if (isLoading) {
 		return (
 			<div className="hidden lg:flex h-[500px] w-full max-w-[500px] items-center justify-center rounded-2xl bg-neutral-100 dark:bg-neutral-800">
-				<span className="text-neutral-400">Loading...</span>
+				<span className="text-neutral-400">Memuat...</span>
 			</div>
 		);
 	}
@@ -85,9 +95,9 @@ export function HeroImageGrid() {
 							},
 						}}
 					>
-						{leftItems.map((item, index) => (
-							<div key={`left-${item.id}-${index}`} className="h-[160px] shrink-0">
-								<GridImage src={item.image} alt={item.caption || "Galeri MBA Laundry"} />
+						{leftItems.map((src, index) => (
+							<div key={`left-${index}`} className="h-[160px] shrink-0">
+								<GridImage src={src} alt="Galeri MBA Laundry" />
 							</div>
 						))}
 					</motion.div>
@@ -107,9 +117,9 @@ export function HeroImageGrid() {
 							},
 						}}
 					>
-						{rightItems.map((item, index) => (
-							<div key={`right-${item.id}-${index}`} className="h-[160px] shrink-0">
-								<GridImage src={item.image} alt={item.caption || "Galeri MBA Laundry"} />
+						{rightItems.map((src, index) => (
+							<div key={`right-${index}`} className="h-[160px] shrink-0">
+								<GridImage src={src} alt="Galeri MBA Laundry" />
 							</div>
 						))}
 					</motion.div>
