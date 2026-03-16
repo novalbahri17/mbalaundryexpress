@@ -103,31 +103,35 @@
 	];
 	
 	function shouldBlock(args) {
-		const message = args.join(' ');
-		return blockedPatterns.some(p => p.test(message));
+		try {
+			const message = Array.from(args).join(' ');
+			return blockedPatterns.some(p => p.test(message));
+		} catch (e) {
+			return false;
+		}
 	}
 	
-	console.log = function() {
-		if (!shouldBlock(arguments)) {
-			return originalLog.apply(this, arguments);
+	console.log = function(...args) {
+		if (!shouldBlock(args)) {
+			return originalLog.apply(this, args);
 		}
 	};
 	
-	console.warn = function() {
-		if (!shouldBlock(arguments)) {
-			return originalWarn.apply(this, arguments);
+	console.warn = function(...args) {
+		if (!shouldBlock(args)) {
+			return originalWarn.apply(this, args);
 		}
 	};
 	
-	console.info = function() {
-		if (!shouldBlock(arguments)) {
-			return originalInfo.apply(this, arguments);
+	console.info = function(...args) {
+		if (!shouldBlock(args)) {
+			return originalInfo.apply(this, args);
 		}
 	};
 	
-	console.error = function() {
-		if (!shouldBlock(arguments)) {
-			return originalError.apply(this, arguments);
+	console.error = function(...args) {
+		if (!shouldBlock(args)) {
+			return originalError.apply(this, args);
 		}
 	};
 	
