@@ -48,6 +48,15 @@ body,
 }
 
 html {
+  overflow-x: hidden;
+}
+
+body {
+  overflow-x: hidden;
+  position: relative;
+}
+
+html {
   scroll-behavior: smooth;
 }
 
@@ -304,20 +313,21 @@ select {
   left: 0;
   top: 0;
   height: 3px;
+  width: 0%;
   z-index: 80;
   background: linear-gradient(135deg, #C62828, #1565C0, #00695C);
+  transition: width 0.1s ease-out;
 }
 
 .custom-cursor {
-  position: fixed;
   width: 10px;
   height: 10px;
   border-radius: 999px;
-  pointer-events: none;
   z-index: 999;
   background: rgba(198, 40, 40, 0.85);
-  transform: translate(-50%, -50%);
-  transition: transform 0.08s ease-out;
+  margin-left: -5px;
+  margin-top: -5px;
+  transition: opacity 0.2s ease;
 }
 
 .custom-cursor::after {

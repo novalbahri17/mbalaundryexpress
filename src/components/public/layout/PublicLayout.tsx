@@ -13,64 +13,68 @@ import { normalizeHexColor } from "@/utils/validation";
 import { ToastContainer } from "@/design-system";
 
 function ScrollProgress() {
-	const [progress, setProgress] = useState(0);
+	const progressRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
-		let frameId = 0;
-		const onScroll = () => {
-			if (frameId) return;
-			frameId = window.requestAnimationFrame(() => {
-				const top = window.scrollY;
-				const height = document.documentElement.scrollHeight - window.innerHeight;
-				setProgress(height > 0 ? (top / height) * 100 : 0);
-				frameId = 0;
-			});
+		const updateProgress = () => {
+			if (!progressRef.current) return;
+			const scrollTop = window.scrollY;
+			const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+			const scrollPercent = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+			progressRef.current.style.width = `${scrollPercent}%`;
 		};
 
-		onScroll();
-		window.addEventListener("scroll", onScroll, { passive: true });
-		return () => {
-			window.removeEventListener("scroll", onScroll);
-			if (frameId) window.cancelAnimationFrame(frameId);
-		};
+		updateProgress();
+		window.addEventListener("scroll", updateProgress, { passive: true });
+		return () => window.removeEventListener("scroll", updateProgress);
 	}, []);
 
-	return <span className="scroll-progress" style={{ width: `${progress}%` }} />;
+	return <div ref={progressRef} className="scroll-progress" />;
 }
 
 function CursorFollower() {
 	const nodeRef = useRef<HTMLSpanElement | null>(null);
+	const [isVisible, setIsVisible] = useState(false);
 
 	useEffect(() => {
+		// Disable on touch devices
+		if ("ontouchstart" in window) return;
+
 		const node = nodeRef.current;
 		if (!node) return;
 
-		let frameId = 0;
-		let latestX = 0;
-		let latestY = 0;
-
-		const render = () => {
-			node.style.left = `${latestX}px`;
-			node.style.top = `${latestY}px`;
-			frameId = 0;
-		};
-
 		const onMove = (event: MouseEvent) => {
-			latestX = event.clientX;
-			latestY = event.clientY;
-			if (!frameId) {
-				frameId = window.requestAnimationFrame(render);
-			}
+			node.style.transform = `translate(${event.clientX}px, ${event.clientY}px)`;
+			if (!isVisible) setIsVisible(true);
 		};
 
-		window.addEventListener("mousemove", onMove, { passive: true });
+		const onLeave = () => setIsVisible(false);
+
+		document.addEventListener("mousemove", onMove, { passive: true });
+		document.addEventListener("mouseleave", onLeave);
+		
 		return () => {
-			window.removeEventListener("mousemove", onMove);
-			if (frameId) window.cancelAnimationFrame(frameId);
+			document.removeEventListener("mousemove", onMove);
+			document.removeEventListener("mouseleave", onLeave);
 		};
-	}, []);
+	}, [isVisible]);
 
-	return <span ref={nodeRef} className="custom-cursor" />;
+	if ("ontouchstart" in window) return null;
+
+	return (
+		<span 
+			ref={nodeRef} 
+			className="custom-cursor"
+			style={{ 
+				opacity: isVisible ? 1 : 0,
+				pointerEvents: "none",
+				position: "fixed",
+				left: 0,
+				top: 0,
+				willChange: "transform"
+			}} 
+		/>
+	);
 }
 
 export function PublicLayout() {
@@ -103,7 +107,7 @@ export function PublicLayout() {
 	return (
 		<div
 			style={publicStyle}
-			className="relative min-h-screen bg-[var(--landing-bg-light)] text-[var(--text-main)] dark:bg-[var(--landing-bg-dark)]"
+			className="relative min-h-screen overflow-x-hidden bg-[var(--landing-bg-light)] text-[var(--text-main)] dark:bg-[var(--landing-bg-dark)]"
 		>
 			<PublicSeo />
 			<a
