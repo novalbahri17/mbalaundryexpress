@@ -2,7 +2,8 @@ import { CheckCircle2, Clock, MapPin, Star, TrendingUp, Users, Home, ArrowRight,
 import { Link } from "react-router-dom";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
-import { Button, Card } from "@/design-system";
+import { Button } from "@/design-system";
+import { HeroImageGrid } from "./HeroImageGrid";
 
 const stats = [
 	{ icon: TrendingUp, value: "12.5K+", label: "Cucian Selesai", color: "from-ruby-500 to-ruby-600" },
