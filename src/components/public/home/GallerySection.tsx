@@ -5,9 +5,8 @@ import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { getGallery } from "@/api/gallery.api";
 import { ScrollReveal } from "@/components/public/shared/ScrollReveal";
-import { OptimizedImage, preloadImages } from "@/components/public/OptimizedImage";
 import type { GalleryType } from "@/types/database.types";
-import { useEffect } from "react";
+import { useState } from "react";
 
 const typeLabels: Record<GalleryType, string> = {
 	interior: "Interior",
@@ -28,23 +27,44 @@ const typeColors: Record<GalleryType, string> = {
 const SKELETON_COUNT = 6;
 const SKELETON_IDS = Array.from({ length: SKELETON_COUNT }, (_, i) => `gallery-skeleton-${i + 1}`);
 
+// Simple image component dengan lazy loading
+function GalleryImage({ src, alt }: { src?: string; alt: string }) {
+	const [loaded, setLoaded] = useState(false);
+	const [error, setError] = useState(false);
+
+	if (error || !src) {
+		return (
+			<div className="flex h-full w-full items-center justify-center bg-neutral-200 dark:bg-neutral-700">
+				<PictureOutlined className="h-8 w-8 text-neutral-400" />
+			</div>
+		);
+	}
+
+	return (
+		<>
+			{!loaded && <div className="absolute inset-0 animate-pulse bg-neutral-200 dark:bg-neutral-700" />}
+			<img
+				src={src}
+				alt={alt}
+				loading="lazy"
+				className={`h-full w-full object-cover transition-opacity duration-300 ${loaded ? "opacity-100" : "opacity-0"}`}
+				onLoad={() => setLoaded(true)}
+				onError={() => setError(true)}
+			/>
+		</>
+	);
+}
+
 export function GallerySection() {
 	const { data, isLoading, error } = useQuery({
 		queryKey: ["home-gallery"],
 		queryFn: () => getGallery(),
-		staleTime: 5 * 60 * 1000, // Cache 5 menit
+		staleTime: 5 * 60 * 1000,
 	});
 
-	const galleryItems = (data ?? []).filter((item) => Boolean(item.image && item.image.trim() !== "")).slice(0, 6);
-
-	// Preload images setelah data loaded
-	useEffect(() => {
-		if (galleryItems.length > 0) {
-			const imageUrls = galleryItems.map((item) => item.image).filter(Boolean);
-			// Preload hanya 3 gambar pertama untuk LCP
-			preloadImages(imageUrls.slice(0, 3), 2);
-		}
-	}, [galleryItems]);
+	const galleryItems = (data ?? [])
+		.filter((item) => Boolean(item.image && item.image.trim() !== ""))
+		.slice(0, 6);
 
 	return (
 		<section className="relative overflow-hidden bg-neutral-50 px-6 py-24 md:px-12 md:py-32 dark:bg-neutral-900">
@@ -68,8 +88,8 @@ export function GallerySection() {
 
 				<ScrollReveal delay={0.2}>
 					<p className="mt-4 max-w-[600px] text-center text-[16px] leading-[1.6] text-neutral-600 dark:text-neutral-300">
-						Didesain untuk kenyamanan optimal Anda, setiap outlet kami bersih, terang, dan ber-AC penuh sambil menunggu
-						cucian selesai.
+						Didesain untuk kenyamanan optimal Anda, setiap outlet kami bersih, terang, dan ber-AC penuh sambil
+						menunggu cucian selesai.
 					</p>
 				</ScrollReveal>
 
@@ -99,13 +119,12 @@ export function GallerySection() {
 									transition={{ duration: 0.3 }}
 									className="group relative aspect-[4/3] w-full overflow-hidden rounded-[20px] bg-neutral-200 shadow-lg dark:bg-neutral-800"
 								>
-									<OptimizedImage
-										src={item.image}
-										alt={item.caption ?? `Galeri ${typeLabels[item.type]}`}
-										className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
-										width={600}
-										priority={index < 3} // Prioritas untuk 3 gambar pertama
-									/>
+									<div className="h-full w-full transition-transform duration-700 ease-out group-hover:scale-110">
+										<GalleryImage
+											src={item.image}
+											alt={item.caption ?? `Galeri ${typeLabels[item.type]}`}
+										/>
+									</div>
 
 									<div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
@@ -116,7 +135,9 @@ export function GallerySection() {
 									</div>
 
 									<div className="absolute bottom-0 left-0 right-0 translate-y-full p-5 transition-transform duration-300 group-hover:translate-y-0">
-										<p className="text-[16px] font-semibold text-white">{item.caption || typeLabels[item.type]}</p>
+										<p className="text-[16px] font-semibold text-white">
+											{item.caption || typeLabels[item.type]}
+										</p>
 										<p className="mt-1 text-[13px] text-white/80">Klik untuk melihat detail</p>
 									</div>
 
@@ -141,11 +162,7 @@ export function GallerySection() {
 				</div>
 
 				{error && (
-					<motion.p
-						initial={{ opacity: 0 }}
-						animate={{ opacity: 1 }}
-						className="mt-6 text-sm font-medium text-ruby-600"
-					>
+					<motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-6 text-sm font-medium text-ruby-600">
 						Galeri outlet belum bisa dimuat. Silakan cek koneksi.
 					</motion.p>
 				)}
