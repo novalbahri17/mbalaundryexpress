@@ -1,4 +1,4 @@
-import { CheckCircle2, Clock, MapPin, Star, TrendingUp, Users, Home, ArrowRight, Sparkles } from "lucide-react";
+import { CheckCircle2, Clock, MapPin, Star, TrendingUp, Users, ArrowRight, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
@@ -195,67 +195,14 @@ export function HeroSection() {
 						</motion.div>
 					</div>
 
-					{/* Right Content - Image */}
+					{/* Right Content - Image Grid */}
 					<motion.div
 						initial={{ opacity: 0, x: 40 }}
 						animate={{ opacity: 1, x: 0 }}
 						transition={{ duration: 0.7, delay: 0.3 }}
 						className="relative mx-auto w-full max-w-sm sm:max-w-md lg:mx-0 lg:max-w-none"
 					>
-						{/* Main Image Card */}
-						<Card className="relative overflow-hidden" hoverLift>
-							<div className="aspect-[4/3] w-full overflow-hidden">
-								<img
-									src="https://images.unsplash.com/photo-1517677208171-0bc6725a3e60?q=80&w=2070&auto=format&fit=crop"
-									alt="Interior mesin cuci modern"
-									className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
-								/>
-							</div>
-						</Card>
-
-						{/* Floating Card 1 - Hidden on small mobile */}
-						<motion.div
-							initial={{ opacity: 0, y: 20, x: 20 }}
-							animate={{ opacity: 1, y: 0, x: 0 }}
-							transition={{ duration: 0.5, delay: 0.8 }}
-							className="absolute -right-2 top-4 hidden sm:block sm:-right-4 lg:-right-6"
-						>
-							<Card className="border border-white/50 shadow-xl backdrop-blur-xl dark:border-white/10" size="sm">
-								<div className="flex items-center gap-2 sm:gap-3">
-									<div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-ruby-500 to-rose-500 sm:h-10 sm:w-10">
-										<Home className="h-4 w-4 text-white sm:h-5 sm:w-5" />
-									</div>
-									<div>
-										<p className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400 sm:text-xs">
-											Mesin Modern
-										</p>
-										<p className="text-xs font-bold text-neutral-900 dark:text-white sm:text-sm">7-10kg</p>
-									</div>
-								</div>
-							</Card>
-						</motion.div>
-
-						{/* Floating Card 2 - Hidden on small mobile */}
-						<motion.div
-							initial={{ opacity: 0, y: 20, x: -20 }}
-							animate={{ opacity: 1, y: 0, x: 0 }}
-							transition={{ duration: 0.5, delay: 1 }}
-							className="absolute -left-2 bottom-4 hidden sm:block sm:-left-4 lg:-left-6"
-						>
-							<Card className="border border-white/50 shadow-xl backdrop-blur-xl dark:border-white/10" size="sm">
-								<div className="flex items-center gap-2 sm:gap-3">
-									<div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-teal-500 to-emerald-500 sm:h-10 sm:w-10">
-										<Clock className="h-4 w-4 text-white sm:h-5 sm:w-5" />
-									</div>
-									<div>
-										<p className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400 sm:text-xs">
-											Cepat
-										</p>
-										<p className="text-xs font-bold text-neutral-900 dark:text-white sm:text-sm">30-40 Menit</p>
-									</div>
-								</div>
-							</Card>
-						</motion.div>
+						<HeroImageGrid />
 					</motion.div>
 				</div>
 			</motion.div>
