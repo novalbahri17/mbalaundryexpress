@@ -197,10 +197,10 @@ export function HeroSection() {
 
 					{/* Right Content - Image Grid */}
 					<motion.div
-						initial={{ opacity: 0, x: 40 }}
-						animate={{ opacity: 1, x: 0 }}
+						initial={{ opacity: 0, y: 40 }}
+						animate={{ opacity: 1, y: 0 }}
 						transition={{ duration: 0.7, delay: 0.3 }}
-						className="relative mx-auto w-full max-w-sm sm:max-w-md lg:mx-0 lg:max-w-none"
+						className="relative mx-auto w-full max-w-sm sm:max-w-md lg:mx-0 lg:max-w-none mt-8 lg:mt-0"
 					>
 						<HeroImageGrid />
 					</motion.div>
