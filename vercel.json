@@ -72,7 +72,7 @@
 	"rewrites": [
 		{
 			"source": "/pb-api/(.*)",
-			"destination": "${POCKETBASE_URL}/$1"
+			"destination": "https://api.mba-laundry.com/api/$1"
 		}
 	],
 	"redirects": [
