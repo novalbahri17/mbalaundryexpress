@@ -6,7 +6,7 @@
 	"homepage": "https://github.com/d3george/slash-admin",
 	"scripts": {
 		"dev": "vite",
-		"build": "vite build && node scripts/remove-signatures.js",
+		"build": "vite build",
 		"preview": "vite preview",
 		"pb:bootstrap": "node scripts/bootstrap-pocketbase.mjs"
 	},
