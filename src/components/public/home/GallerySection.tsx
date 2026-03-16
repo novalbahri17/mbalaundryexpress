@@ -2,11 +2,12 @@ import { PictureOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
-import { useState } from "react";
 import { Link } from "react-router-dom";
 import { getGallery } from "@/api/gallery.api";
 import { ScrollReveal } from "@/components/public/shared/ScrollReveal";
+import { OptimizedImage, preloadImages } from "@/components/public/OptimizedImage";
 import type { GalleryType } from "@/types/database.types";
+import { useEffect } from "react";
 
 const typeLabels: Record<GalleryType, string> = {
 	interior: "Interior",
@@ -27,43 +28,23 @@ const typeColors: Record<GalleryType, string> = {
 const SKELETON_COUNT = 6;
 const SKELETON_IDS = Array.from({ length: SKELETON_COUNT }, (_, i) => `gallery-skeleton-${i + 1}`);
 
-function GalleryImage({ src, alt, className }: { src?: string; alt: string; className?: string }) {
-	const [error, setError] = useState(false);
-	const [loaded, setLoaded] = useState(false);
-
-	if (error || !src) {
-		return (
-			<div className={`flex items-center justify-center bg-neutral-200 dark:bg-neutral-800 ${className}`}>
-				<div className="text-center">
-					<PictureOutlined className="h-12 w-12 text-neutral-400 dark:text-neutral-600" />
-					<p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">Gambar tidak tersedia</p>
-				</div>
-			</div>
-		);
-	}
-
-	return (
-		<>
-			{!loaded && <div className={`absolute inset-0 animate-pulse bg-neutral-200 dark:bg-neutral-800 ${className}`} />}
-			<img
-				src={src}
-				alt={alt}
-				className={`${className} ${loaded ? "opacity-100" : "opacity-0"} transition-opacity duration-300`}
-				onLoad={() => setLoaded(true)}
-				onError={() => setError(true)}
-				loading="lazy"
-			/>
-		</>
-	);
-}
-
 export function GallerySection() {
 	const { data, isLoading, error } = useQuery({
 		queryKey: ["home-gallery"],
 		queryFn: () => getGallery(),
+		staleTime: 5 * 60 * 1000, // Cache 5 menit
 	});
 
 	const galleryItems = (data ?? []).filter((item) => Boolean(item.image && item.image.trim() !== "")).slice(0, 6);
+
+	// Preload images setelah data loaded
+	useEffect(() => {
+		if (galleryItems.length > 0) {
+			const imageUrls = galleryItems.map((item) => item.image).filter(Boolean);
+			// Preload hanya 3 gambar pertama untuk LCP
+			preloadImages(imageUrls.slice(0, 3), 2);
+		}
+	}, [galleryItems]);
 
 	return (
 		<section className="relative overflow-hidden bg-neutral-50 px-6 py-24 md:px-12 md:py-32 dark:bg-neutral-900">
@@ -110,7 +91,7 @@ export function GallerySection() {
 								key={item.id}
 								initial={{ opacity: 0, y: 30 }}
 								whileInView={{ opacity: 1, y: 0 }}
-								viewport={{ once: true }}
+								viewport={{ once: true, margin: "-50px" }}
 								transition={{ duration: 0.5, delay: index * 0.1 }}
 							>
 								<motion.div
@@ -118,10 +99,12 @@ export function GallerySection() {
 									transition={{ duration: 0.3 }}
 									className="group relative aspect-[4/3] w-full overflow-hidden rounded-[20px] bg-neutral-200 shadow-lg dark:bg-neutral-800"
 								>
-									<GalleryImage
+									<OptimizedImage
 										src={item.image}
 										alt={item.caption ?? `Galeri ${typeLabels[item.type]}`}
 										className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+										width={600}
+										priority={index < 3} // Prioritas untuk 3 gambar pertama
 									/>
 
 									<div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
