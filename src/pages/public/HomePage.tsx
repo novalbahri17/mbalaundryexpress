@@ -12,7 +12,7 @@ import { WhyUsSection } from "@/components/public/home/WhyUsSection";
 
 export default function HomePage() {
 	return (
-		<main className="landing-page flex min-h-[100svh] flex-col bg-transparent font-sans text-neutral-900 selection:bg-ruby-200">
+		<main className="landing-page flex flex-col bg-transparent font-sans text-neutral-900 selection:bg-ruby-200">
 			<HeroSection />
 			<PromoSection />
 			<HowItWorksSection />

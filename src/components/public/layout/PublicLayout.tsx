@@ -115,7 +115,7 @@ export function PublicLayout() {
 			<ScrollProgress />
 			<CursorFollower />
 			<Navbar whatsapp={content.whatsapp_cs} />
-			<main id="main-content" className="pb-20 md:pb-0">
+			<main id="main-content" className="flex-1">
 				<AnimatePresence mode="wait">
 					<motion.div
 						key={location.pathname}
