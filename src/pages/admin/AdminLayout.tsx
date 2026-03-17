@@ -31,6 +31,7 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useUserActions, useUserInfo } from "@/store/userStore";
 import { useBranding } from "@/hooks/useBranding";
 import { DynamicFavicon } from "@/components/public/layout/DynamicFavicon";
+import { AdminFavicon } from "@/components/admin/AdminFavicon";
 
 const { Header, Content, Sider } = Layout;
 const SIDEBAR_WIDTH = 272;
@@ -253,6 +254,7 @@ export default function AdminLayout() {
 	return (
 		<>
 			<DynamicFavicon />
+			<AdminFavicon />
 			<Layout className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
 			<Sider
 				width={SIDEBAR_WIDTH}
