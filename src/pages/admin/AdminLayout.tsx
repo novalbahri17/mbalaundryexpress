@@ -29,6 +29,8 @@ import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useUserActions, useUserInfo } from "@/store/userStore";
+import { useBranding } from "@/hooks/useBranding";
+import { DynamicFavicon } from "@/components/public/layout/DynamicFavicon";
 
 const { Header, Content, Sider } = Layout;
 const SIDEBAR_WIDTH = 272;
@@ -204,6 +206,50 @@ export default function AdminLayout() {
 		navigate("/admin/login", { replace: true });
 	};
 
+	// Admin drawer title component with branding
+	function AdminDrawerTitle() {
+		const { data: branding } = useBranding();
+		return (
+			<span className="flex items-center gap-2 font-bold text-white">
+				{branding?.logo_url ? (
+					<img 
+						src={branding.logo_url} 
+						alt="Logo" 
+						className="h-6 w-6 object-contain rounded"
+					/>
+				) : (
+					<span className="inline-flex h-6 w-6 items-center justify-center rounded-lg bg-gradient-to-br from-ruby-600 to-sapphire-500">
+						<span className="h-2 w-2 rounded-full border-2 border-white" />
+					</span>
+				)}
+				{branding?.site_title || "MBA Admin"}
+			</span>
+		);
+	}
+
+	// Admin sidebar logo component
+	function AdminSidebarLogo({ collapsed }: { collapsed: boolean }) {
+		const { data: branding } = useBranding();
+		return (
+			<Typography.Text className="flex items-center gap-3 text-[1.06rem] font-bold tracking-tight text-white">
+				{branding?.logo_url ? (
+					<img 
+						src={branding.logo_url} 
+						alt="Logo" 
+						className="h-8 w-8 object-contain rounded"
+					/>
+				) : (
+					<span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-ruby-600 to-sapphire-500 text-white shadow">
+						<span className="h-2.5 w-2.5 rounded-full border-2 border-white" />
+					</span>
+				)}
+				<span className={`${collapsed ? "hidden" : "inline"}`}>
+					{branding?.site_title ? `${branding.site_title} Admin` : "MBA Admin"}
+				</span>
+			</Typography.Text>
+		);
+	}
+
 	return (
 		<Layout className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
 			<Sider
@@ -219,12 +265,7 @@ export default function AdminLayout() {
 						sidebarCollapsed ? "justify-center px-0" : "px-5"
 					}`}
 				>
-					<Typography.Text className="flex items-center gap-3 text-[1.06rem] font-bold tracking-tight text-white">
-						<span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-ruby-600 to-sapphire-500 text-white shadow">
-							<span className="h-2.5 w-2.5 rounded-full border-2 border-white" />
-						</span>
-						<span className={`${sidebarCollapsed ? "hidden" : "inline"}`}>MBA Admin</span>
-					</Typography.Text>
+					<AdminSidebarLogo collapsed={sidebarCollapsed} />
 				</div>
 
 				<div className="h-[calc(100vh-70px)] overflow-y-auto p-3">
