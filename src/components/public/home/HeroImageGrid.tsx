@@ -77,9 +77,9 @@ export function HeroImageGrid() {
 
 	return (
 		<div className="relative h-[400px] sm:h-[500px] w-full max-w-[500px] overflow-hidden mx-auto lg:mx-0">
-			{/* Gradient masks */}
-			<div className="absolute top-0 left-0 right-0 h-12 sm:h-20 bg-gradient-to-b from-white to-transparent z-10 pointer-events-none dark:from-neutral-900" />
-			<div className="absolute bottom-0 left-0 right-0 h-12 sm:h-20 bg-gradient-to-t from-white to-transparent z-10 pointer-events-none dark:from-neutral-900" />
+			{/* Gradient masks - hanya untuk desktop animated scroll */}
+			<div className="hidden lg:block absolute top-0 left-0 right-0 h-12 sm:h-20 bg-gradient-to-b from-white to-transparent z-10 pointer-events-none dark:from-neutral-900" />
+			<div className="hidden lg:block absolute bottom-0 left-0 right-0 h-12 sm:h-20 bg-gradient-to-t from-white to-transparent z-10 pointer-events-none dark:from-neutral-900" />
 
 			{/* Desktop: Animated scroll */}
 			<div className="hidden lg:flex gap-3 sm:gap-4 h-full">
