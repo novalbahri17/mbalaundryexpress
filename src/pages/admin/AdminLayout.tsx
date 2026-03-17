@@ -74,6 +74,7 @@ const menuEntries: AdminMenuEntry[] = [
 	{ key: "/admin/kemitraan", icon: <HomeOutlined />, label: "Kemitraan", group: "group-komunikasi" },
 	{ key: "/admin/pesan", icon: <MailOutlined />, label: "Pesan", group: "group-komunikasi" },
 	{ key: "/admin/pengaturan", icon: <SettingOutlined />, label: "Pengaturan", group: "group-komunikasi" },
+	{ key: "/admin/pengaturan/branding", icon: <SettingOutlined />, label: "Branding", group: "group-komunikasi" },
 ];
 
 const menuByKey = new Map<string, { label: string; group?: MenuGroupKey }>([

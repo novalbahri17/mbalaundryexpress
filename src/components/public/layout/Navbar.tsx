@@ -3,7 +3,7 @@ import { ArrowUpRight, ChevronDown, MessageCircle, Moon, Sun, X } from "lucide-r
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { NavLink, useLocation } from "react-router-dom";
-import { BrandLogo } from "@/components/public/layout/BrandLogo";
+import { DynamicLogo } from "@/components/public/layout/DynamicLogo";
 
 import { useLocaleStore } from "@/store/localeStore";
 import { useThemeStore } from "@/store/themeStore";
@@ -166,7 +166,7 @@ export function Navbar({ whatsapp }: NavbarProps) {
 					>
 						{/* Header */}
 						<div className="mb-4 flex items-center justify-between border-b border-neutral-100 pb-4 dark:border-neutral-800">
-							<BrandLogo />
+							<DynamicLogo />
 							<button
 								type="button"
 								onClick={() => setMobileOpen(false)}
@@ -272,7 +272,7 @@ export function Navbar({ whatsapp }: NavbarProps) {
 						)}
 					>
 						<span className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-ruby-400/60 to-transparent" />
-						<BrandLogo />
+						<DynamicLogo />
 
 						<div className="hidden items-center gap-1 xl:flex">
 							{primaryNavItems.map((item) => (
