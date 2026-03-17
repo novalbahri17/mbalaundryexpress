@@ -2,17 +2,6 @@ import { useState, useEffect } from "react";
 import { Button, Input, Upload, Switch, message } from "antd";
 import { UploadOutlined, SaveOutlined, ReloadOutlined } from "@ant-design/icons";
 import { useBranding, useUpdateBranding, type BrandingSettings } from "@/hooks/useBranding";
-import { pb } from "@/api/pocketbase";
-
-// Convert file to base64
-function fileToBase64(file: File): Promise<string> {
-	return new Promise((resolve, reject) => {
-		const reader = new FileReader();
-		reader.readAsDataURL(file);
-		reader.onload = () => resolve(reader.result as string);
-		reader.onerror = reject;
-	});
-}
 
 export default function BrandingSettingsPage() {
 	const { data: branding, isLoading } = useBranding();
@@ -34,28 +23,39 @@ export default function BrandingSettingsPage() {
 
 	const handleLogoChange = async (file: File) => {
 		setLogoFile(file);
-		const base64 = await fileToBase64(file);
-		setLogoPreview(base64);
+		// Create local preview
+		const reader = new FileReader();
+		reader.readAsDataURL(file);
+		reader.onload = () => {
+			setLogoPreview(reader.result as string);
+		};
 		return false; // Prevent auto upload
 	};
 
 	const handleFaviconChange = async (file: File) => {
 		setFaviconFile(file);
-		const base64 = await fileToBase64(file);
-		setFaviconPreview(base64);
+		const reader = new FileReader();
+		reader.readAsDataURL(file);
+		reader.onload = () => {
+			setFaviconPreview(reader.result as string);
+		};
 		return false;
 	};
 
 	const handleSave = async () => {
 		try {
-			const payload: BrandingSettings = { ...form };
+			const payload: BrandingSettings & { logo_file?: File; favicon_file?: File } = { 
+				...form,
+				logo_url: logoPreview || form.logo_url,
+				favicon_url: faviconPreview || form.favicon_url,
+			};
 
-			// Use preview (base64) if new file selected, otherwise keep existing
-			if (logoFile && logoPreview) {
-				payload.logo_url = logoPreview;
+			// Add files if selected
+			if (logoFile) {
+				payload.logo_file = logoFile;
 			}
-			if (faviconFile && faviconPreview) {
-				payload.favicon_url = faviconPreview;
+			if (faviconFile) {
+				payload.favicon_file = faviconFile;
 			}
 
 			await updateBranding.mutateAsync(payload);
@@ -110,7 +110,7 @@ export default function BrandingSettingsPage() {
 				<h3 className="mb-4 text-lg font-semibold">Preview Logo</h3>
 				<div className="flex items-center gap-3 rounded-lg bg-neutral-50 p-4 dark:bg-neutral-900">
 					<img
-						src={logoPreview || form.logo_url || "/logo.png"}
+						src={logoPreview || "/logo.png"}
 						alt="Logo"
 						width={form.logo_width || 40}
 						height={form.logo_height || 40}
@@ -167,11 +167,11 @@ export default function BrandingSettingsPage() {
 								✓ {logoFile.name} (siap disimpan)
 							</p>
 						)}
-						{logoPreview && !logoFile && (
+						{logoPreview && (
 							<div className="mt-2">
 								<img
 									src={logoPreview}
-									alt="Current logo"
+									alt="Logo preview"
 									className="h-16 w-16 object-contain rounded border"
 								/>
 							</div>
@@ -192,11 +192,11 @@ export default function BrandingSettingsPage() {
 								✓ {faviconFile.name} (siap disimpan)
 							</p>
 						)}
-						{faviconPreview && !faviconFile && (
+						{faviconPreview && (
 							<div className="mt-2">
 								<img
 									src={faviconPreview}
-									alt="Current favicon"
+									alt="Favicon preview"
 									className="h-8 w-8 object-contain rounded border"
 								/>
 							</div>

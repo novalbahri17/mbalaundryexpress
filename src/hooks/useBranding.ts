@@ -64,6 +64,37 @@ const DEFAULT_BRANDING: BrandingSettings = {
 	site_description: "Self Service Laundry Modern di Surabaya",
 };
 
+// Upload file to PocketBase and return URL
+async function uploadBrandingFile(file: File, filename: string): Promise<string> {
+	// Create form data
+	const formData = new FormData();
+	formData.append("image", file);
+	
+	// Upload to branch_gallery collection as temporary storage
+	// or create a dedicated collection for branding files
+	try {
+		const record = await pb.collection("branch_gallery").create({
+			caption: `branding-${filename}`,
+			type: "umum",
+			sort_order: 0,
+			image: file,
+		});
+		
+		// Get the file URL
+		const url = pb.files.getURL(record, record.image);
+		return url;
+	} catch (error) {
+		console.error("Failed to upload file:", error);
+		// Fallback to base64 if upload fails
+		return new Promise((resolve, reject) => {
+			const reader = new FileReader();
+			reader.readAsDataURL(file);
+			reader.onload = () => resolve(reader.result as string);
+			reader.onerror = reject;
+		});
+	}
+}
+
 export function useBranding() {
 	return useQuery({
 		queryKey: ["branding"],
@@ -103,11 +134,29 @@ export function useUpdateBranding() {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: async (settings: BrandingSettings) => {
+		mutationFn: async (settings: BrandingSettings & { logo_file?: File; favicon_file?: File }) => {
+			// Handle file uploads first
+			let logoUrl = settings.logo_url;
+			let faviconUrl = settings.favicon_url;
+			
+			if (settings.logo_file) {
+				logoUrl = await uploadBrandingFile(settings.logo_file, "logo");
+			}
+			
+			if (settings.favicon_file) {
+				faviconUrl = await uploadBrandingFile(settings.favicon_file, "favicon");
+			}
+
 			const updates: Promise<unknown>[] = [];
 
 			for (const [key, value] of Object.entries(settings)) {
-				if (value === undefined) continue;
+				// Skip file objects and undefined values
+				if (key === "logo_file" || key === "favicon_file" || value === undefined) continue;
+				
+				// Use uploaded URLs for logo and favicon
+				let finalValue = value;
+				if (key === "logo_url") finalValue = logoUrl;
+				if (key === "favicon_url") finalValue = faviconUrl;
 
 				// Cek apakah setting sudah ada
 				const existing = await pb
@@ -119,7 +168,7 @@ export function useUpdateBranding() {
 					// Update
 					updates.push(
 						pb.collection("site_settings").update(existing.id, {
-							value: String(value),
+							value: String(finalValue),
 						})
 					);
 				} else {
@@ -127,7 +176,7 @@ export function useUpdateBranding() {
 					updates.push(
 						pb.collection("site_settings").create({
 							key,
-							value: String(value),
+							value: String(finalValue),
 							description: `Branding setting: ${key}`,
 						})
 					);
