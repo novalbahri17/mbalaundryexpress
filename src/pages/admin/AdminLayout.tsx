@@ -385,7 +385,7 @@ export default function AdminLayout() {
 			</Layout>
 
 			<Drawer
-				title={<AdminDrawerTitle />
+				title={<AdminDrawerTitle />}
 				placement="left"
 				open={mobileOpen}
 				onClose={() => setMobileOpen(false)}
