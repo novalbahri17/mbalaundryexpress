@@ -1,7 +1,7 @@
 import { CheckCircle2, Clock, MapPin, Star, TrendingUp, Users, ArrowRight, Sparkles } from "lucide-react";
 import { Link } from "react-router-dom";
-import { motion, useScroll, useTransform } from "framer-motion";
-import { useRef } from "react";
+import { motion } from "framer-motion";
+
 import { Button } from "@/design-system";
 import { HeroImageGrid } from "./HeroImageGrid";
 
@@ -20,18 +20,8 @@ const features = [
 ];
 
 export function HeroSection() {
-	const containerRef = useRef<HTMLDivElement>(null);
-	const { scrollYProgress } = useScroll({
-		target: containerRef,
-		offset: ["start start", "end start"],
-	});
-
-	const y = useTransform(scrollYProgress, [0, 1], [0, 100]);
-	const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0]);
-
 	return (
 		<section
-			ref={containerRef}
 			className="relative min-h-[100svh] overflow-hidden bg-gradient-to-b from-neutral-50 via-white to-neutral-50 pt-24 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 sm:pt-28 lg:pt-32"
 		>
 			{/* Animated Background */}
@@ -74,8 +64,7 @@ export function HeroSection() {
 				/>
 			</div>
 
-			<motion.div
-				style={{ y, opacity }}
+			<div
 				className="relative z-10 mx-auto flex min-h-[calc(100svh-6rem)] max-w-[1400px] flex-col justify-center px-4 py-8 sm:px-6 sm:py-12 lg:px-12 lg:py-16"
 			>
 				<div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-2 lg:gap-12">
@@ -205,7 +194,7 @@ export function HeroSection() {
 						<HeroImageGrid />
 					</motion.div>
 				</div>
-			</motion.div>
+			</div>
 		</section>
 	);
 }
