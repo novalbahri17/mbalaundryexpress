@@ -1,8 +1,18 @@
 import { useState, useEffect } from "react";
-import { Button, Input, Upload, ColorPicker, Switch, message } from "antd";
+import { Button, Input, Upload, Switch, message } from "antd";
 import { UploadOutlined, SaveOutlined, ReloadOutlined } from "@ant-design/icons";
 import { useBranding, useUpdateBranding, type BrandingSettings } from "@/hooks/useBranding";
-import { fileUrl } from "@/api/pocketbase";
+import { pb } from "@/api/pocketbase";
+
+// Convert file to base64
+function fileToBase64(file: File): Promise<string> {
+	return new Promise((resolve, reject) => {
+		const reader = new FileReader();
+		reader.readAsDataURL(file);
+		reader.onload = () => resolve(reader.result as string);
+		reader.onerror = reject;
+	});
+}
 
 export default function BrandingSettingsPage() {
 	const { data: branding, isLoading } = useBranding();
@@ -11,40 +21,47 @@ export default function BrandingSettingsPage() {
 	const [form, setForm] = useState<BrandingSettings>({});
 	const [logoFile, setLogoFile] = useState<File | null>(null);
 	const [faviconFile, setFaviconFile] = useState<File | null>(null);
+	const [logoPreview, setLogoPreview] = useState<string>("");
+	const [faviconPreview, setFaviconPreview] = useState<string>("");
 
 	useEffect(() => {
 		if (branding) {
 			setForm(branding);
+			setLogoPreview(branding.logo_url || "");
+			setFaviconPreview(branding.favicon_url || "");
 		}
 	}, [branding]);
+
+	const handleLogoChange = async (file: File) => {
+		setLogoFile(file);
+		const base64 = await fileToBase64(file);
+		setLogoPreview(base64);
+		return false; // Prevent auto upload
+	};
+
+	const handleFaviconChange = async (file: File) => {
+		setFaviconFile(file);
+		const base64 = await fileToBase64(file);
+		setFaviconPreview(base64);
+		return false;
+	};
 
 	const handleSave = async () => {
 		try {
 			const payload: BrandingSettings = { ...form };
 
-			// Upload logo jika ada
-			if (logoFile) {
-				const formData = new FormData();
-				formData.append("file", logoFile);
-				// Upload ke collection files atau gunakan base64
-				const reader = new FileReader();
-				reader.readAsDataURL(logoFile);
-				reader.onload = () => {
-					payload.logo_url = reader.result as string;
-				};
+			// Use preview (base64) if new file selected, otherwise keep existing
+			if (logoFile && logoPreview) {
+				payload.logo_url = logoPreview;
 			}
-
-			// Upload favicon jika ada
-			if (faviconFile) {
-				const reader = new FileReader();
-				reader.readAsDataURL(faviconFile);
-				reader.onload = () => {
-					payload.favicon_url = reader.result as string;
-				};
+			if (faviconFile && faviconPreview) {
+				payload.favicon_url = faviconPreview;
 			}
 
 			await updateBranding.mutateAsync(payload);
 			message.success("Pengaturan branding berhasil disimpan");
+			setLogoFile(null);
+			setFaviconFile(null);
 		} catch (error) {
 			message.error("Gagal menyimpan pengaturan");
 			console.error(error);
@@ -56,6 +73,8 @@ export default function BrandingSettingsPage() {
 			setForm(branding);
 			setLogoFile(null);
 			setFaviconFile(null);
+			setLogoPreview(branding.logo_url || "");
+			setFaviconPreview(branding.favicon_url || "");
 		}
 	};
 
@@ -91,10 +110,10 @@ export default function BrandingSettingsPage() {
 				<h3 className="mb-4 text-lg font-semibold">Preview Logo</h3>
 				<div className="flex items-center gap-3 rounded-lg bg-neutral-50 p-4 dark:bg-neutral-900">
 					<img
-						src={logoFile ? URL.createObjectURL(logoFile) : form.logo_url}
+						src={logoPreview || form.logo_url || "/logo.png"}
 						alt="Logo"
-						width={form.logo_width}
-						height={form.logo_height}
+						width={form.logo_width || 40}
+						height={form.logo_height || 40}
 						className="object-contain"
 					/>
 					<div className="flex flex-col leading-none">
@@ -136,30 +155,52 @@ export default function BrandingSettingsPage() {
 					<div>
 						<label className="mb-2 block text-sm font-medium">Upload Logo</label>
 						<Upload
-							beforeUpload={(file) => {
-								setLogoFile(file);
-								return false;
-							}}
+							beforeUpload={handleLogoChange}
 							accept="image/*"
 							maxCount={1}
+							showUploadList={false}
 						>
 							<Button icon={<UploadOutlined />}>Pilih File</Button>
 						</Upload>
-						{logoFile && <p className="mt-2 text-sm text-neutral-500">{logoFile.name}</p>}
+						{logoFile && (
+							<p className="mt-2 text-sm text-green-600">
+								✓ {logoFile.name} (siap disimpan)
+							</p>
+						)}
+						{logoPreview && !logoFile && (
+							<div className="mt-2">
+								<img
+									src={logoPreview}
+									alt="Current logo"
+									className="h-16 w-16 object-contain rounded border"
+								/>
+							</div>
+						)}
 					</div>
 					<div>
 						<label className="mb-2 block text-sm font-medium">Upload Favicon</label>
 						<Upload
-							beforeUpload={(file) => {
-								setFaviconFile(file);
-								return false;
-							}}
-							accept=".ico,.png,.svg"
+							beforeUpload={handleFaviconChange}
+							accept=".ico,.png,.svg,.jpg,.jpeg"
 							maxCount={1}
+							showUploadList={false}
 						>
 							<Button icon={<UploadOutlined />}>Pilih File</Button>
 						</Upload>
-						{faviconFile && <p className="mt-2 text-sm text-neutral-500">{faviconFile.name}</p>}
+						{faviconFile && (
+							<p className="mt-2 text-sm text-green-600">
+								✓ {faviconFile.name} (siap disimpan)
+							</p>
+						)}
+						{faviconPreview && !faviconFile && (
+							<div className="mt-2">
+								<img
+									src={faviconPreview}
+									alt="Current favicon"
+									className="h-8 w-8 object-contain rounded border"
+								/>
+							</div>
+						)}
 					</div>
 				</div>
 				<div className="mt-4 grid gap-4 sm:grid-cols-2">
