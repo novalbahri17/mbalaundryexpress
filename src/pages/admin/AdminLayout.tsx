@@ -251,7 +251,9 @@ export default function AdminLayout() {
 	}
 
 	return (
-		<Layout className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
+		<>
+			<DynamicFavicon />
+			<Layout className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
 			<Sider
 				width={SIDEBAR_WIDTH}
 				collapsedWidth={SIDEBAR_COLLAPSED_WIDTH}
@@ -381,7 +383,7 @@ export default function AdminLayout() {
 			</Layout>
 
 			<Drawer
-				title={<span className="font-bold text-white">MBA Admin</span>}
+				title={<AdminDrawerTitle />
 				placement="left"
 				open={mobileOpen}
 				onClose={() => setMobileOpen(false)}
@@ -405,5 +407,6 @@ export default function AdminLayout() {
 				/>
 			</Drawer>
 		</Layout>
+		</>
 	);
 }

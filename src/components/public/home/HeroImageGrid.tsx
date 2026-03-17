@@ -115,7 +115,8 @@ export function HeroImageGrid() {
 						}}
 					>
 						{leftItems.map((src, index) => (
-							<div key={`left-${index}`} className="h-[130px] sm:h-[160px] shrink-0">
+							// biome-ignore lint/suspicious/noArrayIndexKey: items are duplicated for animation, index is safe
+							<div key={`left-${src.slice(-10)}-${index}`} className="h-[130px] sm:h-[160px] shrink-0">
 								<GridImage src={src} alt="Galeri MBA Laundry" />
 							</div>
 						))}
@@ -137,7 +138,8 @@ export function HeroImageGrid() {
 						}}
 					>
 						{rightItems.map((src, index) => (
-							<div key={`right-${index}`} className="h-[130px] sm:h-[160px] shrink-0">
+							// biome-ignore lint/suspicious/noArrayIndexKey: items are duplicated for animation, index is safe
+							<div key={`right-${src.slice(-10)}-${index}`} className="h-[130px] sm:h-[160px] shrink-0">
 								<GridImage src={src} alt="Galeri MBA Laundry" />
 							</div>
 						))}
