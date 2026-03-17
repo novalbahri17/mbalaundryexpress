@@ -7,6 +7,7 @@ import { FloatingWA } from "@/components/public/layout/FloatingWA";
 import { Footer } from "@/components/public/layout/Footer";
 import { Navbar } from "@/components/public/layout/Navbar";
 import { PublicSeo } from "@/components/public/layout/PublicSeo";
+import { DynamicFavicon } from "@/components/public/layout/DynamicFavicon";
 import { usePageContentMap } from "@/hooks/usePageContent";
 import { useSiteSettingsMap } from "@/hooks/useSiteSettings";
 import { normalizeHexColor } from "@/utils/validation";
@@ -110,6 +111,7 @@ export function PublicLayout() {
 			className="relative min-h-screen overflow-x-hidden bg-[var(--landing-bg-light)] text-[var(--text-main)] dark:bg-[var(--landing-bg-dark)]"
 		>
 			<PublicSeo />
+			<DynamicFavicon />
 			<a
 				href="#main-content"
 				className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[90] focus:rounded-lg focus:bg-sapphire-700 focus:px-3 focus:py-2 focus:text-xs focus:font-semibold focus:text-white"
