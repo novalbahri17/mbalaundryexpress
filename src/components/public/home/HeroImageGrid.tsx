@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { getGallery } from "@/api/gallery.api";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 // Simple image dengan lazy loading
 function GridImage({ src, alt, className = "" }: { src?: string; alt: string; className?: string }) {
@@ -23,6 +23,7 @@ function GridImage({ src, alt, className = "" }: { src?: string; alt: string; cl
 				src={src}
 				alt={alt}
 				loading="lazy"
+				decoding="async"
 				className={`h-full w-full object-cover transition-opacity duration-300 ${loaded ? "opacity-100" : "opacity-0"}`}
 				onLoad={() => setLoaded(true)}
 				onError={() => setError(true)}
@@ -48,24 +49,39 @@ export function HeroImageGrid() {
 		staleTime: 5 * 60 * 1000,
 	});
 
+	const containerRef = useRef<HTMLDivElement>(null);
+	const [isVisible, setIsVisible] = useState(false);
+
+	// Pause animation when not visible
+	useEffect(() => {
+		const observer = new IntersectionObserver(
+			([entry]) => {
+				setIsVisible(entry.isIntersecting);
+			},
+			{ threshold: 0.1 }
+		);
+
+		if (containerRef.current) {
+			observer.observe(containerRef.current);
+		}
+
+		return () => observer.disconnect();
+	}, []);
+
 	// Ambil gambar dari galeri atau gunakan default
 	const galleryItems = (data ?? [])
 		.filter((item) => Boolean(item.image && item.image.trim() !== ""))
 		.slice(0, 6);
 
-	// Buat array 6 gambar
-	const images =
-		galleryItems.length > 0
-			? galleryItems.map((item) => item.image)
-			: defaultImages;
+	const images = galleryItems.length > 0 ? galleryItems.map((item) => item.image) : defaultImages;
 
 	// Split untuk 2 kolom (3 gambar per kolom)
 	const leftColumn = [images[0], images[2], images[4]].filter(Boolean);
 	const rightColumn = [images[1], images[3], images[5]].filter(Boolean);
 
-	// Duplicate untuk animasi seamless (desktop only)
-	const leftItems = [...leftColumn, ...leftColumn];
-	const rightItems = [...rightColumn, ...rightColumn];
+	// Duplicate untuk animasi seamless
+	const leftItems = [...leftColumn, ...leftColumn, ...leftColumn];
+	const rightItems = [...rightColumn, ...rightColumn, ...rightColumn];
 
 	if (isLoading) {
 		return (
@@ -76,28 +92,30 @@ export function HeroImageGrid() {
 	}
 
 	return (
-		<div className="relative h-[400px] sm:h-[500px] w-full max-w-[500px] overflow-hidden mx-auto lg:mx-0">
-			{/* Gradient masks - hanya untuk desktop animated scroll */}
-			<div className="hidden lg:block absolute top-0 left-0 right-0 h-12 sm:h-20 bg-gradient-to-b from-white to-transparent z-10 pointer-events-none dark:from-neutral-900" />
-			<div className="hidden lg:block absolute bottom-0 left-0 right-0 h-12 sm:h-20 bg-gradient-to-t from-white to-transparent z-10 pointer-events-none dark:from-neutral-900" />
+		<div
+			ref={containerRef}
+			className="relative h-[400px] sm:h-[500px] w-full max-w-[500px] overflow-hidden mx-auto lg:mx-0"
+		>
+			{/* Gradient masks */}
+			<div className="absolute top-0 left-0 right-0 h-12 sm:h-20 bg-gradient-to-b from-white to-transparent z-10 pointer-events-none dark:from-neutral-900" />
+			<div className="absolute bottom-0 left-0 right-0 h-12 sm:h-20 bg-gradient-to-t from-white to-transparent z-10 pointer-events-none dark:from-neutral-900" />
 
-			{/* Desktop: Animated scroll */}
-			<div className="hidden lg:flex gap-3 sm:gap-4 h-full">
+			<div className="flex gap-3 sm:gap-4 h-full">
 				{/* Left column - scroll down */}
 				<div className="flex-1 overflow-hidden">
 					<motion.div
 						className="flex flex-col gap-3 sm:gap-4"
-						animate={{ y: ["0%", "-50%"] }}
+						animate={isVisible ? { y: ["0%", "-33.33%"] } : { y: "0%" }}
 						transition={{
 							y: {
-								duration: 20,
+								duration: 15,
 								repeat: Infinity,
 								ease: "linear",
 							},
 						}}
 					>
 						{leftItems.map((src, index) => (
-							<div key={`left-${index}`} className="h-[120px] sm:h-[160px] shrink-0">
+							<div key={`left-${index}`} className="h-[130px] sm:h-[160px] shrink-0">
 								<GridImage src={src} alt="Galeri MBA Laundry" />
 							</div>
 						))}
@@ -108,43 +126,22 @@ export function HeroImageGrid() {
 				<div className="flex-1 overflow-hidden">
 					<motion.div
 						className="flex flex-col gap-3 sm:gap-4"
-						initial={{ y: "-50%" }}
-						animate={{ y: ["-50%", "0%"] }}
+						initial={{ y: "-33.33%" }}
+						animate={isVisible ? { y: ["-33.33%", "0%"] } : { y: "-33.33%" }}
 						transition={{
 							y: {
-								duration: 20,
+								duration: 15,
 								repeat: Infinity,
 								ease: "linear",
 							},
 						}}
 					>
 						{rightItems.map((src, index) => (
-							<div key={`right-${index}`} className="h-[120px] sm:h-[160px] shrink-0">
+							<div key={`right-${index}`} className="h-[130px] sm:h-[160px] shrink-0">
 								<GridImage src={src} alt="Galeri MBA Laundry" />
 							</div>
 						))}
 					</motion.div>
-				</div>
-			</div>
-
-			{/* Mobile/Tablet: Static grid 2 columns */}
-			<div className="flex lg:hidden gap-3 h-full overflow-hidden">
-				{/* Left column */}
-				<div className="flex-1 flex flex-col gap-3">
-					{leftColumn.map((src, index) => (
-						<div key={`mobile-left-${index}`} className="flex-1 min-h-0">
-							<GridImage src={src} alt="Galeri MBA Laundry" className="h-full" />
-						</div>
-					))}
-				</div>
-
-				{/* Right column */}
-				<div className="flex-1 flex flex-col gap-3">
-					{rightColumn.map((src, index) => (
-						<div key={`mobile-right-${index}`} className="flex-1 min-h-0">
-							<GridImage src={src} alt="Galeri MBA Laundry" className="h-full" />
-						</div>
-					))}
 				</div>
 			</div>
 		</div>
