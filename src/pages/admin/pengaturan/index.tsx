@@ -28,6 +28,7 @@ type AnnouncementFormValues = {
 	announcement_dates?: [dayjs.Dayjs, dayjs.Dayjs] | null;
 	announcement_type: AnnouncementType;
 	announcement_recurring: string;
+	announcement_frequency: string;
 };
 
 const fileToBase64 = (file: File): Promise<string> =>
@@ -112,6 +113,7 @@ export default function PengaturanAdminPage() {
 			announcement_text: pageContentMap.announcement_text ?? "",
 			announcement_type: (pageContentMap.announcement_type as AnnouncementType) || "info",
 			announcement_recurring: pageContentMap.announcement_recurring || "none",
+			announcement_frequency: pageContentMap.announcement_frequency || "session",
 			announcement_dates:
 				pageContentMap.announcement_start && pageContentMap.announcement_end
 					? [dayjs(pageContentMap.announcement_start), dayjs(pageContentMap.announcement_end)]
@@ -128,6 +130,7 @@ export default function PengaturanAdminPage() {
 		pageContentMap.announcement_end,
 		pageContentMap.announcement_type,
 		pageContentMap.announcement_recurring,
+		pageContentMap.announcement_frequency,
 		settingsMap.landing_bg_color_dark,
 		settingsMap.landing_bg_color_light,
 	]);
@@ -155,6 +158,28 @@ export default function PengaturanAdminPage() {
 			announcement_type: tpl.type as AnnouncementType,
 			announcement_active: true
 		});
+	};
+
+	const insertTag = (tagStart: string, tagEnd: string) => {
+		const textarea = document.getElementById("announcement_text") as HTMLTextAreaElement | null;
+		if (!textarea) return;
+
+		const start = textarea.selectionStart;
+		const end = textarea.selectionEnd;
+		const text = announcementForm.getFieldValue("announcement_text") || "";
+		
+		const before = text.substring(0, start);
+		const selected = text.substring(start, end);
+		const after = text.substring(end);
+		
+		const newText = `${before}${tagStart}${selected}${tagEnd}${after}`;
+		announcementForm.setFieldValue("announcement_text", newText);
+		
+		// Focus back
+		setTimeout(() => {
+			textarea.focus();
+			textarea.setSelectionRange(start + tagStart.length, start + tagStart.length + selected.length);
+		}, 0);
 	};
 
 	const saveAnnouncement = async () => {
@@ -220,6 +245,14 @@ export default function PengaturanAdminPage() {
 				type: "text",
 				label: "Jadwal Berulang",
 				description: "Penayangan rutin",
+				group: "announcement",
+			},
+			{
+				key: "announcement_frequency",
+				value: values.announcement_frequency ?? "session",
+				type: "text",
+				label: "Frekuensi Tampil",
+				description: "Berapa sering muncul",
 				group: "announcement",
 			},
 		]);
@@ -330,8 +363,24 @@ export default function PengaturanAdminPage() {
 										</Col>
 									</Row>
 
-									<Form.Item name="announcement_text" label="Isi Pengumuman" extra="Bisa berisi info diskon, libur, atau waktu operasional khusus">
-										<Input.TextArea rows={4} placeholder="Contoh: Terkait libur Lebaran, seluruh cabang MBA Laundry tutup dari tanggal..." />
+									<Form.Item label="Isi Pengumuman" className="mb-2">
+										<div className="mb-2 flex flex-wrap gap-2 items-center rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 dark:border-neutral-700 dark:bg-neutral-800">
+											<span className="text-xs font-semibold text-neutral-500 mr-1">Toolbar:</span>
+											<Button size="small" onClick={() => insertTag("<b>", "</b>")} className="font-bold">B</Button>
+											<Button size="small" onClick={() => insertTag("<i>", "</i>")} className="italic">I</Button>
+											<Button size="small" onClick={() => insertTag('<a href="#" className="underline text-blue-300">', "</a>")}>🔗 Link</Button>
+											<div className="w-px h-4 bg-neutral-300 mx-1" />
+											<Button size="small" onClick={() => insertTag('<span className="text-sm">', "</span>")}>T-Kecil</Button>
+											<Button size="small" onClick={() => insertTag('<span className="text-xl font-bold">', "</span>")}>T-Besar</Button>
+											<div className="w-px h-4 bg-neutral-300 mx-1" />
+											<Button size="small" type="primary" ghost onClick={() => insertTag("{Nama Pelanggan}", "")} className="border-dashed">
+												&#123;Nama Pelanggan&#125;
+											</Button>
+										</div>
+										<Form.Item name="announcement_text" noStyle>
+											<Input.TextArea id="announcement_text" rows={5} placeholder="Ketik pengumuman di sini..." className="font-mono text-sm" />
+										</Form.Item>
+										<div className="mt-1 text-xs text-neutral-400">Dukung tag HTML dasar dan variabel otomatis.</div>
 									</Form.Item>
 
 									<Row gutter={16}>
@@ -345,24 +394,57 @@ export default function PengaturanAdminPage() {
 											</Form.Item>
 										</Col>
 										<Col xs={24} md={12}>
-											<Form.Item name="announcement_dates" label="Jadwal Tayang Khusus" extra="Prioritas utama waktu tampil modal">
+											<Form.Item name="announcement_dates" label="Jadwal Tayang Khusus">
 												<DatePicker.RangePicker showTime format="YYYY-MM-DD HH:mm" className="w-full" />
 											</Form.Item>
 										</Col>
 									</Row>
 
-									<Form.Item name="announcement_image_file" label="Banner/Gambar Opsional">
-										<Upload maxCount={1} beforeUpload={() => false} listType="picture">
-											<Button icon={<UploadOutlined />}>Pilih Gambar</Button>
-										</Upload>
-										{pageContentMap.announcement_image && !announcementForm.getFieldValue("announcement_image_file") && (
-											<div className="mt-2 text-xs text-emerald-600">Terpasang: Banner/Gambar sudah tersimpan di server.</div>
-										)}
-									</Form.Item>
+									<Row gutter={16}>
+										<Col xs={24} md={12}>
+											<Form.Item name="announcement_frequency" label="Frekuensi Tampil (Logic)">
+												<Select options={[
+													{ label: "🔥 Setiap Refresh (Penting/Urgent)", value: "always" },
+													{ label: "🕒 Sekali per Sesi Browser (Normal)", value: "session" },
+													{ label: "🛑 Sekali Saja (Sampai klik 'Paham')", value: "once" },
+												]} />
+											</Form.Item>
+										</Col>
+										<Col xs={24} md={12}>
+											<Form.Item name="announcement_image_file" label="Banner/Gambar Opsional">
+												<Upload maxCount={1} beforeUpload={() => false} listType="picture">
+													<Button icon={<UploadOutlined />}>Pilih Gambar</Button>
+												</Upload>
+												{pageContentMap.announcement_image && !announcementForm.getFieldValue("announcement_image_file") && (
+													<div className="mt-2 text-xs text-emerald-600">Terpasang: Banner/Gambar sudah tersimpan di server.</div>
+												)}
+											</Form.Item>
+										</Col>
+									</Row>
 
-									<Button type="primary" onClick={() => void saveAnnouncement()} style={{ backgroundColor: "#F97316", borderColor: "#ea580c" }}>
+									<Button type="primary" onClick={() => void saveAnnouncement()} style={{ backgroundColor: "#F97316", borderColor: "#ea580c" }} className="w-full sm:w-auto">
 										Simpan Pengumuman
 									</Button>
+
+									{/* Mock Stats Tracker */}
+									<div className="mt-8 rounded-xl border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-700 dark:bg-neutral-800">
+										<div className="mb-3 text-sm font-semibold text-neutral-600 dark:text-neutral-400">📊 Statistik Pengumuman (Pratinjau)</div>
+										<Row gutter={16}>
+											<Col xs={12}>
+												<div className="rounded-lg bg-white p-3 shadow-sm dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800">
+													<div className="text-xs text-neutral-500">Total Dilihat</div>
+													<div className="text-xl font-bold text-sky-600">1,245 <span className="text-xs font-normal text-neutral-400">kali</span></div>
+												</div>
+											</Col>
+											<Col xs={12}>
+												<div className="rounded-lg bg-white p-3 shadow-sm dark:bg-neutral-900 border border-neutral-100 dark:border-neutral-800">
+													<div className="text-xs text-neutral-500">Klik "Paham"</div>
+													<div className="text-xl font-bold text-emerald-600">890 <span className="text-xs font-normal text-neutral-400">user</span></div>
+												</div>
+											</Col>
+										</Row>
+										<div className="mt-2 text-[10px] text-neutral-400 italic">*Statistik ini menggunakan UI Mockup. Tracking log per user membutuhkan plugin backend tambahan.</div>
+									</div>
 								</Form>
 							</Col>
 
