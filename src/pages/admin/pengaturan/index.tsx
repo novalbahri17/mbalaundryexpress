@@ -1,4 +1,4 @@
-import { Alert, Button, Card, Col, Form, Input, Row, Switch, DatePicker, Upload, message } from "antd";
+import { Alert, Button, Card, Col, Form, Input, Row, Switch, DatePicker, Upload, message, Select } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useEffect, useMemo } from "react";
 import dayjs from "dayjs";
@@ -11,6 +11,7 @@ import { PAGE_CONTENT_QUERY_KEY } from "@/hooks/usePageContent";
 import { SITE_SETTINGS_QUERY_KEY } from "@/hooks/useSiteSettings";
 import type { SiteSetting } from "@/types/database.types";
 import { normalizeHexColor, validateHexColor } from "@/utils/validation";
+import { AnnouncementCard, type AnnouncementType } from "@/components/public/home/AnnouncementModal";
 
 const DEFAULT_LIGHT_BG = "#FAFAFA";
 const DEFAULT_DARK_BG = "#0A0A0F";
@@ -25,6 +26,8 @@ type AnnouncementFormValues = {
 	announcement_text: string;
 	announcement_image_file?: any;
 	announcement_dates?: [dayjs.Dayjs, dayjs.Dayjs] | null;
+	announcement_type: AnnouncementType;
+	announcement_recurring: string;
 };
 
 const fileToBase64 = (file: File): Promise<string> =>
@@ -107,6 +110,8 @@ export default function PengaturanAdminPage() {
 		announcementForm.setFieldsValue({
 			announcement_active: pageContentMap.announcement_active === "true" || pageContentMap.announcement_active === "1",
 			announcement_text: pageContentMap.announcement_text ?? "",
+			announcement_type: (pageContentMap.announcement_type as AnnouncementType) || "info",
+			announcement_recurring: pageContentMap.announcement_recurring || "none",
 			announcement_dates:
 				pageContentMap.announcement_start && pageContentMap.announcement_end
 					? [dayjs(pageContentMap.announcement_start), dayjs(pageContentMap.announcement_end)]
@@ -121,12 +126,36 @@ export default function PengaturanAdminPage() {
 		pageContentMap.announcement_text,
 		pageContentMap.announcement_start,
 		pageContentMap.announcement_end,
+		pageContentMap.announcement_type,
+		pageContentMap.announcement_recurring,
 		settingsMap.landing_bg_color_dark,
 		settingsMap.landing_bg_color_light,
 	]);
 
 	const lightPreview = normalizeHexColor(Form.useWatch("landing_bg_color_light", appearanceForm), DEFAULT_LIGHT_BG);
 	const darkPreview = normalizeHexColor(Form.useWatch("landing_bg_color_dark", appearanceForm), DEFAULT_DARK_BG);
+
+	// Watch values for Smart Preview
+	const liveText = Form.useWatch("announcement_text", announcementForm);
+	const liveType = Form.useWatch("announcement_type", announcementForm);
+	const liveImageFile: any = Form.useWatch("announcement_image_file", announcementForm);
+	const previewImage = liveImageFile?.fileList?.[0]?.thumbUrl || pageContentMap.announcement_image || undefined;
+
+	const applyTemplate = (type: AnnouncementType) => {
+		const templates = {
+			promo: { text: "🎉 Diskon Spesial Hari Ini! Cuci 5Kg Gratis 1Kg. Yuk buruan mampir sebelum kehabisan mesin!", type: "promo" },
+			libur: { text: "Mohon maaf, kami tutup sementara dalam rangka libur nasional. Kami akan buka kembali segera.", type: "libur" },
+			maintenance: { text: "Mohon maaf, sistem operasional kami sedang dalam perbaikan rutin. Silakan cek berkala.", type: "maintenance" },
+			info: { text: "Halo pelanggan setia MBA Laundry! Jangan lupa ambil cucian Anda tepat waktu ya.", type: "info" }
+		};
+
+		const tpl = templates[type] || templates.info;
+		announcementForm.setFieldsValue({
+			announcement_text: tpl.text,
+			announcement_type: tpl.type as AnnouncementType,
+			announcement_active: true
+		});
+	};
 
 	const saveAnnouncement = async () => {
 		const values = await announcementForm.validateFields();
@@ -175,6 +204,22 @@ export default function PengaturanAdminPage() {
 				type: "text",
 				label: "Banner Pengumuman",
 				description: "URL/Base64 banner",
+				group: "announcement",
+			},
+			{
+				key: "announcement_type",
+				value: values.announcement_type ?? "info",
+				type: "text",
+				label: "Tipe Pengumuman",
+				description: "Warna dan tema",
+				group: "announcement",
+			},
+			{
+				key: "announcement_recurring",
+				value: values.announcement_recurring ?? "none",
+				type: "text",
+				label: "Jadwal Berulang",
+				description: "Penayangan rutin",
 				group: "announcement",
 			},
 		]);
@@ -254,34 +299,92 @@ export default function PengaturanAdminPage() {
 					/>
 
 					<Card title="Pengumuman (Popup Modal)" className="shadow-sm">
-						<Form form={announcementForm} layout="vertical">
-							<Form.Item name="announcement_active" label="Tampilkan Pengumuman di Halaman Utama" valuePropName="checked">
-								<Switch checkedChildren="Aktif" unCheckedChildren="Mati" />
-							</Form.Item>
-							<Form.Item name="announcement_text" label="Isi Pengumuman" extra="Bisa berisi info diskon, libur, atau waktu operasional khusus">
-								<Input.TextArea rows={4} placeholder="Contoh: Terkait libur Lebaran, seluruh cabang MBA Laundry tutup dari tanggal..." />
-							</Form.Item>
-							<Row gutter={16}>
-								<Col xs={24} md={12}>
-									<Form.Item name="announcement_dates" label="Jadwal Tayang (Opsional)" extra="Bila diatur, modal otomatis tampil/hilang sesuai waktu">
-										<DatePicker.RangePicker showTime format="YYYY-MM-DD HH:mm" className="w-full" />
+						<Row gutter={24}>
+							<Col xs={24} lg={14}>
+								<div className="mb-6 rounded-lg border border-ruby-200 bg-ruby-50 p-4 dark:border-ruby-900/50 dark:bg-ruby-900/20">
+									<div className="mb-2 text-sm font-semibold text-ruby-700 dark:text-ruby-400">✨ Magic Templates (Jalur Cepat)</div>
+									<div className="flex flex-wrap gap-2">
+										<Button size="small" onClick={() => applyTemplate("promo")}>🎁 Mode Promo</Button>
+										<Button size="small" onClick={() => applyTemplate("libur")}>🔒 Mode Libur</Button>
+										<Button size="small" onClick={() => applyTemplate("maintenance")}>🔧 Mode Maintenance</Button>
+										<Button size="small" onClick={() => applyTemplate("info")}>ℹ️ Mode Info</Button>
+									</div>
+								</div>
+
+								<Form form={announcementForm} layout="vertical">
+									<Row gutter={16}>
+										<Col xs={24} sm={12}>
+											<Form.Item name="announcement_active" label="Status Penayangan" valuePropName="checked">
+												<Switch checkedChildren="Aktif" unCheckedChildren="Mati" />
+											</Form.Item>
+										</Col>
+										<Col xs={24} sm={12}>
+											<Form.Item name="announcement_type" label="Tema Tampilan">
+												<Select options={[
+													{ label: "ℹ️ Standar Info (Biru)", value: "info" },
+													{ label: "🎉 Promo Spesial (Emas)", value: "promo" },
+													{ label: "🔒 Libur / Tutup (Merah)", value: "libur" },
+													{ label: "🔧 Maintenance (Oranye)", value: "maintenance" },
+												]} />
+											</Form.Item>
+										</Col>
+									</Row>
+
+									<Form.Item name="announcement_text" label="Isi Pengumuman" extra="Bisa berisi info diskon, libur, atau waktu operasional khusus">
+										<Input.TextArea rows={4} placeholder="Contoh: Terkait libur Lebaran, seluruh cabang MBA Laundry tutup dari tanggal..." />
 									</Form.Item>
-								</Col>
-								<Col xs={24} md={12}>
-									<Form.Item name="announcement_image_file" label="Banner/Gambar (Opsional)">
+
+									<Row gutter={16}>
+										<Col xs={24} md={12}>
+											<Form.Item name="announcement_recurring" label="Tayang Berulang Mingguan">
+												<Select options={[
+													{ label: "Tidak (Muncul Tiap Hari)", value: "none" },
+													{ label: "Hanya Hari Jumat (Promo Jumat)", value: "friday" },
+													{ label: "Hanya Akhir Pekan (Sabtu & Minggu)", value: "weekend" },
+												]} />
+											</Form.Item>
+										</Col>
+										<Col xs={24} md={12}>
+											<Form.Item name="announcement_dates" label="Jadwal Tayang Khusus" extra="Prioritas utama waktu tampil modal">
+												<DatePicker.RangePicker showTime format="YYYY-MM-DD HH:mm" className="w-full" />
+											</Form.Item>
+										</Col>
+									</Row>
+
+									<Form.Item name="announcement_image_file" label="Banner/Gambar Opsional">
 										<Upload maxCount={1} beforeUpload={() => false} listType="picture">
 											<Button icon={<UploadOutlined />}>Pilih Gambar</Button>
 										</Upload>
 										{pageContentMap.announcement_image && !announcementForm.getFieldValue("announcement_image_file") && (
-											<div className="mt-2 text-xs text-emerald-600">Terpasang: Banner/Gambar sudah tersimpan.</div>
+											<div className="mt-2 text-xs text-emerald-600">Terpasang: Banner/Gambar sudah tersimpan di server.</div>
 										)}
 									</Form.Item>
-								</Col>
-							</Row>
-							<Button type="primary" onClick={() => void saveAnnouncement()} style={{ backgroundColor: "#F97316", borderColor: "#ea580c" }}>
-								Simpan Pengumuman
-							</Button>
-						</Form>
+
+									<Button type="primary" onClick={() => void saveAnnouncement()} style={{ backgroundColor: "#F97316", borderColor: "#ea580c" }}>
+										Simpan Pengumuman
+									</Button>
+								</Form>
+							</Col>
+
+							<Col xs={24} lg={10}>
+								<div className="h-full rounded-xl border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-700 dark:bg-neutral-800 flex flex-col items-center">
+									<h4 className="mb-4 w-full font-semibold text-neutral-600 dark:text-neutral-400">👀 Smart Live Preview</h4>
+									<div className="flex w-full flex-1 items-center justify-center pointer-events-none relative pt-10 pb-4">
+										{/* Scale down to fit the parent container seamlessly */}
+										<div className="w-[125%] max-w-sm origin-top scale-[0.8]">
+											<AnnouncementCard
+												text={liveText || "Ketik sesuatu untuk melihat pratinjau langsung di sini..."}
+												type={(liveType as AnnouncementType) || "info"}
+												image={previewImage}
+											/>
+										</div>
+									</div>
+									<p className="mt-4 text-center text-xs text-neutral-400">
+										Preview animasi icon dan gradient langsung memantulkan tema yang sedang aktif.
+									</p>
+								</div>
+							</Col>
+						</Row>
 					</Card>
 
 					<Card title="Tampilan Landing Page" className="shadow-sm">
