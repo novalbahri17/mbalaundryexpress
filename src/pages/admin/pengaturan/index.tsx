@@ -1,6 +1,8 @@
-import { Alert, Button, Card, Col, Form, Input, Row, Switch, message } from "antd";
+import { Alert, Button, Card, Col, Form, Input, Row, Switch, DatePicker, Upload, message } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useEffect, useMemo } from "react";
+import dayjs from "dayjs";
+import { UploadOutlined } from "@ant-design/icons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { CrudManager } from "@/components/admin/CrudManager";
 import { getPageContentValueMap, saveBulkPageContents } from "@/api/pageContents.api";
@@ -21,7 +23,17 @@ type LandingAppearanceForm = {
 type AnnouncementFormValues = {
 	announcement_active: boolean;
 	announcement_text: string;
+	announcement_image_file?: any;
+	announcement_dates?: [dayjs.Dayjs, dayjs.Dayjs] | null;
 };
+
+const fileToBase64 = (file: File): Promise<string> =>
+	new Promise((resolve, reject) => {
+		const reader = new FileReader();
+		reader.readAsDataURL(file);
+		reader.onload = () => resolve(reader.result as string);
+		reader.onerror = reject;
+	});
 
 const columns: ColumnsType<SiteSetting> = [
 	{ title: "Key", dataIndex: "key" },
@@ -95,6 +107,10 @@ export default function PengaturanAdminPage() {
 		announcementForm.setFieldsValue({
 			announcement_active: pageContentMap.announcement_active === "true" || pageContentMap.announcement_active === "1",
 			announcement_text: pageContentMap.announcement_text ?? "",
+			announcement_dates:
+				pageContentMap.announcement_start && pageContentMap.announcement_end
+					? [dayjs(pageContentMap.announcement_start), dayjs(pageContentMap.announcement_end)]
+					: undefined,
 		});
 	}, [
 		appearanceForm,
@@ -103,6 +119,8 @@ export default function PengaturanAdminPage() {
 		pageContentMap.landing_bg_color_light,
 		pageContentMap.announcement_active,
 		pageContentMap.announcement_text,
+		pageContentMap.announcement_start,
+		pageContentMap.announcement_end,
 		settingsMap.landing_bg_color_dark,
 		settingsMap.landing_bg_color_light,
 	]);
@@ -112,6 +130,12 @@ export default function PengaturanAdminPage() {
 
 	const saveAnnouncement = async () => {
 		const values = await announcementForm.validateFields();
+		
+		let imageUrl = pageContentMap.announcement_image ?? "";
+		if (values.announcement_image_file?.file) {
+			imageUrl = await fileToBase64(values.announcement_image_file.file as File);
+		}
+
 		await saveBulkPageContents([
 			{
 				key: "announcement_active",
@@ -127,6 +151,30 @@ export default function PengaturanAdminPage() {
 				type: "text",
 				label: "Teks Pengumuman",
 				description: "Isi teks pengumuman",
+				group: "announcement",
+			},
+			{
+				key: "announcement_start",
+				value: values.announcement_dates?.[0]?.toISOString() ?? "",
+				type: "text",
+				label: "Mulai Tayang",
+				description: "Waktu mulai",
+				group: "announcement",
+			},
+			{
+				key: "announcement_end",
+				value: values.announcement_dates?.[1]?.toISOString() ?? "",
+				type: "text",
+				label: "Selesai Tayang",
+				description: "Waktu selesai",
+				group: "announcement",
+			},
+			{
+				key: "announcement_image",
+				value: imageUrl,
+				type: "text",
+				label: "Banner Pengumuman",
+				description: "URL/Base64 banner",
 				group: "announcement",
 			},
 		]);
@@ -213,7 +261,26 @@ export default function PengaturanAdminPage() {
 							<Form.Item name="announcement_text" label="Isi Pengumuman" extra="Bisa berisi info diskon, libur, atau waktu operasional khusus">
 								<Input.TextArea rows={4} placeholder="Contoh: Terkait libur Lebaran, seluruh cabang MBA Laundry tutup dari tanggal..." />
 							</Form.Item>
-							<Button type="primary" onClick={() => void saveAnnouncement()}>Simpan Pengumuman</Button>
+							<Row gutter={16}>
+								<Col xs={24} md={12}>
+									<Form.Item name="announcement_dates" label="Jadwal Tayang (Opsional)" extra="Bila diatur, modal otomatis tampil/hilang sesuai waktu">
+										<DatePicker.RangePicker showTime format="YYYY-MM-DD HH:mm" className="w-full" />
+									</Form.Item>
+								</Col>
+								<Col xs={24} md={12}>
+									<Form.Item name="announcement_image_file" label="Banner/Gambar (Opsional)">
+										<Upload maxCount={1} beforeUpload={() => false} listType="picture">
+											<Button icon={<UploadOutlined />}>Pilih Gambar</Button>
+										</Upload>
+										{pageContentMap.announcement_image && !announcementForm.getFieldValue("announcement_image_file") && (
+											<div className="mt-2 text-xs text-emerald-600">Terpasang: Banner/Gambar sudah tersimpan.</div>
+										)}
+									</Form.Item>
+								</Col>
+							</Row>
+							<Button type="primary" onClick={() => void saveAnnouncement()} style={{ backgroundColor: "#F97316", borderColor: "#ea580c" }}>
+								Simpan Pengumuman
+							</Button>
 						</Form>
 					</Card>
 
