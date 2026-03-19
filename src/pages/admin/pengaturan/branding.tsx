@@ -1,357 +1,322 @@
 import { useState, useEffect } from "react";
-import { Button, Input, Upload, Switch, message, Tabs } from "antd";
-import { UploadOutlined, SaveOutlined, ReloadOutlined } from "@ant-design/icons";
-import { useBranding, useUpdateBranding, type BrandingSettings } from "@/hooks/useBranding";
+import { Card, Form, Input, Button, message, Slider, Switch, ColorPicker, Tabs, Upload, Spin } from "antd";
+import { UploadOutlined, SaveOutlined, EyeOutlined, ReloadOutlined } from "@ant-design/icons";
+import { useBranding, useUpdateBranding } from "@/hooks/useBranding";
+import { DynamicLogo } from "@/components/public/layout/DynamicLogo";
+import { updateFavicon } from "@/components/public/layout/DynamicFavicon";
+import type { UploadFile } from "antd/es/upload/interface";
 
-// Convert file to base64
-function fileToBase64(file: File): Promise<string> {
-	return new Promise((resolve, reject) => {
-		const reader = new FileReader();
-		reader.readAsDataURL(file);
-		reader.onload = () => resolve(reader.result as string);
-		reader.onerror = reject;
-	});
-}
+const { TextArea } = Input;
+const { TabPane } = Tabs;
 
-export default function BrandingSettingsPage() {
-	const { data: branding, isLoading } = useBranding();
+export default function BrandingPage() {
+	const { data: branding, isLoading, refetch } = useBranding();
 	const updateBranding = useUpdateBranding();
-
-	const [form, setForm] = useState<BrandingSettings>({});
+	const [form] = Form.useForm();
+	const [activeTab, setActiveTab] = useState("logo");
+	const [previewVisible, setPreviewVisible] = useState(false);
 	const [logoFile, setLogoFile] = useState<File | null>(null);
 	const [logoPreview, setLogoPreview] = useState<string>("");
+	const [isSaving, setIsSaving] = useState(false);
 
+	// Set form values when data loads
 	useEffect(() => {
 		if (branding) {
-			setForm(branding);
-			setLogoPreview(branding.logo_url || "");
+			form.setFieldsValue({
+				logo_width: branding.logo_width,
+				logo_height: branding.logo_height,
+				text_mba_size: branding.text_mba_size,
+				text_mba_weight: branding.text_mba_weight,
+				text_mba_color: branding.text_mba_color,
+				text_brand_size: branding.text_brand_size,
+				text_brand_weight: branding.text_brand_weight,
+				text_brand_color: branding.text_brand_color,
+				text_brand_gradient: branding.text_brand_gradient,
+				text_brand_gradient_from: branding.text_brand_gradient_from,
+				text_brand_gradient_to: branding.text_brand_gradient_to,
+				site_title: branding.site_title,
+				site_description: branding.site_description,
+			});
+			if (branding.logo_url) {
+				setLogoPreview(branding.logo_url);
+			}
 		}
-	}, [branding]);
+	}, [branding, form]);
 
-	const handleLogoChange = async (file: File) => {
-		setLogoFile(file);
-		const base64 = await fileToBase64(file);
-		setLogoPreview(base64);
-		return false;
+	const handleLogoChange = (info: { fileList: UploadFile[] }) => {
+		const file = info.fileList[0]?.originFileObj;
+		if (file) {
+			setLogoFile(file);
+			const reader = new FileReader();
+			reader.onload = (e) => {
+				setLogoPreview(e.target?.result as string);
+			};
+			reader.readAsDataURL(file);
+		}
 	};
 
 	const handleSave = async () => {
 		try {
-			const payload: BrandingSettings & { logo_file?: File; favicon_file?: File } = {
-				...form,
-			};
+			setIsSaving(true);
+			const values = await form.validateFields();
 
-			// Use base64 preview for logo AND favicon
-			if (logoPreview && logoPreview.startsWith("data:")) {
-				payload.logo_url = logoPreview;
-				payload.favicon_url = logoPreview;
-			}
+			console.log("[BrandingPage] Saving with logo file:", logoFile?.name);
 
-			if (logoFile) {
-				payload.logo_file = logoFile;
-				payload.favicon_file = logoFile;
-			}
+			await updateBranding.mutateAsync({
+				...values,
+				logo_file: logoFile || undefined,
+			});
 
-			await updateBranding.mutateAsync(payload);
-			message.success("Pengaturan branding berhasil disimpan");
+			// Clear file state
 			setLogoFile(null);
+
+			// Refetch to get new URLs
+			await refetch();
+
+			// Update favicon immediately
+			setTimeout(() => {
+				updateFavicon();
+			}, 500);
+
+			message.success("Branding berhasil disimpan!");
 		} catch (error) {
-			message.error("Gagal menyimpan pengaturan");
-			console.error(error);
+			console.error("[BrandingPage] Save error:", error);
+			message.error("Gagal menyimpan branding: " + (error instanceof Error ? error.message : "Unknown error"));
+		} finally {
+			setIsSaving(false);
 		}
 	};
 
-	const handleReset = () => {
-		if (branding) {
-			setForm(branding);
-			setLogoFile(null);
-			setLogoPreview(branding.logo_url || "");
-		}
+	const handleRefreshFavicon = () => {
+		refetch();
+		updateFavicon();
+		message.success("Favicon diperbarui!");
 	};
 
 	if (isLoading) {
 		return (
-			<div className="flex h-64 items-center justify-center">
-				<div className="text-neutral-400">Memuat pengaturan...</div>
+			<div className="flex items-center justify-center h-64">
+				<Spin size="large" />
 			</div>
 		);
 	}
 
 	return (
-		<div className="mx-auto max-w-4xl space-y-6">
+		<div className="space-y-6">
 			<div className="flex items-center justify-between">
-				<h1 className="text-2xl font-bold">Pengaturan Branding</h1>
+				<div>
+					<h1 className="text-2xl font-bold text-gray-900">Pengaturan Branding</h1>
+					<p className="text-gray-500">Kelola logo, favicon, dan identitas brand</p>
+				</div>
 				<div className="flex gap-2">
-					<Button icon={<ReloadOutlined />} onClick={handleReset}>
-						Reset
+					<Button icon={<ReloadOutlined />} onClick={handleRefreshFavicon} title="Refresh Favicon">
+						Refresh Favicon
 					</Button>
-					<Button type="primary" icon={<SaveOutlined />} onClick={handleSave} loading={updateBranding.isPending}>
-						Simpan
+					<Button
+						type="primary"
+						icon={<SaveOutlined />}
+						onClick={handleSave}
+						loading={isSaving || updateBranding.isPending}
+					>
+						Simpan Perubahan
 					</Button>
 				</div>
 			</div>
 
-			{/* Preview */}
-			<div className="rounded-xl border border-neutral-200 bg-white p-6 dark:border-neutral-700 dark:bg-neutral-800">
-				<h3 className="mb-4 text-lg font-semibold">Preview Logo</h3>
-				<div className="flex items-center gap-3 rounded-lg bg-neutral-50 p-4 dark:bg-neutral-900">
-					<img
-						src={logoPreview || "/logo.png"}
-						alt="Logo"
-						width={form.logo_width || 40}
-						height={form.logo_height || 40}
-						className="object-contain"
-					/>
-					<div className="flex flex-col leading-none">
-						<span
-							className="tracking-wider uppercase"
-							style={{
-								fontSize: form.text_mba_size,
-								fontWeight: form.text_mba_weight,
-								color: form.text_mba_color,
-							}}
-						>
-							MBA
-						</span>
-						<span
-							className="tracking-wide uppercase"
-							style={{
-								fontSize: form.text_brand_size,
-								fontWeight: form.text_brand_weight,
-								...(form.text_brand_gradient
-									? {
-											backgroundImage: `linear-gradient(135deg, ${form.text_brand_gradient_from}, ${form.text_brand_gradient_to})`,
-											WebkitBackgroundClip: "text",
-											backgroundClip: "text",
-											color: "transparent",
-										}
-									: { color: form.text_brand_color }),
-							}}
-						>
-							LAUNDRY EXPRESS
-						</span>
-					</div>
-				</div>
-			</div>
+			<Form form={form} layout="vertical">
+				<Card>
+					<Tabs activeKey={activeTab} onChange={setActiveTab}>
+						<TabPane tab="Logo & Favicon" key="logo">
+							<div className="max-w-xl">
+								<h3 className="text-lg font-semibold mb-4">Logo Website & Favicon</h3>
+								<p className="text-sm text-gray-500 mb-4">
+									Upload logo yang akan digunakan sebagai logo website dan favicon (ikon tab browser). Format yang
+									disarankan: PNG atau SVG dengan background transparan.
+								</p>
 
-			<Tabs
-				items={[
-					{
-						key: "logo",
-						label: "Logo & Favicon",
-						children: (
-							<div className="space-y-6">
-								{/* Logo Upload */}
-								<div className="rounded-xl border border-neutral-200 bg-white p-6 dark:border-neutral-700 dark:bg-neutral-800">
-									<h3 className="mb-4 text-lg font-semibold">Upload Logo & Favicon</h3>
-									<p className="text-sm text-neutral-500 mb-4">
-										Logo utama juga akan digunakan sebagai favicon website secara otomatis. Format yang disarankan: PNG
-										Transparan atau SVG.
+								<Form.Item label="Upload Logo">
+									<Upload
+										accept="image/png,image/jpeg,image/svg+xml,image/webp"
+										beforeUpload={() => false}
+										onChange={handleLogoChange}
+										maxCount={1}
+										showUploadList={true}
+									>
+										<Button icon={<UploadOutlined />}>Pilih File Logo</Button>
+									</Upload>
+									<p className="text-xs text-gray-500 mt-1">
+										Format: PNG, JPG, SVG, WebP. Ukuran maks: 5MB. Logo akan otomatis digunakan sebagai favicon juga.
 									</p>
-									<div className="flex flex-col sm:flex-row gap-6">
-										<div className="flex-1">
-											<Upload beforeUpload={handleLogoChange} accept="image/*" maxCount={1} showUploadList={false}>
-												<Button icon={<UploadOutlined />} size="large">
-													Pilih File Gambar
-												</Button>
-											</Upload>
-											{logoFile && <p className="mt-2 text-sm text-green-600">✓ {logoFile.name}</p>}
-										</div>
-										{logoPreview && (
-											<div className="flex items-center gap-4">
-												<div className="text-center">
-													<img
-														src={logoPreview}
-														alt="Logo preview"
-														className="h-20 w-20 object-contain rounded-lg border"
-													/>
-													<p className="mt-1 text-xs text-neutral-500">Preview</p>
-												</div>
-											</div>
-										)}
-									</div>
-								</div>
+								</Form.Item>
 
-								{/* Logo Size */}
-								<div className="rounded-xl border border-neutral-200 bg-white p-6 dark:border-neutral-700 dark:bg-neutral-800">
-									<h3 className="mb-4 text-lg font-semibold">Ukuran Logo</h3>
-									<div className="grid gap-4 sm:grid-cols-2">
-										<div>
-											<label className="mb-2 block text-sm font-medium">Lebar (px)</label>
-											<Input
-												type="number"
-												value={form.logo_width}
-												onChange={(e) => setForm({ ...form, logo_width: Number(e.target.value) })}
-											/>
+								{logoPreview && (
+									<div className="mt-4 p-4 bg-gray-50 rounded-lg">
+										<p className="text-sm text-gray-600 mb-2">Preview Logo:</p>
+										<div className="flex items-center gap-4">
+											<img src={logoPreview} alt="Logo Preview" className="h-16 object-contain" />
+											<img src={logoPreview} alt="Favicon Preview" className="w-8 h-8 object-contain" />
 										</div>
-										<div>
-											<label className="mb-2 block text-sm font-medium">Tinggi (px)</label>
-											<Input
-												type="number"
-												value={form.logo_height}
-												onChange={(e) => setForm({ ...form, logo_height: Number(e.target.value) })}
-											/>
-										</div>
+										<p className="text-xs text-gray-400 mt-2 break-all">{logoPreview}</p>
 									</div>
-								</div>
+								)}
+
+								<Form.Item label="Lebar Logo (px)" name="logo_width">
+									<Slider min={24} max={120} marks={{ 24: "24", 40: "40", 60: "60", 80: "80", 120: "120" }} />
+								</Form.Item>
+
+								<Form.Item label="Tinggi Logo (px)" name="logo_height">
+									<Slider min={24} max={120} marks={{ 24: "24", 40: "40", 60: "60", 80: "80", 120: "120" }} />
+								</Form.Item>
 							</div>
-						),
-					},
-					{
-						key: "text",
-						label: "Teks Brand",
-						children: (
-							<div className="space-y-6">
-								{/* Text "MBA" Settings */}
-								<div className="rounded-xl border border-neutral-200 bg-white p-6 dark:border-neutral-700 dark:bg-neutral-800">
-									<h3 className="mb-4 text-lg font-semibold">Teks "MBA"</h3>
-									<div className="grid gap-4 sm:grid-cols-3">
-										<div>
-											<label className="mb-2 block text-sm font-medium">Ukuran Font</label>
-											<Input
-												value={form.text_mba_size}
-												onChange={(e) => setForm({ ...form, text_mba_size: e.target.value })}
-												placeholder="12px"
+						</TabPane>
+
+						<TabPane tab="Teks Brand" key="text">
+							<div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+								<div>
+									<h3 className="text-lg font-semibold mb-4">Teks "MBA"</h3>
+									<Form.Item label="Ukuran Font" name="text_mba_size">
+										<Slider min={10} max={20} marks={{ 10: "10px", 12: "12px", 14: "14px", 16: "16px", 20: "20px" }} />
+									</Form.Item>
+
+									<Form.Item label="Ketebalan Font" name="text_mba_weight">
+										<Slider
+											min={400}
+											max={800}
+											step={100}
+											marks={{ 400: "400", 500: "500", 600: "600", 700: "700", 800: "800" }}
+										/>
+									</Form.Item>
+
+									<Form.Item label="Warna Teks" name="text_mba_color">
+										<div className="flex items-center gap-2">
+											<ColorPicker
+												value={form.getFieldValue("text_mba_color")}
+												onChange={(color) => form.setFieldValue("text_mba_color", color.toHexString())}
 											/>
+											<span className="text-sm text-gray-500">{form.getFieldValue("text_mba_color")}</span>
 										</div>
-										<div>
-											<label className="mb-2 block text-sm font-medium">Ketebalan</label>
-											<Input
-												value={form.text_mba_weight}
-												onChange={(e) => setForm({ ...form, text_mba_weight: e.target.value })}
-												placeholder="600"
-											/>
-										</div>
-										<div>
-											<label className="mb-2 block text-sm font-medium">Warna</label>
-											<div className="flex items-center gap-2">
-												<Input
-													value={form.text_mba_color}
-													onChange={(e) => setForm({ ...form, text_mba_color: e.target.value })}
-												/>
-												<input
-													type="color"
-													value={form.text_mba_color}
-													onChange={(e) => setForm({ ...form, text_mba_color: e.target.value })}
-													className="h-8 w-8 rounded cursor-pointer"
-												/>
-											</div>
-										</div>
-									</div>
+									</Form.Item>
 								</div>
 
-								{/* Text "LAUNDRY EXPRESS" Settings */}
-								<div className="rounded-xl border border-neutral-200 bg-white p-6 dark:border-neutral-700 dark:bg-neutral-800">
-									<h3 className="mb-4 text-lg font-semibold">Teks "LAUNDRY EXPRESS"</h3>
-									<div className="mb-4">
-										<Switch
-											checked={form.text_brand_gradient}
-											onChange={(checked) => setForm({ ...form, text_brand_gradient: checked })}
+								<div>
+									<h3 className="text-lg font-semibold mb-4">Teks "Laundry Express"</h3>
+									<Form.Item label="Ukuran Font" name="text_brand_size">
+										<Slider min={12} max={24} marks={{ 12: "12px", 14: "14px", 16: "16px", 18: "18px", 24: "24px" }} />
+									</Form.Item>
+
+									<Form.Item label="Ketebalan Font" name="text_brand_weight">
+										<Slider
+											min={400}
+											max={900}
+											step={100}
+											marks={{ 400: "400", 600: "600", 700: "700", 800: "800", 900: "900" }}
 										/>
-										<span className="ml-2">Gunakan Gradient</span>
-									</div>
-									<div className="grid gap-4 sm:grid-cols-2">
-										<div>
-											<label className="mb-2 block text-sm font-medium">Ukuran Font</label>
-											<Input
-												value={form.text_brand_size}
-												onChange={(e) => setForm({ ...form, text_brand_size: e.target.value })}
-												placeholder="16px"
-											/>
-										</div>
-										<div>
-											<label className="mb-2 block text-sm font-medium">Ketebalan</label>
-											<Input
-												value={form.text_brand_weight}
-												onChange={(e) => setForm({ ...form, text_brand_weight: e.target.value })}
-												placeholder="800"
-											/>
-										</div>
-									</div>
-									{form.text_brand_gradient ? (
-										<div className="mt-4 grid gap-4 sm:grid-cols-2">
-											<div>
-												<label className="mb-2 block text-sm font-medium">Gradient Dari</label>
+									</Form.Item>
+
+									<Form.Item label="Gunakan Gradient" name="text_brand_gradient" valuePropName="checked">
+										<Switch />
+									</Form.Item>
+
+									{form.getFieldValue("text_brand_gradient") ? (
+										<>
+											<Form.Item label="Warna Gradient Dari" name="text_brand_gradient_from">
 												<div className="flex items-center gap-2">
-													<Input
-														value={form.text_brand_gradient_from}
-														onChange={(e) => setForm({ ...form, text_brand_gradient_from: e.target.value })}
+													<ColorPicker
+														value={form.getFieldValue("text_brand_gradient_from")}
+														onChange={(color) => form.setFieldValue("text_brand_gradient_from", color.toHexString())}
 													/>
-													<input
-														type="color"
-														value={form.text_brand_gradient_from}
-														onChange={(e) => setForm({ ...form, text_brand_gradient_from: e.target.value })}
-														className="h-8 w-8 rounded cursor-pointer"
-													/>
+													<span className="text-sm text-gray-500">
+														{form.getFieldValue("text_brand_gradient_from")}
+													</span>
 												</div>
-											</div>
-											<div>
-												<label className="mb-2 block text-sm font-medium">Gradient Ke</label>
+											</Form.Item>
+
+											<Form.Item label="Warna Gradient Ke" name="text_brand_gradient_to">
 												<div className="flex items-center gap-2">
-													<Input
-														value={form.text_brand_gradient_to}
-														onChange={(e) => setForm({ ...form, text_brand_gradient_to: e.target.value })}
+													<ColorPicker
+														value={form.getFieldValue("text_brand_gradient_to")}
+														onChange={(color) => form.setFieldValue("text_brand_gradient_to", color.toHexString())}
 													/>
-													<input
-														type="color"
-														value={form.text_brand_gradient_to}
-														onChange={(e) => setForm({ ...form, text_brand_gradient_to: e.target.value })}
-														className="h-8 w-8 rounded cursor-pointer"
-													/>
+													<span className="text-sm text-gray-500">{form.getFieldValue("text_brand_gradient_to")}</span>
 												</div>
-											</div>
-										</div>
+											</Form.Item>
+										</>
 									) : (
-										<div className="mt-4">
-											<label className="mb-2 block text-sm font-medium">Warna</label>
+										<Form.Item label="Warna Teks" name="text_brand_color">
 											<div className="flex items-center gap-2">
-												<Input
-													value={form.text_brand_color}
-													onChange={(e) => setForm({ ...form, text_brand_color: e.target.value })}
+												<ColorPicker
+													value={form.getFieldValue("text_brand_color")}
+													onChange={(color) => form.setFieldValue("text_brand_color", color.toHexString())}
 												/>
-												<input
-													type="color"
-													value={form.text_brand_color}
-													onChange={(e) => setForm({ ...form, text_brand_color: e.target.value })}
-													className="h-8 w-8 rounded cursor-pointer"
-												/>
+												<span className="text-sm text-gray-500">{form.getFieldValue("text_brand_color")}</span>
 											</div>
-										</div>
+										</Form.Item>
 									)}
 								</div>
 							</div>
-						),
-					},
-					{
-						key: "meta",
-						label: "Meta & SEO",
-						children: (
-							<div className="rounded-xl border border-neutral-200 bg-white p-6 dark:border-neutral-700 dark:bg-neutral-800">
-								<h3 className="mb-4 text-lg font-semibold">Meta & SEO</h3>
-								<div className="space-y-4">
-									<div>
-										<label className="mb-2 block text-sm font-medium">Judul Situs</label>
-										<Input
-											value={form.site_title}
-											onChange={(e) => setForm({ ...form, site_title: e.target.value })}
-											placeholder="MBA Laundry Express"
-										/>
-									</div>
-									<div>
-										<label className="mb-2 block text-sm font-medium">Deskripsi Situs</label>
-										<Input.TextArea
-											value={form.site_description}
-											onChange={(e) => setForm({ ...form, site_description: e.target.value })}
-											placeholder="Self Service Laundry Modern di Surabaya"
-											rows={3}
-										/>
-									</div>
-								</div>
+						</TabPane>
+
+						<TabPane tab="Meta & SEO" key="seo">
+							<div className="max-w-2xl">
+								<Form.Item
+									label="Judul Situs"
+									name="site_title"
+									rules={[{ required: true, message: "Judul situs wajib diisi" }]}
+								>
+									<Input placeholder="MBA Laundry Express" maxLength={60} showCount />
+								</Form.Item>
+
+								<Form.Item
+									label="Deskripsi Situs"
+									name="site_description"
+									rules={[{ required: true, message: "Deskripsi situs wajib diisi" }]}
+								>
+									<TextArea
+										placeholder="Self Service Laundry Modern di Surabaya..."
+										rows={3}
+										maxLength={160}
+										showCount
+									/>
+								</Form.Item>
 							</div>
-						),
-					},
-				]}
-			/>
+						</TabPane>
+					</Tabs>
+				</Card>
+			</Form>
+
+			{/* Live Preview */}
+			<Card
+				title={
+					<div className="flex items-center justify-between">
+						<span>Preview Brand</span>
+						<Button type="link" icon={<EyeOutlined />} onClick={() => setPreviewVisible(!previewVisible)}>
+							{previewVisible ? "Sembunyikan" : "Tampilkan"} Preview
+						</Button>
+					</div>
+				}
+			>
+				<div className="flex items-center gap-4 p-4 bg-white rounded-lg border">
+					<DynamicLogo />
+				</div>
+
+				{previewVisible && (
+					<div className="mt-6 space-y-4">
+						<div className="p-4 bg-gray-50 rounded-lg">
+							<h4 className="font-semibold mb-2">Header Preview:</h4>
+							<div className="flex items-center gap-4 p-4 bg-white rounded border">
+								<DynamicLogo />
+							</div>
+						</div>
+
+						<div className="p-4 bg-gray-50 rounded-lg">
+							<h4 className="font-semibold mb-2">Footer Preview:</h4>
+							<div className="flex items-center gap-4 p-4 bg-gray-900 rounded">
+								<DynamicLogo />
+							</div>
+						</div>
+					</div>
+				)}
+			</Card>
 		</div>
 	);
 }

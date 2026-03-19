@@ -2,34 +2,24 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { pb } from "@/api/pocketbase";
 
 export interface BrandingSettings {
-	// Logo
 	logo_url?: string;
 	logo_width?: number;
 	logo_height?: number;
-
-	// Text "MBA"
 	text_mba_size?: string;
 	text_mba_weight?: string;
 	text_mba_color?: string;
-
-	// Text "LAUNDRY EXPRESS"
 	text_brand_size?: string;
 	text_brand_weight?: string;
 	text_brand_color?: string;
 	text_brand_gradient?: boolean;
 	text_brand_gradient_from?: string;
 	text_brand_gradient_to?: string;
-
-	// Favicon
 	favicon_url?: string;
-
-	// Meta
 	site_title?: string;
 	site_description?: string;
 }
 
-const BRANDING_KEYS = [
-	"logo_url",
+const BRANDING_TEXT_KEYS = [
 	"logo_width",
 	"logo_height",
 	"text_mba_size",
@@ -41,7 +31,6 @@ const BRANDING_KEYS = [
 	"text_brand_gradient",
 	"text_brand_gradient_from",
 	"text_brand_gradient_to",
-	"favicon_url",
 	"site_title",
 	"site_description",
 ];
@@ -64,23 +53,42 @@ const DEFAULT_BRANDING: BrandingSettings = {
 	site_description: "Self Service Laundry Modern di Surabaya",
 };
 
-// Convert file directly to base64 to store in site_settings
-// This avoids polluting public tables like branch_gallery with branding files
+// Upload file to branding_files collection
 async function uploadBrandingFile(file: File): Promise<string> {
-	return new Promise((resolve, reject) => {
-		const reader = new FileReader();
-		reader.readAsDataURL(file);
-		reader.onload = () => resolve(reader.result as string);
-		reader.onerror = reject;
+	console.log("[useBranding] Uploading file:", file.name, file.size);
+
+	// Hapus file branding lama
+	try {
+		const existing = await pb.collection("branding_files").getFullList();
+		console.log("[useBranding] Found existing files:", existing.length);
+		for (const record of existing) {
+			await pb.collection("branding_files").delete(record.id);
+			console.log("[useBranding] Deleted old file:", record.id);
+		}
+	} catch (e) {
+		console.log("[useBranding] No existing files or error:", e);
+	}
+
+	// Upload file baru
+	const record = await pb.collection("branding_files").create({
+		type: "logo",
+		file: file,
 	});
+
+	const url = pb.files.getURL(record, record.file);
+	console.log("[useBranding] Uploaded new file, URL:", url);
+	return url;
 }
 
 export function useBranding() {
 	return useQuery({
 		queryKey: ["branding"],
 		queryFn: async (): Promise<BrandingSettings> => {
+			console.log("[useBranding] Fetching branding...");
+
+			// Get text settings from site_settings
 			const records = await pb.collection("site_settings").getFullList({
-				filter: BRANDING_KEYS.map((k) => `key="${k}"`).join(" || "),
+				filter: BRANDING_TEXT_KEYS.map((k) => `key="${k}"`).join(" || "),
 			});
 
 			const settings: Record<string, string> = {};
@@ -88,8 +96,29 @@ export function useBranding() {
 				settings[record.key] = record.value;
 			}
 
-			return {
-				logo_url: settings.logo_url || DEFAULT_BRANDING.logo_url,
+			// Get logo/favicon dari branding_files collection
+			let logoUrl = DEFAULT_BRANDING.logo_url;
+			let faviconUrl = DEFAULT_BRANDING.favicon_url;
+
+			try {
+				const brandingFiles = await pb.collection("branding_files").getFullList({
+					sort: "-created",
+				});
+				console.log("[useBranding] Found branding files:", brandingFiles.length);
+
+				const logoFile = brandingFiles.find((f) => f.type === "logo");
+
+				if (logoFile) {
+					logoUrl = pb.files.getURL(logoFile, logoFile.file);
+					faviconUrl = logoUrl; // Use same logo as favicon
+					console.log("[useBranding] Using custom logo:", logoUrl);
+				}
+			} catch (e) {
+				console.log("[useBranding] Could not fetch branding files:", e);
+			}
+
+			const result = {
+				logo_url: logoUrl,
 				logo_width: Number(settings.logo_width) || DEFAULT_BRANDING.logo_width,
 				logo_height: Number(settings.logo_height) || DEFAULT_BRANDING.logo_height,
 				text_mba_size: settings.text_mba_size || DEFAULT_BRANDING.text_mba_size,
@@ -101,12 +130,16 @@ export function useBranding() {
 				text_brand_gradient: settings.text_brand_gradient === "true",
 				text_brand_gradient_from: settings.text_brand_gradient_from || DEFAULT_BRANDING.text_brand_gradient_from,
 				text_brand_gradient_to: settings.text_brand_gradient_to || DEFAULT_BRANDING.text_brand_gradient_to,
-				favicon_url: settings.favicon_url || DEFAULT_BRANDING.favicon_url,
+				favicon_url: faviconUrl,
 				site_title: settings.site_title || DEFAULT_BRANDING.site_title,
 				site_description: settings.site_description || DEFAULT_BRANDING.site_description,
 			};
+
+			console.log("[useBranding] Result:", result);
+			return result;
 		},
-		staleTime: 5 * 60 * 1000,
+		staleTime: 0,
+		refetchOnWindowFocus: true,
 	});
 }
 
@@ -114,49 +147,40 @@ export function useUpdateBranding() {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: async (settings: BrandingSettings & { logo_file?: File; favicon_file?: File }) => {
-			// Handle file uploads first
-			let logoUrl = settings.logo_url;
-			let faviconUrl = settings.favicon_url;
+		mutationFn: async (settings: BrandingSettings & { logo_file?: File }) => {
+			console.log("[useUpdateBranding] Starting update...", settings.logo_file?.name);
 
+			// Upload logo file jika ada
 			if (settings.logo_file) {
-				logoUrl = await uploadBrandingFile(settings.logo_file, "logo");
+				const logoUrl = await uploadBrandingFile(settings.logo_file);
+				settings.logo_url = logoUrl;
+				settings.favicon_url = logoUrl; // Same logo for favicon
+				console.log("[useUpdateBranding] Logo uploaded:", logoUrl);
 			}
 
-			if (settings.favicon_file) {
-				faviconUrl = await uploadBrandingFile(settings.favicon_file, "favicon");
-			}
-
+			// Update text settings ke site_settings
 			const updates: Promise<unknown>[] = [];
 
-			for (const [key, value] of Object.entries(settings)) {
-				// Skip file objects and undefined values
-				if (key === "logo_file" || key === "favicon_file" || value === undefined) continue;
+			for (const key of BRANDING_TEXT_KEYS) {
+				const value = settings[key as keyof BrandingSettings];
+				if (value === undefined) continue;
 
-				// Use uploaded URLs for logo and favicon
-				let finalValue = value;
-				if (key === "logo_url") finalValue = logoUrl;
-				if (key === "favicon_url") finalValue = faviconUrl;
-
-				// Cek apakah setting sudah ada
 				const existing = await pb
 					.collection("site_settings")
 					.getFirstListItem(`key="${key}"`)
 					.catch(() => null);
 
 				if (existing) {
-					// Update
 					updates.push(
 						pb.collection("site_settings").update(existing.id, {
-							value: String(finalValue),
+							value: String(value),
 						}),
 					);
 				} else {
-					// Create
 					updates.push(
 						pb.collection("site_settings").create({
 							key,
-							value: String(finalValue),
+							value: String(value),
 							description: `Branding setting: ${key}`,
 						}),
 					);
@@ -164,10 +188,16 @@ export function useUpdateBranding() {
 			}
 
 			await Promise.all(updates);
+			console.log("[useUpdateBranding] Settings updated");
 		},
 		onSuccess: () => {
+			console.log("[useUpdateBranding] Success, invalidating queries...");
 			queryClient.invalidateQueries({ queryKey: ["branding"] });
 			queryClient.invalidateQueries({ queryKey: ["site-settings"] });
+
+			setTimeout(() => {
+				queryClient.refetchQueries({ queryKey: ["branding"] });
+			}, 500);
 		},
 	});
 }

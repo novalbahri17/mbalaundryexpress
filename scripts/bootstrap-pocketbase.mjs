@@ -363,6 +363,18 @@ const collections = [
 		updateRule: "",
 		deleteRule: "",
 	},
+	{
+		name: "branding_files",
+		fields: [
+			textField("type", true),
+			fileField("file", true),
+		],
+		listRule: "",
+		viewRule: "",
+		createRule: "@request.auth.id != ''",
+		updateRule: "@request.auth.id != ''",
+		deleteRule: "@request.auth.id != ''",
+	},
 ];
 
 let authToken = "";

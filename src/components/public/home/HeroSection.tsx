@@ -21,9 +21,7 @@ const features = [
 
 export function HeroSection() {
 	return (
-		<section
-			className="relative min-h-[100svh] overflow-hidden bg-gradient-to-b from-neutral-50 via-white to-neutral-50 pt-24 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 sm:pt-28 lg:pt-32"
-		>
+		<section className="relative min-h-[100svh] overflow-hidden bg-gradient-to-b from-neutral-50 via-white to-neutral-50 pt-24 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 sm:pt-28 lg:pt-32">
 			{/* Animated Background */}
 			<div className="pointer-events-none absolute inset-0 overflow-hidden">
 				<motion.div
@@ -64,9 +62,7 @@ export function HeroSection() {
 				/>
 			</div>
 
-			<div
-				className="relative z-10 mx-auto flex min-h-[calc(100svh-6rem)] max-w-[1400px] flex-col justify-center px-4 py-8 sm:px-6 sm:py-12 lg:px-12 lg:py-16"
-			>
+			<div className="relative z-10 mx-auto flex min-h-[calc(100svh-6rem)] max-w-[1400px] flex-col justify-center px-4 py-8 sm:px-6 sm:py-12 lg:px-12 lg:py-16">
 				<div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-2 lg:gap-12">
 					{/* Left Content */}
 					<div className="flex flex-col items-center text-center lg:items-start lg:text-left">
@@ -140,7 +136,7 @@ export function HeroSection() {
 							<div className="flex gap-2 overflow-x-auto pb-2 sm:flex-wrap sm:justify-center sm:overflow-visible sm:pb-0 lg:justify-start">
 								{features.map((feature, index) => (
 									<motion.div
-										key={index}
+										key={feature.text}
 										initial={{ opacity: 0, scale: 0.9 }}
 										animate={{ opacity: 1, scale: 1 }}
 										transition={{ delay: 0.5 + index * 0.1 }}
@@ -164,7 +160,7 @@ export function HeroSection() {
 						>
 							{stats.map((stat, index) => (
 								<motion.div
-									key={index}
+									key={stat.label}
 									initial={{ opacity: 0, y: 20 }}
 									animate={{ opacity: 1, y: 0 }}
 									transition={{ delay: 0.7 + index * 0.1 }}

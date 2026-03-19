@@ -10,7 +10,9 @@ function GridImage({ src, alt, className = "" }: { src?: string; alt: string; cl
 
 	if (error || !src) {
 		return (
-			<div className={`flex h-full w-full items-center justify-center bg-neutral-200 dark:bg-neutral-700 rounded-xl ${className}`}>
+			<div
+				className={`flex h-full w-full items-center justify-center bg-neutral-200 dark:bg-neutral-700 rounded-xl ${className}`}
+			>
 				<span className="text-neutral-400 text-xs">{alt}</span>
 			</div>
 		);
@@ -54,24 +56,22 @@ export function HeroImageGrid() {
 
 	// Pause animation when not visible
 	useEffect(() => {
+		if (isLoading || !containerRef.current) return;
+
 		const observer = new IntersectionObserver(
 			([entry]) => {
 				setIsVisible(entry.isIntersecting);
 			},
-			{ threshold: 0.1 }
+			{ threshold: 0.1 },
 		);
 
-		if (containerRef.current) {
-			observer.observe(containerRef.current);
-		}
+		observer.observe(containerRef.current);
 
 		return () => observer.disconnect();
-	}, []);
+	}, [isLoading]);
 
 	// Ambil gambar dari galeri atau gunakan default
-	const galleryItems = (data ?? [])
-		.filter((item) => Boolean(item.image && item.image.trim() !== ""))
-		.slice(0, 6);
+	const galleryItems = (data ?? []).filter((item) => Boolean(item.image && item.image.trim() !== "")).slice(0, 6);
 
 	const images = galleryItems.length > 0 ? galleryItems.map((item) => item.image) : defaultImages;
 
@@ -115,7 +115,6 @@ export function HeroImageGrid() {
 						}}
 					>
 						{leftItems.map((src, index) => (
-							// biome-ignore lint/suspicious/noArrayIndexKey: items are duplicated for animation, index is safe
 							<div key={`left-${src.slice(-10)}-${index}`} className="h-[130px] sm:h-[160px] shrink-0">
 								<GridImage src={src} alt="Galeri MBA Laundry" />
 							</div>
@@ -138,7 +137,6 @@ export function HeroImageGrid() {
 						}}
 					>
 						{rightItems.map((src, index) => (
-							// biome-ignore lint/suspicious/noArrayIndexKey: items are duplicated for animation, index is safe
 							<div key={`right-${src.slice(-10)}-${index}`} className="h-[130px] sm:h-[160px] shrink-0">
 								<GridImage src={src} alt="Galeri MBA Laundry" />
 							</div>

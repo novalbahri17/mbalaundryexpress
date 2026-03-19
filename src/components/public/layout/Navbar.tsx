@@ -112,11 +112,11 @@ export function Navbar({ whatsapp }: NavbarProps) {
 		return () => window.removeEventListener("scroll", onScroll);
 	}, []);
 
-	const path = location.pathname;
+	// biome-ignore lint/correctness/useExhaustiveDependencies: deliberately running on route change
 	useEffect(() => {
 		setMobileOpen(false);
 		setMoreOpen(false);
-	}, [path]);
+	}, [location.pathname]);
 
 	useEffect(() => {
 		document.body.style.overflow = mobileOpen ? "hidden" : "";

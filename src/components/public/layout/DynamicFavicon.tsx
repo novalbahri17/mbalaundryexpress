@@ -1,88 +1,138 @@
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { useBranding } from "@/hooks/useBranding";
+
+// Global function to update favicon - can be called from anywhere
+export function updateFavicon() {
+	// Get current branding from localStorage
+	const storedBranding = localStorage.getItem("branding_settings");
+	let faviconUrl = "/favicon.ico";
+	let siteTitle = "MBA Laundry Express";
+
+	if (storedBranding) {
+		try {
+			const branding = JSON.parse(storedBranding);
+			faviconUrl = branding.favicon_url || branding.logo_url || "/favicon.ico";
+			siteTitle = branding.site_title || "MBA Laundry Express";
+		} catch {
+			// Ignore parse error
+		}
+	}
+
+	const timestamp = Date.now();
+	const faviconWithTimestamp = `${faviconUrl}?t=${timestamp}`;
+
+	// Remove all existing favicon links
+	document.querySelectorAll("link[rel*='icon']").forEach((el) => el.remove());
+
+	// Add new favicon links with cache-busting
+	const links = [
+		{ rel: "icon", type: "image/x-icon" },
+		{ rel: "shortcut icon", type: "image/x-icon" },
+		{ rel: "apple-touch-icon", type: "image/png" },
+	];
+
+	links.forEach(({ rel, type }) => {
+		const link = document.createElement("link");
+		link.rel = rel;
+		link.type = type;
+		link.href = faviconWithTimestamp;
+		document.head.appendChild(link);
+	});
+
+	// Update page title
+	document.title = siteTitle;
+
+	// Update meta description
+	const stored = localStorage.getItem("branding_settings");
+	if (stored) {
+		try {
+			const branding = JSON.parse(stored);
+			if (branding.site_description) {
+				let metaDesc = document.querySelector('meta[name="description"]');
+				if (!metaDesc) {
+					metaDesc = document.createElement("meta");
+					metaDesc.setAttribute("name", "description");
+					document.head.appendChild(metaDesc);
+				}
+				metaDesc.setAttribute("content", branding.site_description);
+			}
+		} catch {
+			// Ignore
+		}
+	}
+
+	console.log("[DynamicFavicon] Favicon updated:", faviconWithTimestamp);
+}
 
 export function DynamicFavicon() {
 	const { data: branding } = useBranding();
 
-	useEffect(() => {
-		if (!branding) {
-			console.log("[DynamicFavicon] No branding data");
-			return;
-		}
+	const applyFavicon = useCallback(() => {
+		if (!branding) return;
 
-		console.log("[DynamicFavicon] Updating favicon with:", branding.favicon_url);
+		// Store in localStorage for access from updateFavicon function
+		localStorage.setItem("branding_settings", JSON.stringify(branding));
 
-		// Add timestamp to bust cache
 		const timestamp = Date.now();
-		const faviconUrl = branding.favicon_url 
-			? `${branding.favicon_url}?t=${timestamp}` 
-			: `/favicon.ico?t=${timestamp}`;
-		
-		console.log("[DynamicFavicon] Final favicon URL:", faviconUrl);
+		const faviconUrl = branding.favicon_url || branding.logo_url || "/favicon.ico";
+		const faviconWithTimestamp = `${faviconUrl}?t=${timestamp}`;
 
-		// Remove ALL existing favicon links
-		const selectors = [
-			"link[rel='icon']",
-			"link[rel='shortcut icon']", 
-			"link[rel='apple-touch-icon']",
-			"link[rel='apple-touch-icon-precomposed']"
+		// Remove existing favicon links
+		document.querySelectorAll("link[rel*='icon']").forEach((el) => el.remove());
+
+		// Add new favicon links
+		const links = [
+			{ rel: "icon", type: "image/x-icon" },
+			{ rel: "shortcut icon", type: "image/x-icon" },
+			{ rel: "apple-touch-icon", type: "image/png" },
 		];
-		
-		selectors.forEach(selector => {
-			const elements = document.querySelectorAll(selector);
-			elements.forEach(el => {
-				console.log("[DynamicFavicon] Removing:", selector);
-				el.remove();
-			});
+
+		links.forEach(({ rel, type }) => {
+			const link = document.createElement("link");
+			link.rel = rel;
+			link.type = type;
+			link.href = faviconWithTimestamp;
+			document.head.appendChild(link);
 		});
 
-		// Create new favicon link - try different approaches
-		// Approach 1: Standard favicon
-		const link = document.createElement("link");
-		link.rel = "icon";
-		link.href = faviconUrl;
-		document.head.appendChild(link);
-		console.log("[DynamicFavicon] Added icon link");
-
-		// Approach 2: Shortcut icon
-		const shortcutLink = document.createElement("link");
-		shortcutLink.rel = "shortcut icon";
-		shortcutLink.href = faviconUrl;
-		document.head.appendChild(shortcutLink);
-		console.log("[DynamicFavicon] Added shortcut icon link");
-
-		// Approach 3: Apple touch icon
-		const appleLink = document.createElement("link");
-		appleLink.rel = "apple-touch-icon";
-		appleLink.href = faviconUrl;
-		document.head.appendChild(appleLink);
-		console.log("[DynamicFavicon] Added apple-touch-icon link");
-
-		// Force browser to notice the change
-		const forceUpdate = document.createElement("link");
-		forceUpdate.rel = "icon";
-		forceUpdate.type = "image/png";
-		forceUpdate.href = faviconUrl;
-		document.head.appendChild(forceUpdate);
-
-		// Update site title
+		// Update page title
 		if (branding.site_title) {
 			document.title = branding.site_title;
-			console.log("[DynamicFavicon] Updated title:", branding.site_title);
 		}
 
 		// Update meta description
-		let metaDesc = document.querySelector("meta[name='description']") as HTMLMetaElement;
-		if (!metaDesc) {
-			metaDesc = document.createElement("meta");
-			metaDesc.name = "description";
-			document.head.appendChild(metaDesc);
-		}
 		if (branding.site_description) {
-			metaDesc.content = branding.site_description;
+			let metaDesc = document.querySelector('meta[name="description"]');
+			if (!metaDesc) {
+				metaDesc = document.createElement("meta");
+				metaDesc.setAttribute("name", "description");
+				document.head.appendChild(metaDesc);
+			}
+			metaDesc.setAttribute("content", branding.site_description);
 		}
 
+		console.log("[DynamicFavicon] Applied favicon:", faviconWithTimestamp);
 	}, [branding]);
+
+	useEffect(() => {
+		applyFavicon();
+	}, [applyFavicon]);
+
+	// Also update favicon periodically to ensure it sticks
+	useEffect(() => {
+		if (!branding) return;
+
+		const interval = setInterval(() => {
+			applyFavicon();
+		}, 3000);
+
+		// Stop after 15 seconds
+		setTimeout(() => {
+			clearInterval(interval);
+		}, 15000);
+
+		return () => clearInterval(interval);
+	}, [branding, applyFavicon]);
 
 	return null;
 }
