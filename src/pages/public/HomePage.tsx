@@ -9,10 +9,12 @@ import { PricingSection } from "@/components/public/home/PricingSection";
 import { PromoSection } from "@/components/public/home/PromoSection";
 import { TestimonialsSection } from "@/components/public/home/TestimonialsSection";
 import { WhyUsSection } from "@/components/public/home/WhyUsSection";
+import { AnnouncementModal } from "@/components/public/home/AnnouncementModal";
 
 export default function HomePage() {
 	return (
 		<main className="landing-page flex flex-col bg-transparent font-sans text-neutral-900 selection:bg-ruby-200">
+			<AnnouncementModal />
 			<HeroSection />
 			<PromoSection />
 			<HowItWorksSection />

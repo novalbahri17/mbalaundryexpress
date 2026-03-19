@@ -1,4 +1,4 @@
-import { Alert, Button, Card, Col, Form, Input, Row, message } from "antd";
+import { Alert, Button, Card, Col, Form, Input, Row, Switch, message } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -16,6 +16,11 @@ const DEFAULT_DARK_BG = "#0A0A0F";
 type LandingAppearanceForm = {
 	landing_bg_color_light: string;
 	landing_bg_color_dark: string;
+};
+
+type AnnouncementFormValues = {
+	announcement_active: boolean;
+	announcement_text: string;
 };
 
 const columns: ColumnsType<SiteSetting> = [
@@ -54,6 +59,7 @@ const hexRule = {
 
 export default function PengaturanAdminPage() {
 	const [appearanceForm] = Form.useForm<LandingAppearanceForm>();
+	const [announcementForm] = Form.useForm<AnnouncementFormValues>();
 	const queryClient = useQueryClient();
 
 	const { data: rows = [] } = useQuery({
@@ -85,16 +91,53 @@ export default function PengaturanAdminPage() {
 				DEFAULT_DARK_BG,
 			),
 		});
+
+		announcementForm.setFieldsValue({
+			announcement_active: pageContentMap.announcement_active === "true" || pageContentMap.announcement_active === "1",
+			announcement_text: pageContentMap.announcement_text ?? "",
+		});
 	}, [
 		appearanceForm,
+		announcementForm,
 		pageContentMap.landing_bg_color_dark,
 		pageContentMap.landing_bg_color_light,
+		pageContentMap.announcement_active,
+		pageContentMap.announcement_text,
 		settingsMap.landing_bg_color_dark,
 		settingsMap.landing_bg_color_light,
 	]);
 
 	const lightPreview = normalizeHexColor(Form.useWatch("landing_bg_color_light", appearanceForm), DEFAULT_LIGHT_BG);
 	const darkPreview = normalizeHexColor(Form.useWatch("landing_bg_color_dark", appearanceForm), DEFAULT_DARK_BG);
+
+	const saveAnnouncement = async () => {
+		const values = await announcementForm.validateFields();
+		await saveBulkPageContents([
+			{
+				key: "announcement_active",
+				value: values.announcement_active ? "true" : "false",
+				type: "boolean",
+				label: "Status Pengumuman",
+				description: "Status pengumuman (aktif/tidak)",
+				group: "announcement",
+			},
+			{
+				key: "announcement_text",
+				value: values.announcement_text ?? "",
+				type: "text",
+				label: "Teks Pengumuman",
+				description: "Isi teks pengumuman",
+				group: "announcement",
+			},
+		]);
+
+		message.success("Pengumuman berhasil disimpan");
+		await Promise.all([
+			queryClient.invalidateQueries({ queryKey: ["admin-page-content-map"] }),
+			queryClient.invalidateQueries({ queryKey: [PAGE_CONTENT_QUERY_KEY] }),
+			queryClient.invalidateQueries({ queryKey: [PAGE_CONTENT_QUERY_KEY, "map"] }),
+		]);
+	};
 
 	const saveLandingAppearance = async (): Promise<void> => {
 		const values = await appearanceForm.validateFields();
@@ -161,6 +204,18 @@ export default function PengaturanAdminPage() {
 						message="Custom Background Landing"
 						description="Isi warna HEX. Anda bisa pakai #FFFBF1 untuk light mode sesuai contoh Anda."
 					/>
+
+					<Card title="Pengumuman (Popup Modal)" className="shadow-sm">
+						<Form form={announcementForm} layout="vertical">
+							<Form.Item name="announcement_active" label="Tampilkan Pengumuman di Halaman Utama" valuePropName="checked">
+								<Switch checkedChildren="Aktif" unCheckedChildren="Mati" />
+							</Form.Item>
+							<Form.Item name="announcement_text" label="Isi Pengumuman" extra="Bisa berisi info diskon, libur, atau waktu operasional khusus">
+								<Input.TextArea rows={4} placeholder="Contoh: Terkait libur Lebaran, seluruh cabang MBA Laundry tutup dari tanggal..." />
+							</Form.Item>
+							<Button type="primary" onClick={() => void saveAnnouncement()}>Simpan Pengumuman</Button>
+						</Form>
+					</Card>
 
 					<Card title="Tampilan Landing Page" className="shadow-sm">
 						<Form form={appearanceForm} layout="vertical" autoComplete="off">
