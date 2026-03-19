@@ -1,43 +1,19 @@
 import { DeleteOutlined, EditOutlined, PlusOutlined, UploadOutlined } from "@ant-design/icons";
-import {
-	Button,
-	Form,
-	Input,
-	InputNumber,
-	Modal,
-	Popconfirm,
-	Radio,
-	Select,
-	Space,
-	Table,
-	Tag,
-	message,
-	Tabs,
-} from "antd";
+import { Button, Form, Input, Modal, Popconfirm, Radio, Space, Table, message, Tabs } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { deleteGallery, getGallery, createGallery, updateGallery } from "@/api/gallery.api";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { MultiImageUpload, type UploadingFile } from "@/components/admin/MultiImageUpload";
-import type { BranchGallery, GalleryType } from "@/types/database.types";
+import type { BranchGallery } from "@/types/database.types";
 import { resolveImageUrl, sanitizeUrl } from "@/utils/format";
 
 type GaleriFormValues = {
 	caption?: string;
-	type: GalleryType;
-	sort_order?: number;
 };
 
 type ImageSourceType = "upload" | "url" | "multiple";
-
-const galleryTypeOptions: Array<{ label: string; value: GalleryType }> = [
-	{ label: "Interior", value: "interior" },
-	{ label: "Eksterior", value: "exterior" },
-	{ label: "Mesin", value: "mesin" },
-	{ label: "Fasilitas", value: "fasilitas" },
-	{ label: "Umum", value: "umum" },
-];
 
 const imageExtensionByType: Record<string, string> = {
 	"image/jpeg": "jpg",
@@ -45,14 +21,6 @@ const imageExtensionByType: Record<string, string> = {
 	"image/webp": "webp",
 	"image/gif": "gif",
 	"image/svg+xml": "svg",
-};
-
-const mapLabelByType: Record<GalleryType, string> = {
-	interior: "Interior",
-	exterior: "Eksterior",
-	mesin: "Mesin",
-	fasilitas: "Fasilitas",
-	umum: "Umum",
 };
 
 async function downloadImageAsFile(url: string): Promise<File> {
@@ -103,12 +71,6 @@ export default function GaleriAdminPage() {
 		},
 		{ title: "Caption", dataIndex: "caption", render: (value?: string) => value || "-" },
 		{
-			title: "Tipe",
-			dataIndex: "type",
-			render: (value: GalleryType) => <Tag>{mapLabelByType[value] ?? value}</Tag>,
-		},
-		{ title: "Urutan", dataIndex: "sort_order", width: 100 },
-		{
 			title: "Aksi",
 			render: (_, row) => (
 				<Space>
@@ -122,8 +84,6 @@ export default function GaleriAdminPage() {
 							setImageUrl(sanitizeUrl(row.image) ?? "");
 							form.setFieldsValue({
 								caption: row.caption,
-								type: row.type,
-								sort_order: row.sort_order,
 							});
 							setOpen(true);
 							setActiveTab("single");
@@ -168,7 +128,6 @@ export default function GaleriAdminPage() {
 		setImageUrl("");
 		setUploadingFiles([]);
 		form.resetFields();
-		form.setFieldsValue({ type: "umum", sort_order: 0 });
 		setOpen(true);
 		setActiveTab("single");
 	};
@@ -176,7 +135,6 @@ export default function GaleriAdminPage() {
 	const onSubmitSingle = async (): Promise<void> => {
 		const values = await form.validateFields();
 		const caption = values.caption ?? "";
-		const sortOrder = values.sort_order ?? 0;
 
 		let payload: Partial<BranchGallery> | FormData;
 
@@ -185,14 +143,10 @@ export default function GaleriAdminPage() {
 				const formData = new FormData();
 				formData.append("image", imageFile);
 				formData.append("caption", caption);
-				formData.append("type", values.type);
-				formData.append("sort_order", String(sortOrder));
 				payload = formData;
 			} else if (editing) {
 				payload = {
 					caption,
-					type: values.type,
-					sort_order: sortOrder,
 				};
 			} else {
 				message.error("Silakan upload gambar terlebih dahulu");
@@ -208,8 +162,6 @@ export default function GaleriAdminPage() {
 			const formData = new FormData();
 			formData.append("image", fileFromUrl);
 			formData.append("caption", caption);
-			formData.append("type", values.type);
-			formData.append("sort_order", String(sortOrder));
 			payload = formData;
 		}
 
@@ -240,8 +192,6 @@ export default function GaleriAdminPage() {
 				const formData = new FormData();
 				formData.append("image", fileData.file);
 				formData.append("caption", values.caption ? `${values.caption} ${index + 1}` : "");
-				formData.append("type", values.type);
-				formData.append("sort_order", String((values.sort_order ?? 0) + index));
 
 				setUploadingFiles((prev) => prev.map((f) => (f.id === fileData.id ? { ...f, progress: 50 } : f)));
 
@@ -317,7 +267,6 @@ export default function GaleriAdminPage() {
 										imageUrl={imageUrl}
 										setImageUrl={setImageUrl}
 										safePreviewUrl={safePreviewUrl ?? null}
-										galleryTypeOptions={galleryTypeOptions}
 									/>
 								),
 							},
@@ -333,7 +282,6 @@ export default function GaleriAdminPage() {
 										form={form}
 										uploadingFiles={uploadingFiles}
 										setUploadingFiles={setUploadingFiles}
-										galleryTypeOptions={galleryTypeOptions}
 									/>
 								),
 							},
@@ -349,7 +297,6 @@ export default function GaleriAdminPage() {
 						imageUrl={imageUrl}
 						setImageUrl={setImageUrl}
 						safePreviewUrl={safePreviewUrl ?? null}
-						galleryTypeOptions={galleryTypeOptions}
 						editing={editing}
 					/>
 				)}
@@ -368,7 +315,6 @@ interface SingleUploadFormProps {
 	imageUrl: string;
 	setImageUrl: (url: string) => void;
 	safePreviewUrl: string | null;
-	galleryTypeOptions: Array<{ label: string; value: GalleryType }>;
 	editing?: BranchGallery | null;
 }
 
@@ -381,11 +327,10 @@ function SingleUploadForm({
 	imageUrl,
 	setImageUrl,
 	safePreviewUrl,
-	galleryTypeOptions,
 	editing,
 }: SingleUploadFormProps) {
 	return (
-		<Form form={form} layout="vertical" initialValues={{ type: "umum", sort_order: 0 }}>
+		<Form form={form} layout="vertical">
 			<Form.Item label="Sumber Gambar">
 				<Radio.Group
 					value={sourceType}
@@ -426,14 +371,6 @@ function SingleUploadForm({
 			<Form.Item label="Caption" name="caption">
 				<Input.TextArea rows={3} />
 			</Form.Item>
-
-			<Form.Item label="Tipe" name="type" rules={[{ required: true, message: "Tipe wajib dipilih" }]}>
-				<Select options={galleryTypeOptions} />
-			</Form.Item>
-
-			<Form.Item label="Urutan" name="sort_order">
-				<InputNumber className="w-full" min={0} />
-			</Form.Item>
 		</Form>
 	);
 }
@@ -442,12 +379,11 @@ interface MultipleUploadFormProps {
 	form: ReturnType<typeof Form.useForm<GaleriFormValues>>[0];
 	uploadingFiles: UploadingFile[];
 	setUploadingFiles: React.Dispatch<React.SetStateAction<UploadingFile[]>>;
-	galleryTypeOptions: Array<{ label: string; value: GalleryType }>;
 }
 
-function MultipleUploadForm({ form, uploadingFiles, setUploadingFiles, galleryTypeOptions }: MultipleUploadFormProps) {
+function MultipleUploadForm({ form, uploadingFiles, setUploadingFiles }: MultipleUploadFormProps) {
 	return (
-		<Form form={form} layout="vertical" initialValues={{ type: "umum", sort_order: 0 }}>
+		<Form form={form} layout="vertical">
 			<Form.Item>
 				<div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg mb-4">
 					<p className="text-sm text-blue-700 dark:text-blue-300">
@@ -467,14 +403,6 @@ function MultipleUploadForm({ form, uploadingFiles, setUploadingFiles, galleryTy
 					rows={2}
 					placeholder="Contoh: 'Foto Laundry' akan menjadi 'Foto Laundry 1', 'Foto Laundry 2', dst"
 				/>
-			</Form.Item>
-
-			<Form.Item label="Tipe" name="type" rules={[{ required: true, message: "Tipe wajib dipilih" }]}>
-				<Select options={galleryTypeOptions} />
-			</Form.Item>
-
-			<Form.Item label="Urutan Awal" name="sort_order">
-				<InputNumber className="w-full" min={0} placeholder="Urutan untuk gambar pertama" />
 			</Form.Item>
 		</Form>
 	);

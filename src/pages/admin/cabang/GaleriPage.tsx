@@ -1,26 +1,17 @@
-import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
-import { Button, Form, Input, InputNumber, Modal, Popconfirm, Select, Space, Table, Tag, message } from "antd";
+import { DeleteOutlined, EditOutlined, PlusOutlined, InboxOutlined } from "@ant-design/icons";
+import { Button, Form, Input, Modal, Popconfirm, Space, Table, message, Upload } from "antd";
+import type { UploadFile } from "antd/es/upload/interface";
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { deleteBranchGallery, getBranchGallery, saveBranchGallery } from "@/api/branches.api";
+import { getBranchGallery, saveBranchGallery, deleteBranchGallery } from "@/api/branches.api";
 import { BranchContextHeader } from "@/components/admin/BranchContextHeader";
-import { ImageUpload } from "@/components/admin/ImageUpload";
-import type { BranchGallery, GalleryType } from "@/types/database.types";
+import type { BranchGallery } from "@/types/database.types";
 import { resolveImageUrl } from "@/utils/format";
 
-const galleryTypes: Array<{ label: string; value: GalleryType }> = [
-	{ value: "interior", label: "Interior" },
-	{ value: "exterior", label: "Eksterior" },
-	{ value: "mesin", label: "Mesin" },
-	{ value: "fasilitas", label: "Fasilitas" },
-	{ value: "umum", label: "Umum" },
-];
-
+// Form values now only include optional caption
 type GaleriFormValues = {
 	caption?: string;
-	type: GalleryType;
-	sort_order: number;
 };
 
 export default function CabangGaleriPage() {
@@ -28,7 +19,7 @@ export default function CabangGaleriPage() {
 	const [open, setOpen] = useState(false);
 	const [editing, setEditing] = useState<BranchGallery | null>(null);
 	const [form] = Form.useForm<GaleriFormValues>();
-	const [imageFile, setImageFile] = useState<File | null>(null);
+	const [fileList, setFileList] = useState<UploadFile[]>([]);
 	const queryClient = useQueryClient();
 
 	const { data = [], isLoading } = useQuery({
@@ -41,34 +32,46 @@ export default function CabangGaleriPage() {
 		if (!id) return;
 		const values = await form.validateFields();
 
-		if (!editing && !imageFile) {
+		if (!editing && fileList.length === 0) {
 			message.error("Gambar wajib diisi");
 			return;
 		}
 
-		if (imageFile) {
-			const formData = new FormData();
-			if (editing?.id) formData.append("id", editing.id);
-			formData.append("branch_id", id);
-			formData.append("caption", values.caption ?? "");
-			formData.append("type", values.type);
-			formData.append("sort_order", String(values.sort_order ?? 0));
-			formData.append("image", imageFile);
-			await saveBranchGallery(formData, editing?.id);
+		message.loading({ content: "Menyimpan...", key: "uploading" });
+
+		if (editing) {
+			// EDIT MODE: single item
+			const isNewFile = fileList[0]?.originFileObj;
+			if (isNewFile) {
+				const formData = new FormData();
+				formData.append("id", editing.id);
+				formData.append("branch_id", id);
+				formData.append("caption", values.caption ?? "");
+				formData.append("image", fileList[0].originFileObj as File);
+				await saveBranchGallery(formData, editing.id);
+			} else {
+				await saveBranchGallery({
+					id: editing.id,
+					branch_id: id,
+					caption: values.caption,
+				});
+			}
 		} else {
-			await saveBranchGallery({
-				id: editing?.id,
-				branch_id: id,
-				caption: values.caption,
-				type: values.type,
-				sort_order: values.sort_order ?? 0,
-			});
+			// BULK CREATE MODE
+			for (const fileItem of fileList) {
+				if (!fileItem.originFileObj) continue;
+				const formData = new FormData();
+				formData.append("branch_id", id);
+				formData.append("caption", values.caption ?? "");
+				formData.append("image", fileItem.originFileObj as File);
+				await saveBranchGallery(formData);
+			}
 		}
 
-		message.success("Galeri tersimpan");
+		message.success({ content: "Galeri tersimpan!", key: "uploading", duration: 2 });
 		setOpen(false);
 		setEditing(null);
-		setImageFile(null);
+		setFileList([]);
 		form.resetFields();
 		await queryClient.invalidateQueries({ queryKey: ["branch-gallery", id] });
 	};
@@ -84,14 +87,15 @@ export default function CabangGaleriPage() {
 					icon={<PlusOutlined />}
 					onClick={() => {
 						setEditing(null);
-						setImageFile(null);
-						form.setFieldsValue({ type: "umum", sort_order: 0, caption: "" });
+						setFileList([]);
+						form.setFieldsValue({ caption: "" });
 						setOpen(true);
 					}}
 				>
 					Tambah Gambar
 				</Button>
 			</div>
+
 			<Table
 				rowKey="id"
 				loading={isLoading}
@@ -110,14 +114,6 @@ export default function CabangGaleriPage() {
 					},
 					{ title: "Caption", dataIndex: "caption", render: (value?: string) => value || "-" },
 					{
-						title: "Tipe",
-						dataIndex: "type",
-						render: (value: GalleryType) => (
-							<Tag>{galleryTypes.find((item) => item.value === value)?.label || value}</Tag>
-						),
-					},
-					{ title: "Urutan", dataIndex: "sort_order" },
-					{
 						title: "Aksi",
 						render: (_, record: BranchGallery) => (
 							<Space>
@@ -126,12 +122,8 @@ export default function CabangGaleriPage() {
 									icon={<EditOutlined />}
 									onClick={() => {
 										setEditing(record);
-										setImageFile(null);
-										form.setFieldsValue({
-											caption: record.caption,
-											type: record.type,
-											sort_order: record.sort_order,
-										});
+										setFileList([]);
+										form.setFieldsValue({ caption: record.caption });
 										setOpen(true);
 									}}
 								>
@@ -156,6 +148,7 @@ export default function CabangGaleriPage() {
 					},
 				]}
 			/>
+
 			<Modal
 				title={editing ? "Edit Gambar Galeri" : "Tambah Gambar Galeri"}
 				open={open}
@@ -163,18 +156,38 @@ export default function CabangGaleriPage() {
 				onOk={() => void onSubmit()}
 				destroyOnClose
 			>
-				<Form layout="vertical" form={form} initialValues={{ type: "umum", sort_order: 0 }}>
+				<Form layout="vertical" form={form}>
 					<Form.Item label="Gambar">
-						<ImageUpload value={imageFile} onChange={setImageFile} previewUrl={editing?.image} />
+						<Upload.Dragger
+							multiple={!editing}
+							maxCount={editing ? 1 : 20}
+							fileList={fileList}
+							beforeUpload={() => false}
+							onChange={(info) => setFileList(info.fileList)}
+							accept="image/*"
+							listType="picture"
+						>
+							<p className="ant-upload-drag-icon">
+								<InboxOutlined />
+							</p>
+							<p className="ant-upload-text">Klik atau tarik gambar ke area ini untuk upload</p>
+							{!editing && (
+								<p className="ant-upload-hint">Anda dapat memilih dan mengunggah banyak gambar sekaligus.</p>
+							)}
+						</Upload.Dragger>
+						{editing && !fileList.length && editing.image && (
+							<div className="mt-4">
+								<p className="mb-2 text-sm text-gray-500">Gambar saat ini:</p>
+								<img
+									src={resolveImageUrl(editing.image, editing.caption || "galeri")}
+									alt="Preview"
+									className="max-h-32 rounded-lg object-contain shadow-sm"
+								/>
+							</div>
+						)}
 					</Form.Item>
 					<Form.Item label="Caption" name="caption">
 						<Input />
-					</Form.Item>
-					<Form.Item label="Tipe" name="type" rules={[{ required: true }]}>
-						<Select options={galleryTypes} />
-					</Form.Item>
-					<Form.Item label="Sort Order" name="sort_order">
-						<InputNumber className="w-full" min={0} />
 					</Form.Item>
 				</Form>
 			</Modal>

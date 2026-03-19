@@ -5,24 +5,7 @@ import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { getGallery } from "@/api/gallery.api";
 import { ScrollReveal } from "@/components/public/shared/ScrollReveal";
-import type { GalleryType } from "@/types/database.types";
 import { useState } from "react";
-
-const typeLabels: Record<GalleryType, string> = {
-	interior: "Interior",
-	exterior: "Eksterior",
-	mesin: "Mesin",
-	fasilitas: "Fasilitas",
-	umum: "Umum",
-};
-
-const typeColors: Record<GalleryType, string> = {
-	interior: "bg-purple-500",
-	exterior: "bg-green-500",
-	mesin: "bg-blue-500",
-	fasilitas: "bg-orange-500",
-	umum: "bg-gray-500",
-};
 
 const SKELETON_COUNT = 6;
 const SKELETON_IDS = Array.from({ length: SKELETON_COUNT }, (_, i) => `gallery-skeleton-${i + 1}`);
@@ -62,9 +45,7 @@ export function GallerySection() {
 		staleTime: 5 * 60 * 1000,
 	});
 
-	const galleryItems = (data ?? [])
-		.filter((item) => Boolean(item.image && item.image.trim() !== ""))
-		.slice(0, 6);
+	const galleryItems = (data ?? []).filter((item) => Boolean(item.image && item.image.trim() !== "")).slice(0, 6);
 
 	return (
 		<section className="relative overflow-hidden bg-neutral-50 px-6 py-24 md:px-12 md:py-32 dark:bg-neutral-900">
@@ -88,8 +69,8 @@ export function GallerySection() {
 
 				<ScrollReveal delay={0.2}>
 					<p className="mt-4 max-w-[600px] text-center text-[16px] leading-[1.6] text-neutral-600 dark:text-neutral-300">
-						Didesain untuk kenyamanan optimal Anda, setiap outlet kami bersih, terang, dan ber-AC penuh sambil
-						menunggu cucian selesai.
+						Didesain untuk kenyamanan optimal Anda, setiap outlet kami bersih, terang, dan ber-AC penuh sambil menunggu
+						cucian selesai.
 					</p>
 				</ScrollReveal>
 
@@ -120,24 +101,17 @@ export function GallerySection() {
 									className="group relative aspect-[4/3] w-full overflow-hidden rounded-[20px] bg-neutral-200 shadow-lg dark:bg-neutral-800"
 								>
 									<div className="h-full w-full transition-transform duration-700 ease-out group-hover:scale-110">
-										<GalleryImage
-											src={item.image}
-											alt={item.caption ?? `Galeri ${typeLabels[item.type]}`}
-										/>
+										<GalleryImage src={item.image} alt={item.caption ?? `Galeri ${index + 1}`} />
 									</div>
 
 									<div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
-									<div
-										className={`absolute left-4 top-4 rounded-full ${typeColors[item.type]} px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white opacity-0 shadow-md transition-all duration-300 group-hover:opacity-100`}
-									>
-										{typeLabels[item.type]}
+									<div className="absolute left-4 top-4 rounded-full bg-ruby-500 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white opacity-0 shadow-md transition-all duration-300 group-hover:opacity-100">
+										Galeri
 									</div>
 
 									<div className="absolute bottom-0 left-0 right-0 translate-y-full p-5 transition-transform duration-300 group-hover:translate-y-0">
-										<p className="text-[16px] font-semibold text-white">
-											{item.caption || typeLabels[item.type]}
-										</p>
+										<p className="text-[16px] font-semibold text-white">{item.caption || `Galeri ${index + 1}`}</p>
 										<p className="mt-1 text-[13px] text-white/80">Klik untuk melihat detail</p>
 									</div>
 
@@ -162,7 +136,11 @@ export function GallerySection() {
 				</div>
 
 				{error && (
-					<motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-6 text-sm font-medium text-ruby-600">
+					<motion.p
+						initial={{ opacity: 0 }}
+						animate={{ opacity: 1 }}
+						className="mt-6 text-sm font-medium text-ruby-600"
+					>
 						Galeri outlet belum bisa dimuat. Silakan cek koneksi.
 					</motion.p>
 				)}
@@ -170,10 +148,9 @@ export function GallerySection() {
 				<ScrollReveal delay={0.5}>
 					<Link
 						to="/galeri"
-						className="group mt-12 inline-flex items-center justify-center gap-2 rounded-xl border-2 border-neutral-200 bg-white px-8 py-4 text-[16px] font-semibold text-neutral-700 shadow-sm transition-all hover:border-sapphire-300 hover:bg-sapphire-50 hover:text-sapphire-700 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:border-sapphire-500 dark:hover:bg-sapphire-900/20 dark:hover:text-sapphire-400"
+						className="mt-12 inline-flex items-center gap-2 rounded-full border-2 border-ruby-600 px-6 py-3 text-[14px] font-bold text-ruby-600 transition-all hover:bg-ruby-600 hover:text-white"
 					>
-						Lihat Semua Galeri
-						<ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+						Lihat Semua Galeri <ArrowRight className="h-4 w-4" />
 					</Link>
 				</ScrollReveal>
 			</div>

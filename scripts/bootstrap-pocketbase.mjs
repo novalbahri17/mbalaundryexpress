@@ -105,8 +105,6 @@ const collections = [
 			textField("branch_id"),
 			fileField("image", true),
 			textField("caption"),
-			textField("type"),
-			numberField("sort_order"),
 		],
 		listRule: "",
 		viewRule: "",

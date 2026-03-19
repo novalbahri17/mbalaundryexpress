@@ -10,21 +10,24 @@ import { PromoSection } from "@/components/public/home/PromoSection";
 import { TestimonialsSection } from "@/components/public/home/TestimonialsSection";
 import { WhyUsSection } from "@/components/public/home/WhyUsSection";
 import { AnnouncementModal } from "@/components/public/home/AnnouncementModal";
+import { usePageContentMap } from "@/hooks/usePageContent";
 
 export default function HomePage() {
+	const { data: pageContents = {} } = usePageContentMap();
+
 	return (
 		<main className="landing-page flex flex-col bg-transparent font-sans text-neutral-900 selection:bg-ruby-200">
 			<AnnouncementModal />
 			<HeroSection />
-			<PromoSection />
-			<HowItWorksSection />
-			<PricingSection />
-			<LocationsSection />
+			{pageContents.module_promo !== "false" && <PromoSection />}
+			{pageContents.module_carapakai !== "false" && <HowItWorksSection />}
+			{pageContents.module_harga !== "false" && <PricingSection />}
+			{pageContents.module_cabang !== "false" && <LocationsSection />}
 			<TestimonialsSection />
 			<WhyUsSection />
-			<GallerySection />
+			{pageContents.module_galeri !== "false" && <GallerySection />}
 			<FAQSection />
-			<BlogSection />
+			{pageContents.module_blog !== "false" && <BlogSection />}
 			<CTASection />
 		</main>
 	);

@@ -7,6 +7,7 @@ import { DynamicLogo } from "@/components/public/layout/DynamicLogo";
 
 import { useLocaleStore } from "@/store/localeStore";
 import { useThemeStore } from "@/store/themeStore";
+import { usePageContentMap } from "@/hooks/usePageContent";
 import { toWhatsappLink } from "@/utils/format";
 import { cn } from "@/utils/index";
 
@@ -30,22 +31,6 @@ type NavbarLocaleText = {
 	darkMode: string;
 	moreMenu: string;
 };
-
-const primaryNavItems: NavItem[] = [
-	{ to: "/", label: { id: "Beranda", en: "Home" }, end: true },
-	{ to: "/cabang", label: { id: "Cabang", en: "Branches" } },
-	{ to: "/promo", label: { id: "Promo", en: "Promotions" } },
-	{ to: "/galeri", label: { id: "Galeri", en: "Gallery" } },
-	{ to: "/harga", label: { id: "Harga", en: "Pricing" } },
-];
-
-const secondaryNavItems: NavItem[] = [
-	{ to: "/cara-pakai", label: { id: "Cara Pakai", en: "How It Works" } },
-	{ to: "/blog", label: { id: "Blog", en: "Blog" } },
-	{ to: "/karir", label: { id: "Loker", en: "Careers" } },
-	{ to: "/kemitraan", label: { id: "Kemitraan", en: "Partnership" } },
-	{ to: "/kontak", label: { id: "Kontak", en: "Contact" } },
-];
 
 const localeText: Record<"id" | "en", NavbarLocaleText> = {
 	id: {
@@ -88,6 +73,32 @@ export function Navbar({ whatsapp }: NavbarProps) {
 
 	const moreRef = useRef<HTMLDivElement | null>(null);
 
+	const { data: pageContents = {} } = usePageContentMap();
+
+	const activePrimaryItems = useMemo(() => {
+		return [
+			{ to: "/", label: { id: "Beranda", en: "Home" }, end: true },
+			...(pageContents.module_cabang !== "false" ? [{ to: "/cabang", label: { id: "Cabang", en: "Branches" } }] : []),
+			...(pageContents.module_promo !== "false" ? [{ to: "/promo", label: { id: "Promo", en: "Promotions" } }] : []),
+			...(pageContents.module_galeri !== "false" ? [{ to: "/galeri", label: { id: "Galeri", en: "Gallery" } }] : []),
+			...(pageContents.module_harga !== "false" ? [{ to: "/harga", label: { id: "Harga", en: "Pricing" } }] : []),
+		];
+	}, [pageContents]);
+
+	const activeSecondaryItems = useMemo(() => {
+		return [
+			...(pageContents.module_carapakai !== "false"
+				? [{ to: "/cara-pakai", label: { id: "Cara Pakai", en: "How It Works" } }]
+				: []),
+			...(pageContents.module_blog !== "false" ? [{ to: "/blog", label: { id: "Blog", en: "Blog" } }] : []),
+			...(pageContents.module_loker !== "false" ? [{ to: "/karir", label: { id: "Loker", en: "Careers" } }] : []),
+			...(pageContents.module_kemitraan !== "false"
+				? [{ to: "/kemitraan", label: { id: "Kemitraan", en: "Partnership" } }]
+				: []),
+			...(pageContents.module_kontak !== "false" ? [{ to: "/kontak", label: { id: "Kontak", en: "Contact" } }] : []),
+		];
+	}, [pageContents]);
+
 	const ctaLink = useMemo(
 		() =>
 			toWhatsappLink(
@@ -101,8 +112,8 @@ export function Navbar({ whatsapp }: NavbarProps) {
 
 	const secondaryActive = useMemo(
 		() =>
-			secondaryNavItems.some((item) => location.pathname === item.to || location.pathname.startsWith(`${item.to}/`)),
-		[location.pathname],
+			activeSecondaryItems.some((item) => location.pathname === item.to || location.pathname.startsWith(`${item.to}/`)),
+		[location.pathname, activeSecondaryItems],
 	);
 
 	useEffect(() => {
@@ -213,7 +224,7 @@ export function Navbar({ whatsapp }: NavbarProps) {
 
 						{/* Menu Items */}
 						<div className="flex-1 space-y-1 overflow-y-auto py-2">
-							{[...primaryNavItems, ...secondaryNavItems].map((item) => (
+							{[...activePrimaryItems, ...activeSecondaryItems].map((item) => (
 								<NavLink
 									key={item.to}
 									to={item.to}
@@ -275,7 +286,7 @@ export function Navbar({ whatsapp }: NavbarProps) {
 						<DynamicLogo />
 
 						<div className="hidden items-center gap-1 xl:flex">
-							{primaryNavItems.map((item) => (
+							{activePrimaryItems.map((item) => (
 								<NavLink key={item.to} to={item.to} end={item.end} className={navLinkClass}>
 									{item.label[locale]}
 								</NavLink>
@@ -297,14 +308,14 @@ export function Navbar({ whatsapp }: NavbarProps) {
 								</button>
 
 								<AnimatePresence>
-									{moreOpen ? (
+									{moreOpen && activeSecondaryItems.length > 0 ? (
 										<motion.div
 											initial={{ opacity: 0, y: 8, scale: 0.98 }}
 											animate={{ opacity: 1, y: 0, scale: 1 }}
 											exit={{ opacity: 0, y: 8, scale: 0.98 }}
 											className="absolute right-0 top-[115%] z-[72] min-w-[220px] rounded-2xl border border-white/40 bg-white/95 p-2 shadow-xl backdrop-blur-glass dark:border-white/15 dark:bg-neutral-950/90"
 										>
-											{secondaryNavItems.map((item) => (
+											{activeSecondaryItems.map((item) => (
 												<NavLink
 													key={item.to}
 													to={item.to}

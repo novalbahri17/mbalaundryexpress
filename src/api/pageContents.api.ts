@@ -24,6 +24,12 @@ export const upsertPageContent = async (payload: Partial<PageContent>): Promise<
 	if (!payload.key) {
 		throw new Error("key wajib diisi");
 	}
+
+	// PocketBase rejects empty strings ("") for required text fields.
+	// We dynamically convert empty strings to a single space to pass validation reliably.
+	if (payload.value === "") {
+		payload.value = " ";
+	}
 	const existing = await listRecords("page_contents", {
 		page: 1,
 		perPage: 1,
@@ -42,5 +48,3 @@ export const saveBulkPageContents = async (rows: Array<Partial<PageContent>>): P
 export const deletePageContent = async (id: string): Promise<void> => {
 	await deleteRecord("page_contents", id);
 };
-
-

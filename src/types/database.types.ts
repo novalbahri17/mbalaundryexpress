@@ -1,12 +1,5 @@
 ﻿export type BranchStatus = "buka" | "tutup" | "ramai";
-export type DayName =
-	| "senin"
-	| "selasa"
-	| "rabu"
-	| "kamis"
-	| "jumat"
-	| "sabtu"
-	| "minggu";
+export type DayName = "senin" | "selasa" | "rabu" | "kamis" | "jumat" | "sabtu" | "minggu";
 export type GalleryType = "interior" | "exterior" | "mesin" | "fasilitas" | "umum";
 export type PromoStatus = "draft" | "published" | "expired";
 export type JobType = "full-time" | "part-time" | "freelance" | "magang";
@@ -20,14 +13,7 @@ export type ArticleCategory =
 	| "promo-info";
 export type ArticleStatus = "draft" | "published";
 export type TestimonialSource = "website" | "google" | "instagram" | "manual";
-export type FaqCategory =
-	| "harga"
-	| "mesin"
-	| "waktu"
-	| "pembayaran"
-	| "keamanan"
-	| "barang-hilang"
-	| "umum";
+export type FaqCategory = "harga" | "mesin" | "waktu" | "pembayaran" | "keamanan" | "barang-hilang" | "umum";
 export type PageContentType = "text" | "number" | "image" | "boolean" | "url" | "richtext" | "json";
 
 export interface BaseTable {
@@ -72,8 +58,6 @@ export interface BranchGallery extends BaseTable {
 	branch_id?: string;
 	image: string;
 	caption?: string;
-	type: GalleryType;
-	sort_order: number;
 }
 
 export interface Promo extends BaseTable {
@@ -259,4 +243,3 @@ export interface PaginatedResponse<T> {
 	totalItems: number;
 	totalPages: number;
 }
-
