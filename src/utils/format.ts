@@ -8,6 +8,13 @@ export const formatRupiah = (value: number): string =>
 		maximumFractionDigits: 0,
 	}).format(value);
 
+export const formatCurrency = (value: number): string =>
+	new Intl.NumberFormat("id-ID", {
+		style: "currency",
+		currency: "IDR",
+		maximumFractionDigits: 0,
+	}).format(value);
+
 export const formatCompact = (value: number): string =>
 	new Intl.NumberFormat("id-ID", {
 		notation: "compact",
@@ -59,11 +66,7 @@ export const sanitizeUrl = (value?: string): string | undefined => {
 	}
 };
 
-export const buildImagePlaceholder = (
-	label: string,
-	startColor = "#C62828",
-	endColor = "#1565C0",
-): string => {
+export const buildImagePlaceholder = (label: string, startColor = "#C62828", endColor = "#1565C0"): string => {
 	const safeLabel = label.replace(/[<>&'"]/g, "").slice(0, 32) || "MBA Laundry";
 	const svg = `
 		<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" fill="none">
@@ -96,4 +99,3 @@ export const sanitizeRichHtml = (value: string): string =>
 		.replace(/\son[a-z]+\s*=\s*(['"]).*?\1/gi, "")
 		.replace(/\shref\s*=\s*(['"])\s*javascript:[^'"]*\1/gi, ' href="#"')
 		.replace(/\ssrc\s*=\s*(['"])\s*javascript:[^'"]*\1/gi, "");
-
