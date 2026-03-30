@@ -149,6 +149,7 @@ export default function PengaturanAdminPage() {
 	const [securityModalOpen, setSecurityModalOpen] = useState(false);
 	const [adminEmail, setAdminEmail] = useState("");
 	const [whatsappNumber, setWhatsappNumber] = useState("");
+	const [newLoginEmail, setNewLoginEmail] = useState("");
 
 	const { data: rows = [] } = useQuery({
 		queryKey: ["admin-site-settings"],
@@ -623,6 +624,28 @@ export default function PengaturanAdminPage() {
 		]);
 	};
 
+	// Change Email
+	const handleChangeEmail = async () => {
+		if (!newLoginEmail || newLoginEmail === pb.authStore.model?.email) {
+			message.error("Email baru tidak boleh kosong atau sama dengan email saat ini");
+			return;
+		}
+
+		try {
+			await pb.collection("_superusers").update(pb.authStore.model?.id || "", {
+				email: newLoginEmail,
+			});
+			message.success("Email login berhasil diubah! Silakan login ulang dengan email baru.");
+			setNewLoginEmail("");
+			// Logout setelah email berubah
+			setTimeout(() => {
+				handleLogout();
+			}, 2000);
+		} catch (_error) {
+			message.error("Gagal mengubah email. Pastikan email valid dan belum terdaftar.");
+		}
+	};
+
 	// Security: Change Password
 	const handleChangePassword = async () => {
 		const values = await securityForm.validateFields();
@@ -678,31 +701,6 @@ export default function PengaturanAdminPage() {
 
 	return (
 		<div className="space-y-4">
-			{/* Security & Logout Card */}
-			<Card
-				title="🔐 Keamanan Akun"
-				className="shadow-sm border-ruby-200"
-				extra={
-					<Button type="primary" danger icon={<LogoutOutlined />} onClick={handleLogout} size="large">
-						Logout
-					</Button>
-				}
-			>
-				<Row gutter={[24, 16]} align="middle">
-					<Col xs={24} md={12}>
-						<Space direction="vertical" size="small">
-							<Text strong>Email Admin:</Text>
-							<Text copyable>{pb.authStore.model?.email || "-"}</Text>
-						</Space>
-					</Col>
-					<Col xs={24} md={12} className="text-right">
-						<Button type="default" icon={<LockOutlined />} onClick={() => setSecurityModalOpen(true)} size="large">
-							Ganti Password
-						</Button>
-					</Col>
-				</Row>
-			</Card>
-
 			<div className="admin-page-shell">
 				<div className="admin-page-head">
 					<div>
@@ -1083,6 +1081,64 @@ export default function PengaturanAdminPage() {
 								Simpan Informasi Kontak
 							</Button>
 						</Form>
+					</Card>
+
+					{/* ── Keamanan Akun ── */}
+					<Card title="🔐 Keamanan Akun" className="shadow-sm mt-4">
+						<Alert
+							showIcon
+							type="warning"
+							message="Pengaturan Keamanan"
+							description="Ubah email login dan password admin di sini. Pastikan data yang dimasukkan benar."
+							className="mb-4"
+						/>
+						<div className="space-y-4">
+							{/* Ganti Email */}
+							<div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
+								<h4 className="font-semibold mb-3">Ganti Email Login</h4>
+								<Form layout="vertical">
+									<Row gutter={16}>
+										<Col xs={24} md={12}>
+											<Form.Item label="Email Login Saat Ini">
+												<Input value={pb.authStore.model?.email || ""} disabled />
+											</Form.Item>
+										</Col>
+										<Col xs={24} md={12}>
+											<Form.Item label="Email Baru">
+												<Input
+													value={newLoginEmail}
+													onChange={(e) => setNewLoginEmail(e.target.value)}
+													placeholder="admin-baru@mba-laundry.com"
+													type="email"
+												/>
+											</Form.Item>
+										</Col>
+									</Row>
+									<Button type="primary" onClick={() => void handleChangeEmail()}>
+										Simpan Email Baru
+									</Button>
+								</Form>
+							</div>
+
+							{/* Ganti Password */}
+							<div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
+								<h4 className="font-semibold mb-3">Ganti Password</h4>
+								<Button type="default" icon={<LockOutlined />} onClick={() => setSecurityModalOpen(true)}>
+									Buka Form Ganti Password
+								</Button>
+							</div>
+
+							{/* Logout */}
+							<div className="border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-900/20 rounded-lg p-4">
+								<h4 className="font-semibold mb-3 text-red-700 dark:text-red-400">Logout</h4>
+								<p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
+									Keluar dari sesi admin saat ini.
+								</p>
+								<Button danger icon={<LogoutOutlined />} onClick={() => void handleLogout()}>
+									Logout Sekarang
+								</Button>
+							</div>
+						</div>
 					</Card>
 				</div>
 			</div>
