@@ -147,6 +147,8 @@ export default function PengaturanAdminPage() {
 	const [imageMode, setImageMode] = useState<"upload" | "url">("upload");
 	const [isFormsReady, setIsFormsReady] = useState(false);
 	const [securityModalOpen, setSecurityModalOpen] = useState(false);
+	const [adminEmail, setAdminEmail] = useState("");
+	const [whatsappNumber, setWhatsappNumber] = useState("");
 
 	const { data: rows = [] } = useQuery({
 		queryKey: ["admin-site-settings"],
@@ -226,6 +228,10 @@ export default function PengaturanAdminPage() {
 			module_kemitraan: pageContentMap.module_kemitraan !== "false",
 			module_kontak: pageContentMap.module_kontak !== "false",
 		});
+
+		// Load contact info
+		setAdminEmail(settingsMap.admin_email || pb.authStore.model?.email || "");
+		setWhatsappNumber(settingsMap.whatsapp_number || pageContentMap.whatsapp_number || "");
 	}, [isFormsReady, appearanceForm, announcementForm, modulesForm, pageContentMap, settingsMap]);
 
 	const lightPreview = normalizeHexColor(Form.useWatch("landing_bg_color_light", appearanceForm), DEFAULT_LIGHT_BG);
@@ -565,6 +571,55 @@ export default function PengaturanAdminPage() {
 			queryClient.invalidateQueries({
 				queryKey: [PAGE_CONTENT_QUERY_KEY, "map"],
 			}),
+		]);
+	};
+
+	// Save Contact Info
+	const saveContactInfo = async () => {
+		// Update admin email in PocketBase
+		try {
+			if (adminEmail && adminEmail !== pb.authStore.model?.email) {
+				await pb.collection("_superusers").update(pb.authStore.model?.id || "", {
+					email: adminEmail,
+				});
+			}
+		} catch (_error) {
+			message.error("Gagal mengubah email admin");
+			return;
+		}
+
+		// Save to site_settings
+		await saveBulkSettings([
+			{
+				key: "admin_email",
+				value: adminEmail,
+				description: "Email admin untuk notifikasi",
+			},
+			{
+				key: "whatsapp_number",
+				value: whatsappNumber,
+				description: "Nomor WhatsApp landing page (format: 628xxxxx)",
+			},
+		]);
+
+		// Also save to page_contents for easy access on landing page
+		await saveBulkPageContents([
+			{
+				key: "whatsapp_number",
+				value: whatsappNumber,
+				type: "text",
+				label: "Nomor WhatsApp",
+				description: "Nomor WhatsApp untuk chat di landing page",
+				group: "contact",
+			},
+		]);
+
+		message.success("Informasi kontak berhasil disimpan");
+		await Promise.all([
+			queryClient.invalidateQueries({ queryKey: ["admin-site-settings"] }),
+			queryClient.invalidateQueries({ queryKey: ["admin-page-content-map"] }),
+			queryClient.invalidateQueries({ queryKey: [PAGE_CONTENT_QUERY_KEY] }),
+			queryClient.invalidateQueries({ queryKey: [SITE_SETTINGS_QUERY_KEY] }),
 		]);
 	};
 
@@ -986,6 +1041,46 @@ export default function PengaturanAdminPage() {
 
 							<Button type="primary" onClick={() => void saveLandingAppearance()}>
 								Simpan Warna Landing
+							</Button>
+						</Form>
+					</Card>
+
+					{/* ── Kontak & Informasi ── */}
+					<Card title="📞 Kontak & Informasi" className="shadow-sm mt-4">
+						<Alert
+							showIcon
+							type="info"
+							message="Ubah Informasi Kontak"
+							description="Perbarui email admin dan nomor WhatsApp yang ditampilkan di landing page."
+							className="mb-4"
+						/>
+						<Form layout="vertical">
+							<Row gutter={16}>
+								<Col xs={24} md={12}>
+									<Form.Item label="Email Admin">
+										<Input
+											value={adminEmail}
+											onChange={(e) => setAdminEmail(e.target.value)}
+											placeholder="admin@mba-laundry.com"
+											type="email"
+										/>
+									</Form.Item>
+								</Col>
+								<Col xs={24} md={12}>
+									<Form.Item label="Nomor WhatsApp Landing Page">
+										<Input
+											value={whatsappNumber}
+											onChange={(e) => setWhatsappNumber(e.target.value)}
+											placeholder="6281234567890"
+										/>
+										<p className="text-xs text-neutral-500 mt-1">
+											Format: 628xxxxx (tanpa spasi/tanda hubung)
+										</p>
+									</Form.Item>
+								</Col>
+							</Row>
+							<Button type="primary" onClick={() => void saveContactInfo()}>
+								Simpan Informasi Kontak
 							</Button>
 						</Form>
 					</Card>
