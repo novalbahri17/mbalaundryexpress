@@ -51,72 +51,49 @@ const getErrorMessage = (error: unknown): string | null => {
 	return "Terjadi kesalahan saat memuat data dashboard.";
 };
 
-// Stat Card Component - Metronic Style
+// Stat Card Component - Compact style
 function StatCard({
 	label,
 	value,
 	icon,
-	color,
 	trend,
 	link,
+	actionLabel,
 }: {
 	label: string;
 	value: number;
 	icon: React.ReactNode;
-	color: "primary" | "success" | "warning" | "info";
 	trend?: number;
 	link?: string;
+	actionLabel: string;
 }) {
-	const colorMap = {
-		primary: {
-			bg: "icon-gradient-red",
-		},
-		success: {
-			bg: "icon-gradient-emerald",
-		},
-		warning: {
-			bg: "icon-gradient-amber",
-		},
-		info: {
-			bg: "icon-gradient-blue",
-		},
-	};
-
-	const c = colorMap[color];
-
 	const content = (
-		<div className="card stat-card">
-			<div className="card-header">
-				<div className={`icon-container ${c.bg}`}>{icon}</div>
-				<div className="content">
-					<span className="value">{formatCompact(value)}</span>
-					<span className="label">{label}</span>
+		<div className="stat-card">
+			<div className="stat-card-top">
+				<div className="stat-icon">{icon}</div>
+				<div className="stat-info">
+					<span className="stat-value">{formatCompact(value)}</span>
+					<span className="stat-label">{label}</span>
 				</div>
 			</div>
-			<div className="card-footer">
+			<div className="stat-card-bottom">
 				{trend !== undefined && (
 					<span className={`trend-pill ${trend >= 0 ? "pill-up" : "pill-down"}`}>
 						{trend >= 0 ? "↑" : "↓"}
-						{Math.abs(trend)}% dari kemarin
+						{Math.abs(trend)}%
 					</span>
 				)}
 				{link && (
-					<span className="view-link">
-						<span>Lihat detail</span>
-						<ArrowRight size={14} />
-					</span>
+					<Link to={link} className="stat-action">
+						{actionLabel}
+						<ArrowRight size={13} />
+					</Link>
 				)}
 			</div>
 		</div>
 	);
 
-	return link ? (
-		<Link to={link} className="stat-card-link">
-			{content}
-		</Link>
-	) : (
-		content
-	);
+	return content;
 }
 
 // Activity Item Component
@@ -179,18 +156,20 @@ function KPICard({
 	label,
 	value,
 	icon,
+	accent,
 	sparkline,
 }: {
 	label: string;
 	value: string | number;
 	icon: React.ReactNode;
+	accent?: "brand" | "info" | "teal" | "warning";
 	sparkline?: number[];
 }) {
 	return (
 		<div className="kpi-card">
 			<div className="kpi-header">
 				<span className="kpi-label">{label}</span>
-				<div className="kpi-icon">{icon}</div>
+				<div className={`kpi-icon kpi-icon-${accent || "default"}`}>{icon}</div>
 			</div>
 			<div className="kpi-body">
 				<span className="kpi-value">{value}</span>
@@ -449,31 +428,31 @@ export default function DashboardPage() {
 					label="Cabang Aktif"
 					value={branchItems.length}
 					icon={<ShopOutlined />}
-					color="info"
 					trend={12}
 					link="/admin/cabang"
+					actionLabel="Kelola cabang"
 				/>
 				<StatCard
 					label="Promo Aktif"
 					value={promoItems.length}
 					icon={<GiftOutlined />}
-					color="primary"
 					trend={8}
 					link="/admin/promo"
+					actionLabel="Lihat promo"
 				/>
 				<StatCard
 					label="Lowongan Terbuka"
 					value={jobs.length}
 					icon={<TeamOutlined />}
-					color="success"
 					link="/admin/loker"
+					actionLabel="Lihat loker"
 				/>
 				<StatCard
 					label="Pesan Masuk"
 					value={messages.length}
 					icon={<MailOutlined />}
-					color="warning"
 					link="/admin/pesan"
+					actionLabel="Buka pesan"
 				/>
 			</div>
 
@@ -488,7 +467,7 @@ export default function DashboardPage() {
 				>
 					<div className="card-header">
 						<div className="card-title-group">
-							<div className="card-icon card-icon-red">
+							<div className="card-icon card-icon-brand">
 								<BarChart3 size={20} />
 							</div>
 							<div>
@@ -499,7 +478,7 @@ export default function DashboardPage() {
 						<TrendingUp size={20} />
 					</div>
 					<div className="card-body">
-						<ReactApexChart type="bar" options={chartOptions} series={chartSeries} height={200} />
+						<ReactApexChart type="bar" options={chartOptions} series={chartSeries} height={160} />
 					</div>
 				</motion.div>
 
@@ -512,7 +491,7 @@ export default function DashboardPage() {
 				>
 					<div className="card-header">
 						<div className="card-title-group">
-							<div className="card-icon card-icon-blue">
+							<div className="card-icon card-icon-muted">
 								<MessageSquare size={20} />
 							</div>
 							<div>
@@ -526,11 +505,12 @@ export default function DashboardPage() {
 							label="Pesan Masuk"
 							value={messages.length}
 							icon={<MailOutlined />}
+							accent="info"
 							sparkline={[1, 2, 3, 2, 4, 3, 5]}
 						/>
-						<KPICard label="Lead Kemitraan" value={partnerships.length} icon={<PhoneOutlined />} />
-						<KPICard label="Cabang" value={branchItems.length} icon={<ShopOutlined />} />
-						<KPICard label="Promo" value={promoItems.length} icon={<GiftOutlined />} />
+						<KPICard label="Lead Kemitraan" value={partnerships.length} icon={<PhoneOutlined />} accent="teal" />
+						<KPICard label="Cabang" value={branchItems.length} icon={<ShopOutlined />} accent="brand" />
+						<KPICard label="Promo" value={promoItems.length} icon={<GiftOutlined />} accent="warning" />
 					</div>
 				</motion.div>
 			</div>
@@ -544,7 +524,7 @@ export default function DashboardPage() {
 			>
 				<div className="card-header">
 					<div className="card-title-group">
-						<div className="card-icon card-icon-violet">
+						<div className="card-icon card-icon-muted">
 							<MessageSquare size={20} />
 						</div>
 						<div>
@@ -562,9 +542,9 @@ export default function DashboardPage() {
 						</div>
 					) : (
 						<div className="empty-state">
-							<MessageSquare size={36} />
+							<MessageSquare size={32} />
 							<p>Belum ada aktivitas hari ini.</p>
-							<p className="empty-sub">Chill dulu, semua berjalan lancar!</p>
+							<p className="empty-sub">Aktivitas baru akan muncul setelah ada pesan, promo, atau lead masuk.</p>
 						</div>
 					)}
 				</div>
@@ -574,13 +554,32 @@ export default function DashboardPage() {
 }
 
 const dashboardStyles = `
-	/* ===== BASE (Light Mode) ===== */
+	/* ===== DESIGN TOKENS — LIGHT MODE ===== */
+	:root {
+		--bg-app: #f6f7fb;
+		--bg-card: #ffffff;
+		--bg-surface: #f1f5f9;
+		--border: #e5e7eb;
+		--text-primary: #0f172a;
+		--text-muted: #64748b;
+		--brand: #2563eb;
+		--brand-hover: #1d4ed8;
+		--success: #16a34a;
+		--danger: #dc2626;
+		--warning: #ca8a04;
+		--radius-card: 16px;
+		--radius-sm: 12px;
+		--shadow-card: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+		--shadow-card-hover: 0 4px 12px rgba(0,0,0,0.1);
+	}
+
+	/* ===== BASE ===== */
 	.dashboard-container {
 		max-width: 1400px;
 		margin: 0 auto;
 	}
 
-	/* Page Header */
+	/* ===== PAGE HEADER ===== */
 	.page-header {
 		display: flex;
 		align-items: center;
@@ -589,17 +588,18 @@ const dashboardStyles = `
 	}
 
 	.page-title {
-		font-size: 22px;
+		font-size: 20px;
 		font-weight: 700;
-		color: #1E293B;
+		color: var(--text-primary);
 		margin: 0;
 		line-height: 1.2;
+		letter-spacing: -0.02em;
 	}
 
 	.page-subtitle {
 		font-size: 13px;
-		color: #94A3B8;
-		margin: 4px 0 0;
+		color: var(--text-muted);
+		margin: 3px 0 0;
 	}
 
 	.header-actions {
@@ -615,50 +615,48 @@ const dashboardStyles = `
 		justify-content: center;
 		width: 36px;
 		height: 36px;
-		border-radius: 10px;
+		border-radius: var(--radius-sm);
 		border: none;
 		cursor: pointer;
-		background: #F1F5F9;
-		color: #64748B;
-		transition: all 0.2s;
+		background: var(--bg-surface);
+		color: var(--text-muted);
+		transition: all 0.15s;
 	}
 
 	.btn-theme-toggle:hover {
-		background: #E2E8F0;
-		color: #1E293B;
+		background: var(--border);
+		color: var(--text-primary);
 	}
 
-	/* Action Button — Tambah Promo (indigo/violet) */
+	/* Action Button — Tambah Promo (solid brand blue) */
 	.btn-action-add {
 		display: inline-flex;
 		align-items: center;
 		gap: 6px;
-		padding: 9px 18px;
+		padding: 8px 16px;
 		font-size: 13px;
-		font-weight: 700;
-		border-radius: 10px;
+		font-weight: 600;
+		border-radius: var(--radius-sm);
 		border: none;
 		cursor: pointer;
-		transition: all 0.2s;
+		transition: all 0.15s;
 		text-decoration: none;
-		background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+		background: var(--brand);
 		color: #fff;
-		box-shadow: 0 2px 8px rgba(79, 70, 229, 0.35);
-		letter-spacing: 0.01em;
 	}
 
 	.btn-action-add:hover {
+		background: var(--brand-hover);
 		transform: translateY(-1px);
-		box-shadow: 0 4px 14px rgba(79, 70, 229, 0.45);
 	}
 
-	/* Alert */
+	/* ===== ALERT ===== */
 	.alert {
 		display: flex;
 		align-items: center;
 		gap: 10px;
 		padding: 12px 16px;
-		border-radius: 12px;
+		border-radius: var(--radius-sm);
 		font-size: 13px;
 		font-weight: 500;
 		margin-bottom: 16px;
@@ -666,13 +664,13 @@ const dashboardStyles = `
 
 	.alert-error {
 		background: #FEF2F2;
-		color: #DC2626;
+		color: var(--danger);
 	}
 
-	/* Notification Cards */
+	/* ===== NOTIFICATION CARDS ===== */
 	.notification-row {
 		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+		grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 		gap: 12px;
 		margin-bottom: 20px;
 	}
@@ -681,19 +679,24 @@ const dashboardStyles = `
 		display: flex;
 		align-items: center;
 		gap: 14px;
-		padding: 16px;
-		border-radius: 14px;
+		padding: 14px 16px;
+		border-radius: var(--radius-card);
 		cursor: pointer;
-		transition: all 0.2s;
+		transition: all 0.15s;
 		text-decoration: none;
 	}
 
+	.notification-card:hover {
+		transform: translateY(-1px);
+		box-shadow: var(--shadow-card-hover);
+	}
+
 	.notification-card.warning {
-		background: #FFFBEB;
+		background: #FEF9C3;
 	}
 
 	.notification-card.warning .notification-icon {
-		color: #D97706;
+		color: var(--warning);
 		font-size: 20px;
 	}
 
@@ -702,7 +705,7 @@ const dashboardStyles = `
 	}
 
 	.notification-card.info .notification-icon {
-		color: #3B82F6;
+		color: var(--brand);
 		font-size: 20px;
 	}
 
@@ -711,13 +714,8 @@ const dashboardStyles = `
 	}
 
 	.notification-card.success .notification-icon {
-		color: #16A34A;
+		color: var(--success);
 		font-size: 20px;
-	}
-
-	.notification-card:hover {
-		transform: translateY(-2px);
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
 	}
 
 	.notification-content {
@@ -728,28 +726,30 @@ const dashboardStyles = `
 	.notification-content .count {
 		font-size: 22px;
 		font-weight: 800;
-		color: #1E293B;
+		color: var(--text-primary);
 		line-height: 1;
+		letter-spacing: -0.02em;
 	}
 
 	.notification-content .label {
 		font-size: 12px;
 		font-weight: 600;
-		color: #475569;
+		color: var(--text-muted);
 		margin-top: 3px;
 	}
 
 	.notification-content .description {
 		font-size: 11px;
-		color: #94A3B8;
-		margin-top: 2px;
+		color: var(--text-muted);
+		opacity: 0.7;
+		margin-top: 1px;
 	}
 
-	/* Stats Grid */
+	/* ===== STATS GRID — 4 columns, compact ===== */
 	.stats-grid {
 		display: grid;
 		grid-template-columns: repeat(4, 1fr);
-		gap: 16px;
+		gap: 14px;
 		margin-bottom: 20px;
 	}
 
@@ -761,117 +761,114 @@ const dashboardStyles = `
 		.stats-grid { grid-template-columns: 1fr; }
 	}
 
-	.stat-card-link {
-		text-decoration: none;
-		display: block;
-	}
-
+	/* Stat Card — compact, number dominant */
 	.stat-card {
-		background: #FFFFFF;
-		border-radius: 14px;
-		padding: 20px;
-		border: none;
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
-		transition: all 0.2s;
+		background: var(--bg-card);
+		border-radius: var(--radius-card);
+		padding: 16px;
+		box-shadow: var(--shadow-card);
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+		transition: all 0.15s;
 	}
 
 	.stat-card:hover {
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-		transform: translateY(-2px);
+		box-shadow: var(--shadow-card-hover);
+		transform: translateY(-1px);
 	}
 
-	.stat-card .card-header {
+	.stat-card-top {
 		display: flex;
-		align-items: flex-start;
-		gap: 14px;
-		margin-bottom: 14px;
+		align-items: center;
+		gap: 12px;
 	}
 
-	.stat-card .icon-container {
-		width: 44px;
-		height: 44px;
-		border-radius: 12px;
+	.stat-icon {
+		width: 40px;
+		height: 40px;
+		border-radius: 10px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		font-size: 20px;
+		background: var(--brand);
 		flex-shrink: 0;
 	}
 
-	.stat-card .icon-container svg {
+	.stat-icon svg {
 		color: #fff;
 	}
 
-	.stat-card .content {
+	.stat-info {
 		display: flex;
 		flex-direction: column;
+		gap: 2px;
 	}
 
-	.stat-card .value {
-		font-size: 26px;
+	.stat-value {
+		font-size: 22px;
 		font-weight: 800;
-		color: #1E293B;
+		color: var(--text-primary);
 		line-height: 1;
-		letter-spacing: -0.02em;
+		letter-spacing: -0.03em;
 	}
 
-	.stat-card .label {
+	.stat-label {
 		font-size: 12px;
-		color: #94A3B8;
-		margin-top: 4px;
+		color: var(--text-muted);
 		font-weight: 500;
 	}
 
-	.stat-card .card-footer {
+	.stat-card-bottom {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding-top: 12px;
-		border-top: 1px solid #F1F5F9;
+		padding-top: 10px;
+		border-top: 1px solid var(--border);
 	}
 
-	/* Trend Pill Badges */
+	/* Trend Pill */
 	.trend-pill {
 		display: inline-flex;
 		align-items: center;
 		gap: 3px;
-		padding: 3px 9px;
+		padding: 3px 8px;
 		border-radius: 999px;
 		font-size: 11px;
 		font-weight: 700;
-		letter-spacing: 0.01em;
 	}
 
 	.trend-pill.pill-up {
 		background: #DCFCE7;
-		color: #16A34A;
+		color: var(--success);
 	}
 
 	.trend-pill.pill-down {
 		background: #FEE2E2;
-		color: #DC2626;
+		color: var(--danger);
 	}
 
-	.stat-card .view-link {
-		display: flex;
+	/* Stat Action Link */
+	.stat-action {
+		display: inline-flex;
 		align-items: center;
-		gap: 4px;
+		gap: 3px;
 		font-size: 12px;
 		font-weight: 600;
-		color: #94A3B8;
+		color: var(--brand);
 		text-decoration: none;
-		transition: color 0.2s;
+		transition: color 0.15s;
 	}
 
-	.stat-card .view-link:hover {
-		color: #4F46E5;
+	.stat-action:hover {
+		color: var(--brand-hover);
 	}
 
-	/* Content Grid */
+	/* ===== CONTENT GRID — chart 8col + summary 4col ===== */
 	.content-grid {
 		display: grid;
-		grid-template-columns: 2fr 1fr;
-		gap: 20px;
+		grid-template-columns: 8fr 4fr;
+		gap: 16px;
 		margin-bottom: 20px;
 	}
 
@@ -879,12 +876,12 @@ const dashboardStyles = `
 		.content-grid { grid-template-columns: 1fr; }
 	}
 
-	/* Card Base — no border, subtle shadow, rounded-xl */
+	/* ===== CARD BASE ===== */
 	.card {
-		background: #FFFFFF;
-		border-radius: 14px;
+		background: var(--bg-card);
+		border-radius: var(--radius-card);
 		border: none;
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+		box-shadow: var(--shadow-card);
 		overflow: hidden;
 	}
 
@@ -892,8 +889,8 @@ const dashboardStyles = `
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: 18px 20px;
-		border-bottom: 1px solid #F1F5F9;
+		padding: 16px 18px;
+		border-bottom: 1px solid var(--border);
 	}
 
 	.card-title-group {
@@ -903,9 +900,9 @@ const dashboardStyles = `
 	}
 
 	.card-icon {
-		width: 38px;
-		height: 38px;
-		border-radius: 10px;
+		width: 36px;
+		height: 36px;
+		border-radius: 9px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -916,29 +913,44 @@ const dashboardStyles = `
 		color: #fff;
 	}
 
+	/* Brand blue icon */
+	.card-icon-brand {
+		background: var(--brand);
+	}
+
+	/* Muted icon for summary/activity headers */
+	.card-icon-muted {
+		background: var(--bg-surface);
+	}
+
+	.card-icon-muted svg {
+		color: var(--text-muted) !important;
+	}
+
 	.card .card-title {
 		font-size: 14px;
 		font-weight: 700;
-		color: #1E293B;
+		color: var(--text-primary);
 		margin: 0;
 		letter-spacing: -0.01em;
 	}
 
 	.card .card-subtitle {
 		font-size: 11px;
-		color: #94A3B8;
+		color: var(--text-muted);
 		margin: 2px 0 0;
 	}
 
 	.card .card-header svg {
-		color: #CBD5E1;
+		color: var(--text-muted);
+		opacity: 0.5;
 	}
 
 	.card .card-body {
-		padding: 20px;
+		padding: 16px 18px;
 	}
 
-	/* KPI Card */
+	/* ===== KPI GRID — 2x2 compact ===== */
 	.kpi-grid {
 		display: grid;
 		grid-template-columns: repeat(2, 1fr);
@@ -946,67 +958,68 @@ const dashboardStyles = `
 	}
 
 	.kpi-card {
-		padding: 14px;
-		border-radius: 12px;
-		background: #F8FAFC;
+		padding: 12px;
+		border-radius: var(--radius-sm);
+		background: var(--bg-surface);
 	}
 
 	.kpi-header {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		margin-bottom: 8px;
+		margin-bottom: 6px;
 	}
 
 	.kpi-label {
 		font-size: 11px;
-		color: #94A3B8;
+		color: var(--text-muted);
 		font-weight: 600;
 		letter-spacing: 0.03em;
 	}
 
 	.kpi-icon {
-		font-size: 14px;
+		font-size: 13px;
 	}
 
 	.kpi-icon svg {
-		color: #94A3B8;
+		color: var(--text-muted);
 	}
 
-	.kpi-card:nth-child(1) .kpi-icon svg { color: #3B82F6; }
-	.kpi-card:nth-child(2) .kpi-icon svg { color: #14B8A6; }
-	.kpi-card:nth-child(3) .kpi-icon svg { color: #16A34A; }
-	.kpi-card:nth-child(4) .kpi-icon svg { color: #EF4444; }
+	.kpi-icon-default svg { color: var(--text-muted); }
+	.kpi-icon-brand svg { color: var(--brand); }
+	.kpi-icon-info svg { color: #3B82F6; }
+	.kpi-icon-teal svg { color: #0D9488; }
+	.kpi-icon-warning svg { color: var(--warning); }
 
 	.kpi-body {
 		display: flex;
 		align-items: baseline;
-		gap: 6px;
 	}
 
 	.kpi-value {
 		font-size: 20px;
 		font-weight: 800;
-		color: #1E293B;
-		letter-spacing: -0.02em;
+		color: var(--text-primary);
+		letter-spacing: -0.03em;
 	}
 
 	.sparkline {
 		display: flex;
 		align-items: flex-end;
 		gap: 2px;
-		height: 20px;
-		margin-top: 8px;
+		height: 16px;
+		margin-top: 6px;
 	}
 
 	.sparkline-bar {
 		flex: 1;
-		background: linear-gradient(to top, #C62828, #EF4444);
+		background: var(--brand);
 		border-radius: 2px;
-		min-height: 3px;
+		min-height: 2px;
+		opacity: 0.7;
 	}
 
-	/* Activity Card */
+	/* ===== ACTIVITY CARD ===== */
 	.activity-card .card-body {
 		padding: 0;
 	}
@@ -1020,8 +1033,8 @@ const dashboardStyles = `
 		display: flex;
 		align-items: center;
 		gap: 12px;
-		padding: 14px 20px;
-		border-bottom: 1px solid #F8FAFC;
+		padding: 12px 18px;
+		border-bottom: 1px solid var(--border);
 		transition: background 0.15s;
 		cursor: pointer;
 	}
@@ -1031,7 +1044,7 @@ const dashboardStyles = `
 	}
 
 	.activity-item:hover {
-		background: #F8FAFC;
+		background: var(--bg-surface);
 	}
 
 	.activity-item .indicator {
@@ -1041,6 +1054,11 @@ const dashboardStyles = `
 		flex-shrink: 0;
 	}
 
+	.activity-item .indicator.indicator-red { background: var(--danger); }
+	.activity-item .indicator.indicator-blue { background: var(--brand); }
+	.activity-item .indicator.indicator-teal { background: #0D9488; }
+	.activity-item .indicator.indicator-amber { background: var(--warning); }
+
 	.activity-item .content {
 		flex: 1;
 		min-width: 0;
@@ -1049,7 +1067,7 @@ const dashboardStyles = `
 	.activity-item .title {
 		font-size: 13px;
 		font-weight: 600;
-		color: #1E293B;
+		color: var(--text-primary);
 		margin: 0;
 		white-space: nowrap;
 		overflow: hidden;
@@ -1058,150 +1076,148 @@ const dashboardStyles = `
 
 	.activity-item .detail {
 		font-size: 11px;
-		color: #94A3B8;
+		color: var(--text-muted);
 		margin: 2px 0 0;
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
 	}
 
-	/* Empty State */
+	/* ===== EMPTY STATE ===== */
 	.empty-state {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		padding: 40px 20px;
+		padding: 28px 20px;
 		text-align: center;
 	}
 
 	.empty-state svg {
-		color: #CBD5E1;
-		margin-bottom: 4px;
+		color: var(--border);
+		margin-bottom: 6px;
 	}
 
 	.empty-state p {
 		margin: 0;
 		font-size: 13px;
 		font-weight: 600;
-		color: #64748B;
+		color: var(--text-muted);
 	}
 
 	.empty-state .empty-sub {
 		font-size: 12px;
 		font-weight: 400;
-		color: #94A3B8;
+		color: var(--text-muted);
+		opacity: 0.75;
 		margin-top: 4px;
 	}
 
-	/* Icon Gradients */
-	.icon-gradient-red { background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%); }
-	.icon-gradient-emerald { background: linear-gradient(135deg, #10B981 0%, #059669 100%); }
-	.icon-gradient-amber { background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); }
-	.icon-gradient-blue { background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); }
-
-	.card-icon-red { background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%); }
-	.card-icon-blue { background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); }
-	.card-icon-violet { background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%); }
-
-	.indicator-red { background: #EF4444; }
-	.indicator-blue { background: #3B82F6; }
-	.indicator-teal { background: #14B8A6; }
-	.indicator-amber { background: #F59E0B; }
-
 	/* ===== DARK MODE ===== */
 	.dashboard-container.dashboard-dark {
-		background: #111827;
+		--bg-app: #0f1117;
+		--bg-card: #1a1d27;
+		--bg-surface: #232736;
+		--border: #2a2e3f;
+		--text-primary: #e2e8f0;
+		--text-muted: #64748b;
+		--brand: #3B82F6;
+		--brand-hover: #60A5FA;
+		--success: #4ADE80;
+		--danger: #F87171;
+		--warning: #FACC15;
+		--shadow-card: 0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
+		--shadow-card-hover: 0 4px 12px rgba(0,0,0,0.5);
 	}
 
 	.dashboard-dark .page-title {
-		color: #F1F5F9;
+		color: var(--text-primary);
 	}
 
 	.dashboard-dark .page-subtitle {
-		color: #64748B;
+		color: var(--text-muted);
 	}
 
 	.dashboard-dark .btn-theme-toggle {
-		background: #1F2937;
-		color: #9CA3AF;
+		background: var(--bg-surface);
+		color: var(--text-muted);
 	}
 
 	.dashboard-dark .btn-theme-toggle:hover {
-		background: #374151;
-		color: #F9FAFB;
+		background: var(--border);
+		color: var(--text-primary);
 	}
 
-	.dashboard-dark .card {
-		background: #1F2937;
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+	.dashboard-dark .btn-action-add {
+		background: var(--brand);
 	}
 
-	.dashboard-dark .card .card-header {
-		border-color: #374151;
-	}
-
-	.dashboard-dark .card .card-title {
-		color: #F1F5F9;
-	}
-
-	.dashboard-dark .card .card-subtitle {
-		color: #64748B;
-	}
-
-	.dashboard-dark .card .card-header svg {
-		color: #4B5563 !important;
-	}
-
-	.dashboard-dark .card-icon {
-		background: #374151 !important;
-	}
-
-	.dashboard-dark .card-icon svg {
-		color: #9CA3AF !important;
+	.dashboard-dark .btn-action-add:hover {
+		background: var(--brand-hover);
 	}
 
 	.dashboard-dark .stat-card {
-		background: #1F2937;
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+		background: var(--bg-card);
 	}
 
-	.dashboard-dark .stat-card:hover {
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+	.dashboard-dark .stat-value {
+		color: var(--text-primary);
 	}
 
-	.dashboard-dark .stat-card .value {
-		color: #F1F5F9;
+	.dashboard-dark .stat-label {
+		color: var(--text-muted);
 	}
 
-	.dashboard-dark .stat-card .label {
-		color: #64748B;
+	.dashboard-dark .stat-card-bottom {
+		border-color: var(--border);
 	}
 
-	.dashboard-dark .stat-card .card-footer {
-		border-color: #374151;
+	.dashboard-dark .stat-icon {
+		background: var(--brand);
 	}
 
-	.dashboard-dark .stat-card .view-link {
-		color: #64748B;
+	.dashboard-dark .stat-action {
+		color: var(--brand);
 	}
 
-	.dashboard-dark .stat-card .view-link:hover {
-		color: #818CF8;
+	.dashboard-dark .stat-action:hover {
+		color: var(--brand-hover);
 	}
 
-	/* Dark trend pills */
 	.dashboard-dark .trend-pill.pill-up {
-		background: rgba(22, 163, 74, 0.15);
-		color: #4ADE80;
+		background: rgba(74, 222, 128, 0.12);
+		color: var(--success);
 	}
 
 	.dashboard-dark .trend-pill.pill-down {
-		background: rgba(220, 38, 38, 0.15);
-		color: #F87171;
+		background: rgba(248, 113, 113, 0.12);
+		color: var(--danger);
 	}
 
-	/* Dark notification cards */
+	.dashboard-dark .card {
+		background: var(--bg-card);
+	}
+
+	.dashboard-dark .card-header {
+		border-color: var(--border);
+	}
+
+	.dashboard-dark .card .card-title {
+		color: var(--text-primary);
+	}
+
+	.dashboard-dark .card .card-subtitle {
+		color: var(--text-muted);
+	}
+
+	.dashboard-dark .card-icon-muted {
+		background: var(--bg-surface);
+	}
+
+	.dashboard-dark .card-icon-muted svg {
+		color: var(--text-muted) !important;
+	}
+
 	.dashboard-dark .notification-card {
 		border: none;
 	}
@@ -1210,109 +1226,66 @@ const dashboardStyles = `
 		background: #1C1917;
 	}
 
-	.dashboard-dark .notification-card.warning .notification-icon {
-		color: #D97706;
-	}
-
 	.dashboard-dark .notification-card.info {
-		background: #1E1B2E;
-	}
-
-	.dashboard-dark .notification-card.info .notification-icon {
-		color: #818CF8;
+		background: #1E293B;
 	}
 
 	.dashboard-dark .notification-card.success {
-		background: #172554;
-	}
-
-	.dashboard-dark .notification-card.success .notification-icon {
-		color: #4ADE80;
+		background: #052e16;
 	}
 
 	.dashboard-dark .notification-content .count {
-		color: #F1F5F9;
+		color: var(--text-primary);
 	}
 
-	.dashboard-dark .notification-content .label {
-		color: #9CA3AF;
-	}
-
-	.dashboard-dark .notification-content .description {
-		color: #64748B;
-	}
-
-	/* Dark KPI */
 	.dashboard-dark .kpi-card {
-		background: #1A1D27;
-	}
-
-	.dashboard-dark .kpi-label {
-		color: #64748B;
+		background: var(--bg-surface);
 	}
 
 	.dashboard-dark .kpi-value {
-		color: #F1F5F9;
+		color: var(--text-primary);
 	}
 
-	.dashboard-dark .kpi-card:nth-child(1) .kpi-icon svg { color: #818CF8 !important; }
-	.dashboard-dark .kpi-card:nth-child(2) .kpi-icon svg { color: #2DD4BF !important; }
-	.dashboard-dark .kpi-card:nth-child(3) .kpi-icon svg { color: #4ADE80 !important; }
-	.dashboard-dark .kpi-card:nth-child(4) .kpi-icon svg { color: #F87171 !important; }
+	.dashboard-dark .kpi-icon svg {
+		color: var(--text-muted) !important;
+	}
 
-	/* Dark activity */
+	.dashboard-dark .kpi-icon-brand svg { color: var(--brand) !important; }
+	.dashboard-dark .kpi-icon-info svg { color: #60A5FA !important; }
+	.dashboard-dark .kpi-icon-teal svg { color: #2DD4BF !important; }
+	.dashboard-dark .kpi-icon-warning svg { color: var(--warning) !important; }
+
 	.dashboard-dark .activity-item {
-		border-color: #374151;
+		border-color: var(--border);
 	}
 
 	.dashboard-dark .activity-item:hover {
-		background: #1A1D27;
+		background: var(--bg-surface);
 	}
 
 	.dashboard-dark .activity-item .title {
-		color: #F1F5F9;
+		color: var(--text-primary);
 	}
 
 	.dashboard-dark .activity-item .detail {
-		color: #64748B;
+		color: var(--text-muted);
 	}
 
-	/* Dark empty state */
 	.dashboard-dark .empty-state svg {
-		color: #374151 !important;
+		color: var(--border) !important;
 	}
 
 	.dashboard-dark .empty-state p {
-		color: #9CA3AF;
+		color: var(--text-muted);
 	}
 
-	.dashboard-dark .empty-state .empty-sub {
-		color: #64748B;
-	}
-
-	/* Dark alert */
 	.dashboard-dark .alert-error {
-		background: rgba(220, 38, 38, 0.12);
-		color: #F87171;
+		background: rgba(248, 113, 113, 0.1);
+		color: var(--danger);
 	}
 
-	/* Dark sparkline */
 	.dashboard-dark .sparkline-bar {
-		background: linear-gradient(to top, #991B1B, #DC2626);
+		background: var(--brand);
+		opacity: 0.6;
 	}
-
-	/* Dark icon gradients */
-	.dashboard-dark .icon-gradient-red { background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%); }
-	.dashboard-dark .icon-gradient-emerald { background: linear-gradient(135deg, #059669 0%, #047857 100%); }
-	.dashboard-dark .icon-gradient-amber { background: linear-gradient(135deg, #D97706 0%, #B45309 100%); }
-	.dashboard-dark .icon-gradient-blue { background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%); }
-
-	.dashboard-dark .card-icon-red { background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%); }
-	.dashboard-dark .card-icon-blue { background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%); }
-	.dashboard-dark .card-icon-violet { background: linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%); }
-
-	.dashboard-dark .indicator-red { background: #DC2626; }
-	.dashboard-dark .indicator-blue { background: #2563EB; }
-	.dashboard-dark .indicator-teal { background: #0F766E; }
-	.dashboard-dark .indicator-amber { background: #D97706; }
 `;
