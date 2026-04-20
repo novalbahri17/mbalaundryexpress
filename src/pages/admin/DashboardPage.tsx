@@ -1,74 +1,28 @@
 import {
-	AppstoreOutlined,
-	AreaChartOutlined,
-	BarChartOutlined,
-	CloseOutlined,
-	DragOutlined,
-	ExperimentOutlined,
-	FireOutlined,
-	FunnelPlotOutlined,
 	GiftOutlined,
-	LineChartOutlined,
 	MailOutlined,
 	PhoneOutlined,
-	PieChartOutlined,
 	PlusOutlined,
-	ReadOutlined,
-	SettingOutlined,
 	ShopOutlined,
+	SunOutlined,
+	MoonOutlined,
 	TeamOutlined,
-	TrophyOutlined,
 	WarningOutlined,
 } from "@ant-design/icons";
-import {
-	Alert,
-	Button,
-	Card,
-	Empty,
-	Progress,
-	Segmented,
-	Skeleton,
-	Switch,
-	Tag,
-	Tooltip,
-} from "antd";
-import {
-	DndContext,
-	DragEndEvent,
-	KeyboardSensor,
-	PointerSensor,
-	useSensor,
-	useSensors,
-} from "@dnd-kit/core";
-import {
-	arrayMove,
-	SortableContext,
-	sortableKeyboardCoordinates,
-	useSortable,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import { useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
-import { useMemo, useState } from "react";
-import CountUp from "react-countup";
+import { ArrowRight, BarChart3, MessageSquare, TrendingUp } from "lucide-react";
+import { useMemo } from "react";
 import { Link } from "react-router-dom";
-import { useLocalStorage } from "usehooks-ts";
-import { getArticles } from "@/api/articles.api";
+import ReactApexChart from "react-apexcharts";
 import { getBranches } from "@/api/branches.api";
 import { getJobs } from "@/api/jobs.api";
 import { getPromos } from "@/api/promos.api";
 import { getContactMessages, getPartnerships } from "@/api/settings.api";
-import { getSubscribers } from "@/api/subscribers.api";
-import { formatDateTime } from "@/utils/format";
+import { formatCompact, formatDateTime } from "@/utils/format";
+import { useThemeStore } from "@/store/themeStore";
 
-type SeriesMode = "Mingguan" | "Bulanan";
 type ActivityTone = "brand" | "blue" | "teal" | "amber";
-type WidgetCategory = "analytics" | "monitoring" | "quickActions" | "content" | "marketing";
-
-interface SeriesPoint {
-	label: string;
-	value: number;
-}
 
 interface ActivityItem {
 	key: string;
@@ -77,16 +31,6 @@ interface ActivityItem {
 	timestamp: number;
 	link: string;
 	tone: ActivityTone;
-}
-
-interface WidgetConfig {
-	id: string;
-	title: string;
-	icon: React.ReactNode;
-	colSpan: 1 | 2 | 3 | 4;
-	enabled: boolean;
-	order: number;
-	category: WidgetCategory;
 }
 
 const startOfToday = () => {
@@ -101,249 +45,170 @@ const toTimestamp = (value?: string): number | null => {
 	return Number.isNaN(ts) ? null : ts;
 };
 
-const formatNumber = (value: number): string => {
-	return new Intl.NumberFormat("id-ID").format(value);
-};
-
-const clamp = (value: number, min: number, max: number): number => {
-	return Math.min(max, Math.max(min, value));
-};
-
 const getErrorMessage = (error: unknown): string | null => {
 	if (!error) return null;
 	if (error instanceof Error) return error.message;
 	return "Terjadi kesalahan saat memuat data dashboard.";
 };
 
-const getPercent = (done: number, total: number, fallback = 0): number => {
-	if (total <= 0) return fallback;
-	return clamp(Math.round((done / total) * 100), 0, 100);
-};
-
-// Sortable Widget Component
-interface SortableWidgetCardProps {
-	widget: WidgetConfig;
-	children: React.ReactNode;
-	isCustomizing: boolean;
-	onToggle: (id: string) => void;
-	onRemove: (id: string) => void;
-}
-
-function SortableWidgetCard({ widget, children, isCustomizing, onToggle, onRemove }: SortableWidgetCardProps) {
-	const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-		id: widget.id,
-		disabled: !isCustomizing,
-	});
-
-	const style = {
-		transform: CSS.Transform.toString(transform),
-		transition,
-		opacity: isDragging ? 0.5 : 1,
+// Stat Card Component - Metronic Style
+function StatCard({
+	label,
+	value,
+	icon,
+	color,
+	trend,
+	link,
+}: {
+	label: string;
+	value: number;
+	icon: React.ReactNode;
+	color: "primary" | "success" | "warning" | "info";
+	trend?: number;
+	link?: string;
+}) {
+	const colorMap = {
+		primary: {
+			bg: "icon-gradient-red",
+		},
+		success: {
+			bg: "icon-gradient-emerald",
+		},
+		warning: {
+			bg: "icon-gradient-amber",
+		},
+		info: {
+			bg: "icon-gradient-blue",
+		},
 	};
 
-	const colSpanClasses = {
-		1: "xl:col-span-3",
-		2: "xl:col-span-6",
-		3: "xl:col-span-9",
-		4: "xl:col-span-12",
+	const c = colorMap[color];
+
+	const content = (
+		<div className="card stat-card">
+			<div className="card-header">
+				<div className={`icon-container ${c.bg}`}>{icon}</div>
+				<div className="content">
+					<span className="value">{formatCompact(value)}</span>
+					<span className="label">{label}</span>
+				</div>
+			</div>
+			<div className="card-footer">
+				{trend !== undefined && (
+					<span className={`trend-pill ${trend >= 0 ? "pill-up" : "pill-down"}`}>
+						{trend >= 0 ? "↑" : "↓"}
+						{Math.abs(trend)}% dari kemarin
+					</span>
+				)}
+				{link && (
+					<span className="view-link">
+						<span>Lihat detail</span>
+						<ArrowRight size={14} />
+					</span>
+				)}
+			</div>
+		</div>
+	);
+
+	return link ? (
+		<Link to={link} className="stat-card-link">
+			{content}
+		</Link>
+	) : (
+		content
+	);
+}
+
+// Activity Item Component
+function ActivityListItem({ item }: { item: ActivityItem }) {
+	const toneMap: Record<ActivityTone, string> = {
+		brand: "indicator-red",
+		blue: "indicator-blue",
+		teal: "indicator-teal",
+		amber: "indicator-amber",
 	};
 
 	return (
-		<div ref={setNodeRef} style={style} className={`${colSpanClasses[widget.colSpan]} relative`}>
-			{isCustomizing && (
-				<div className="absolute -top-3 -right-3 z-20 flex gap-1">
-					<Tooltip title={widget.enabled ? "Nonaktifkan" : "Aktifkan"}>
-						<Switch size="small" checked={widget.enabled} onChange={() => onToggle(widget.id)} />
-					</Tooltip>
-					<Tooltip title="Hapus widget">
-						<Button type="primary" danger size="small" icon={<CloseOutlined />} onClick={() => onRemove(widget.id)} />
-					</Tooltip>
+		<Link to={item.link}>
+			<motion.div whileHover={{ x: 2 }} className="activity-item">
+				<div className={`indicator ${toneMap[item.tone]}`} />
+				<div className="content">
+					<p className="title">{item.title}</p>
+					<p className="detail">{item.detail}</p>
+				</div>
+			</motion.div>
+		</Link>
+	);
+}
+
+// Notification Card Component
+function NotificationCard({
+	icon,
+	count,
+	label,
+	description,
+	color,
+	link,
+}: {
+	icon: React.ReactNode;
+	count: number;
+	label: string;
+	description: string;
+	color: string;
+	link?: string;
+}) {
+	const card = (
+		<div className={`notification-card ${color}`}>
+			<div className="notification-icon">{icon}</div>
+			<div className="notification-content">
+				<span className="count">{count}</span>
+				<span className="label">{label}</span>
+				<span className="description">{description}</span>
+			</div>
+		</div>
+	);
+
+	if (link) {
+		return <Link to={link}>{card}</Link>;
+	}
+	return card;
+}
+
+// KPI Card Component
+function KPICard({
+	label,
+	value,
+	icon,
+	sparkline,
+}: {
+	label: string;
+	value: string | number;
+	icon: React.ReactNode;
+	sparkline?: number[];
+}) {
+	return (
+		<div className="kpi-card">
+			<div className="kpi-header">
+				<span className="kpi-label">{label}</span>
+				<div className="kpi-icon">{icon}</div>
+			</div>
+			<div className="kpi-body">
+				<span className="kpi-value">{value}</span>
+			</div>
+			{sparkline && (
+				<div className="sparkline">
+					{sparkline.map((v, i) => (
+						<div key={i} className="sparkline-bar" style={{ height: `${(v / Math.max(...sparkline)) * 100}%` }} />
+					))}
 				</div>
 			)}
-			{isCustomizing && (
-				<div
-					className="absolute -top-3 left-1/2 -translate-x-1/2 z-20 bg-blue-500 text-white px-2 py-1 rounded text-xs cursor-move flex items-center gap-1"
-					{...attributes}
-					{...listeners}
-				>
-					<DragOutlined /> Drag
-				</div>
-			)}
-			<div className={`h-full transition-all duration-300 ${isCustomizing ? "ring-2 ring-blue-400 ring-offset-2 rounded-2xl" : ""}`}>
-				{children}
-			</div>
-		</div>
-	);
-}
-
-// Animated Counter
-function AnimatedCounter({ end }: { end: number }) {
-	return <CountUp end={end} duration={2} separator="." className="tabular-nums" />;
-}
-
-// Marketing Widget
-function MarketingMiniWidget() {
-	const { data: promoRes } = useQuery({
-		queryKey: ["dash-promos-marketing"],
-		queryFn: () => getPromos({ activeOnly: true, status: "published", perPage: 200 }),
-	});
-
-	const promoItems = promoRes?.items ?? [];
-	const totalImpressions = promoItems.reduce((acc, p) => acc + (p.impressions || 0), 0);
-	const totalConversions = promoItems.reduce((acc, p) => acc + (p.conversions || 0), 0);
-	const avgConversionRate = totalImpressions > 0 ? (totalConversions / totalImpressions) * 100 : 0;
-
-	return (
-		<div className="space-y-3">
-			<div className="flex justify-between items-center">
-				<span className="text-sm text-neutral-600 dark:text-neutral-400">Conversion Rate</span>
-				<span className="text-lg font-bold text-emerald-600">{avgConversionRate.toFixed(1)}%</span>
-			</div>
-			<Progress percent={Math.min(avgConversionRate * 10, 100)} showInfo={false} strokeColor="#10b981" />
-			<div className="grid grid-cols-2 gap-2 text-center">
-				<div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-2">
-					<div className="text-lg font-bold text-emerald-600">{formatNumber(totalConversions)}</div>
-					<div className="text-xs text-neutral-500">Konversi</div>
-				</div>
-				<div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-2">
-					<div className="text-lg font-bold text-blue-600">{formatNumber(totalImpressions)}</div>
-					<div className="text-xs text-neutral-500">Impressions</div>
-				</div>
-			</div>
-		</div>
-	);
-}
-
-// Lead Funnel Widget
-function LeadFunnelWidget() {
-	const funnelData = [
-		{ stage: "Website Visit", count: 1250, color: "#3b82f6" },
-		{ stage: "CTA Click", count: 680, color: "#8b5cf6" },
-		{ stage: "WhatsApp", count: 420, color: "#10b981" },
-		{ stage: "Branch Visit", count: 180, color: "#f59e0b" },
-		{ stage: "Transaction", count: 95, color: "#ef4444" },
-	];
-	const maxCount = Math.max(...funnelData.map((d) => d.count));
-
-	return (
-		<div className="space-y-2">
-			{funnelData.map((item, index) => (
-				<div key={item.stage} className="flex items-center gap-2">
-					<div className="w-24 text-xs text-neutral-600 dark:text-neutral-400">{item.stage}</div>
-					<div className="flex-1">
-						<div
-							className="h-6 rounded-md flex items-center justify-end px-2 text-xs font-bold text-white transition-all duration-500"
-							style={{
-								width: `${(item.count / maxCount) * 100}%`,
-								backgroundColor: item.color,
-								marginLeft: index * 8,
-							}}
-						>
-							{item.count}
-						</div>
-					</div>
-				</div>
-			))}
-		</div>
-	);
-}
-
-// A/B Testing Widget
-function ABTestingWidget() {
-	const tests = [
-		{ name: "Hero CTA Color", variantA: "Blue", variantB: "Red", winner: "B", improvement: "+12%" },
-		{ name: "Promo Banner", variantA: "Static", variantB: "Animated", winner: "B", improvement: "+8%" },
-	];
-
-	return (
-		<div className="space-y-3">
-			{tests.map((test) => (
-				<div key={test.name} className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-3">
-					<div className="flex justify-between items-center mb-2">
-						<span className="text-sm font-semibold">{test.name}</span>
-						<Tag color="success">Winner: {test.winner}</Tag>
-					</div>
-					<div className="flex gap-2 text-xs">
-						<div className="flex-1 bg-neutral-100 dark:bg-neutral-800 rounded p-2 text-center">
-							<div className="text-neutral-500">A: {test.variantA}</div>
-						</div>
-						<div className="flex-1 bg-emerald-50 dark:bg-emerald-900/20 rounded p-2 text-center border border-emerald-200">
-							<div className="text-emerald-600 font-bold">B: {test.variantB}</div>
-							<div className="text-emerald-500 text-xs">{test.improvement}</div>
-						</div>
-					</div>
-				</div>
-			))}
-		</div>
-	);
-}
-
-// Campaign Tracker Widget
-function CampaignTrackerWidget() {
-	const campaigns = [
-		{ platform: "Instagram", budget: 2500000, spent: 1800000, clicks: 450, color: "#e1306c" },
-		{ platform: "TikTok", budget: 1500000, spent: 1200000, clicks: 380, color: "#000000" },
-		{ platform: "Facebook", budget: 1000000, spent: 800000, clicks: 220, color: "#1877f2" },
-	];
-
-	return (
-		<div className="space-y-3">
-			{campaigns.map((camp) => (
-				<div key={camp.platform} className="flex items-center gap-3">
-					<div className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold" style={{ backgroundColor: camp.color }}>
-						{camp.platform[0]}
-					</div>
-					<div className="flex-1">
-						<div className="flex justify-between text-sm">
-							<span className="font-semibold">{camp.platform}</span>
-							<span className="text-neutral-500">{formatNumber(camp.clicks)} clicks</span>
-						</div>
-						<Progress percent={Math.round((camp.spent / camp.budget) * 100)} size="small" strokeColor={camp.color} />
-					</div>
-				</div>
-			))}
-		</div>
-	);
-}
-
-// Gamification Widget
-function GamificationWidget() {
-	const achievements = [
-		{ icon: <FireOutlined />, name: "7-Day Streak", unlocked: true },
-		{ icon: <TrophyOutlined />, name: "Promo Master", unlocked: true },
-		{ icon: <GiftOutlined />, name: "Content Creator", unlocked: false },
-		{ icon: <MailOutlined />, name: "Fast Responder", unlocked: false },
-	];
-
-	return (
-		<div className="space-y-2">
-			<div className="flex justify-between items-center mb-3">
-				<span className="text-sm font-semibold">Achievements</span>
-				<Tag color="success">2/4</Tag>
-			</div>
-			<div className="grid grid-cols-2 gap-2">
-				{achievements.map((ach) => (
-					<div
-						key={ach.name}
-						className={`p-2 rounded-lg border text-center transition-all ${
-							ach.unlocked
-								? "bg-amber-50 border-amber-200 dark:bg-amber-900/20 dark:border-amber-700"
-								: "bg-neutral-50 border-neutral-200 dark:bg-neutral-800 dark:border-neutral-700 opacity-60"
-						}`}
-					>
-						<div className={`text-lg ${ach.unlocked ? "text-amber-500" : "text-neutral-400"}`}>{ach.icon}</div>
-						<div className="text-xs font-semibold mt-1">{ach.name}</div>
-					</div>
-				))}
-			</div>
 		</div>
 	);
 }
 
 // Main Dashboard
 export default function DashboardPage() {
-	const [seriesMode, setSeriesMode] = useState<SeriesMode>("Mingguan");
-	const [customizableMode, setCustomizableMode] = useState(false);
+	const { mode, toggle } = useThemeStore();
 	const now = new Date();
 	const dayString = now.toLocaleDateString("id-ID", {
 		weekday: "long",
@@ -352,62 +217,44 @@ export default function DashboardPage() {
 		year: "numeric",
 	});
 
-	const defaultWidgets: WidgetConfig[] = [
-		{ id: "stats-overview", title: "Statistik Overview", icon: <BarChartOutlined />, colSpan: 4, enabled: true, order: 1, category: "analytics" },
-		{ id: "marketing-performance", title: "Marketing Performance", icon: <LineChartOutlined />, colSpan: 2, enabled: true, order: 2, category: "marketing" },
-		{ id: "lead-funnel", title: "Lead Funnel", icon: <FunnelPlotOutlined />, colSpan: 2, enabled: true, order: 3, category: "marketing" },
-		{ id: "performance-chart", title: "Performance Chart", icon: <AreaChartOutlined />, colSpan: 2, enabled: true, order: 4, category: "analytics" },
-		{ id: "recent-activity", title: "Recent Activity", icon: <AppstoreOutlined />, colSpan: 2, enabled: true, order: 5, category: "monitoring" },
-		{ id: "ab-testing", title: "A/B Testing", icon: <ExperimentOutlined />, colSpan: 2, enabled: true, order: 6, category: "marketing" },
-		{ id: "campaign-tracker", title: "Campaign Tracker", icon: <PieChartOutlined />, colSpan: 2, enabled: true, order: 7, category: "marketing" },
-		{ id: "gamification", title: "Achievements", icon: <TrophyOutlined />, colSpan: 2, enabled: true, order: 8, category: "content" },
-	];
-
-	const [widgets, setWidgets] = useLocalStorage<WidgetConfig[]>("dashboard-widgets-v2", defaultWidgets);
-
-	const sensors = useSensors(
-		useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-		useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-	);
-
-	const { data: branchRes, isLoading: branchLoading, error: branchError } = useQuery({
+	const {
+		data: branchRes,
+		isLoading: branchLoading,
+		error: branchError,
+	} = useQuery({
 		queryKey: ["dash-branches"],
 		queryFn: () => getBranches({ activeOnly: true, perPage: 200 }),
 	});
-	const { data: promoRes, isLoading: promoLoading, error: promoError } = useQuery({
+
+	const {
+		data: promoRes,
+		isLoading: promoLoading,
+		error: promoError,
+	} = useQuery({
 		queryKey: ["dash-promos"],
 		queryFn: () => getPromos({ activeOnly: true, status: "published", perPage: 200 }),
 	});
-	const { data: jobs = [], isLoading: jobsLoading, error: jobsError } = useQuery({
+
+	const { data: jobs = [], isLoading: jobsLoading } = useQuery({
 		queryKey: ["dash-jobs"],
 		queryFn: () => getJobs({ openOnly: true }),
 	});
-	const { data: articles = [], isLoading: articlesLoading, error: articlesError } = useQuery({
-		queryKey: ["dash-articles"],
-		queryFn: () => getArticles({ publishedOnly: true }),
-	});
-	const { data: messages = [], isLoading: messagesLoading, error: messagesError } = useQuery({
+
+	const { data: messages = [] } = useQuery({
 		queryKey: ["dash-messages"],
 		queryFn: getContactMessages,
 	});
-	const { data: partnerships = [], isLoading: partnershipsLoading, error: partnershipsError } = useQuery({
+
+	const { data: partnerships = [] } = useQuery({
 		queryKey: ["dash-partnerships"],
 		queryFn: getPartnerships,
-	});
-	const { data: subscribers = [], isLoading: subscribersLoading, error: subscribersError } = useQuery({
-		queryKey: ["dash-subscribers"],
-		queryFn: getSubscribers,
 	});
 
 	const branchItems = branchRes?.items ?? [];
 	const promoItems = promoRes?.items ?? [];
-	const isLoadingDashboard = branchLoading || promoLoading || jobsLoading || articlesLoading || messagesLoading || partnershipsLoading || subscribersLoading;
 
-	const todayTs = startOfToday();
 	const unreadMessagesCount = messages.filter((item) => item.status === "new").length;
 	const newPartnershipCount = partnerships.filter((item) => item.status === "new").length;
-	const openBranches = branchItems.filter((branch) => branch.status === "buka").length;
-	const busyBranches = branchItems.filter((branch) => branch.status === "ramai").length;
 
 	const expiringPromo = useMemo(
 		() =>
@@ -415,20 +262,21 @@ export default function DashboardPage() {
 				const diff = new Date(promo.end_date).getTime() - now.getTime();
 				return diff > 0 && diff <= 3 * 24 * 60 * 60 * 1000;
 			}),
-		[now, promoItems]
+		[now, promoItems],
 	);
 
 	const engagementEventTimestamps = useMemo(() => {
 		const messageEvents = messages.map((item) => toTimestamp(item.created)).filter((v): v is number => v !== null);
-		const partnershipEvents = partnerships.map((item) => toTimestamp(item.created)).filter((v): v is number => v !== null);
-		const subscriberEvents = subscribers.map((item) => toTimestamp(item.created)).filter((v): v is number => v !== null);
-		return [...messageEvents, ...partnershipEvents, ...subscriberEvents];
-	}, [messages, partnerships, subscribers]);
+		const partnershipEvents = partnerships
+			.map((item) => toTimestamp(item.created))
+			.filter((v): v is number => v !== null);
+		return [...messageEvents, ...partnershipEvents];
+	}, [messages, partnerships]);
 
 	const weeklySeries = useMemo(() => {
 		const dayMs = 24 * 60 * 60 * 1000;
 		const todayStart = startOfToday();
-		const points: SeriesPoint[] = [];
+		const points: Array<{ label: string; value: number }> = [];
 		for (let offset = 6; offset >= 0; offset -= 1) {
 			const rangeStart = todayStart - offset * dayMs;
 			const rangeEnd = rangeStart + dayMs;
@@ -438,23 +286,6 @@ export default function DashboardPage() {
 		}
 		return points;
 	}, [engagementEventTimestamps]);
-
-	const monthlySeries = useMemo(() => {
-		const points: SeriesPoint[] = [];
-		const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-		for (let offset = 5; offset >= 0; offset -= 1) {
-			const monthStart = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - offset, 1);
-			const monthEnd = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - offset + 1, 1);
-			const count = engagementEventTimestamps.filter((ts) => ts >= monthStart.getTime() && ts < monthEnd.getTime()).length;
-			const label = monthStart.toLocaleDateString("id-ID", { month: "short" });
-			points.push({ label, value: count });
-		}
-		return points;
-	}, [engagementEventTimestamps, now]);
-
-	const activeSeries = seriesMode === "Mingguan" ? weeklySeries : monthlySeries;
-	const maxSeriesValue = Math.max(1, ...activeSeries.map((point) => point.value));
-	const seriesTotal = activeSeries.reduce((acc, point) => acc + point.value, 0);
 
 	const recentActivities = useMemo(() => {
 		const items: ActivityItem[] = [];
@@ -488,203 +319,71 @@ export default function DashboardPage() {
 				tone: "amber",
 			});
 		}
-		for (const article of articles.slice(0, 3)) {
-			items.push({
-				key: `article-${article.id}`,
-				title: `Artikel diperbarui: ${article.title}`,
-				detail: `Status ${article.status} • ${formatDateTime(article.updated ?? article.created ?? new Date())}`,
-				timestamp: toTimestamp(article.updated ?? article.created) ?? 0,
-				link: "/admin/blog",
-				tone: "brand",
-			});
-		}
 		return items.sort((a, b) => b.timestamp - a.timestamp).slice(0, 10);
-	}, [articles, expiringPromo, messages, partnerships]);
+	}, [expiringPromo, messages, partnerships]);
 
-	const handleDragEnd = (event: DragEndEvent) => {
-		const { active, over } = event;
-		if (over && active.id !== over.id) {
-			setWidgets((items) => {
-				const oldIndex = items.findIndex((item) => item.id === active.id);
-				const newIndex = items.findIndex((item) => item.id === over.id);
-				return arrayMove(items, oldIndex, newIndex);
-			});
-		}
+	const errorMessages = [getErrorMessage(branchError), getErrorMessage(promoError)].filter((value): value is string =>
+		Boolean(value),
+	);
+
+	const chartOptions = {
+		chart: {
+			type: "bar" as const,
+			toolbar: { show: false },
+			fontFamily: "Inter, sans-serif",
+			foreColor: mode === "dark" ? "#8B8FA8" : "#9CA3AF",
+		},
+		plotOptions: {
+			bar: {
+				borderRadius: 8,
+				horizontal: false,
+				columnWidth: "40%",
+				distributed: true,
+			},
+		},
+		colors: ["#C62828", "#EF4444", "#F87171", "#FCA5A5", "#FEE2E2"],
+		dataLabels: { enabled: false },
+		xaxis: {
+			categories: weeklySeries.map((d) => d.label),
+			axisBorder: { show: false },
+			axisTicks: { show: false },
+			labels: {
+				style: { colors: mode === "dark" ? "#8B8FA8" : "#9CA3AF", fontSize: "12px" },
+			},
+		},
+		yaxis: { show: false },
+		grid: { show: false },
+		tooltip: {
+			theme: mode,
+			style: { fontSize: "12px" },
+		},
+		legend: { show: false },
 	};
 
-	const handleToggleWidget = (id: string) => {
-		setWidgets((items) => items.map((item) => (item.id === id ? { ...item, enabled: !item.enabled } : item)));
-	};
-
-	const handleRemoveWidget = (id: string) => {
-		setWidgets((items) => items.filter((item) => item.id !== id));
-	};
-
-	const handleResetWidgets = () => {
-		if (confirm("Reset layout widget ke default?")) {
-			setWidgets(defaultWidgets);
-		}
-	};
-
-	const errorMessages = [
-		getErrorMessage(branchError),
-		getErrorMessage(promoError),
-		getErrorMessage(jobsError),
-		getErrorMessage(articlesError),
-		getErrorMessage(messagesError),
-		getErrorMessage(partnershipsError),
-		getErrorMessage(subscribersError),
-	].filter((value): value is string => Boolean(value));
-
-	const activityToneClass: Record<ActivityTone, string> = {
-		brand: "bg-rose-500",
-		blue: "bg-blue-500",
-		teal: "bg-teal-500",
-		amber: "bg-amber-500",
-	};
-
-	const renderWidgetContent = (widgetId: string) => {
-		switch (widgetId) {
-			case "stats-overview":
-				return (
-					<div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-						{[
-							{ label: "Promo Aktif", value: promoItems.length, helper: `${expiringPromo.length} akan berakhir`, icon: <GiftOutlined />, color: "rose" },
-							{ label: "Cabang Aktif", value: branchItems.length, helper: `${openBranches} buka • ${busyBranches} ramai`, icon: <ShopOutlined />, color: "blue" },
-							{ label: "Loker Terbuka", value: jobs.length, helper: "Posisi tersedia", icon: <TeamOutlined />, color: "amber" },
-							{ label: "Artikel Publish", value: articles.length, helper: `${formatNumber(subscribers.length)} subscribers`, icon: <ReadOutlined />, color: "teal" },
-						].map((item) => (
-							<motion.div
-								key={item.label}
-								whileHover={{ scale: 1.02 }}
-								className={`rounded-xl bg-gradient-to-br from-${item.color}-50 to-white dark:from-${item.color}-900/10 dark:to-transparent border border-${item.color}-200 dark:border-${item.color}-800 p-4`}
-							>
-								<div className="flex items-start justify-between">
-									<div>
-										<p className="text-xs font-bold uppercase tracking-wider text-neutral-600 dark:text-neutral-400">{item.label}</p>
-										<div className="mt-1 text-3xl font-black text-neutral-900 dark:text-white">
-											{isLoadingDashboard ? <Skeleton.Input active size="small" style={{ width: 60 }} /> : <AnimatedCounter end={item.value} />}
-										</div>
-										<p className="text-xs text-neutral-500 mt-1">{item.helper}</p>
-									</div>
-									<div className={`p-2 rounded-lg bg-${item.color}-100 dark:bg-${item.color}-900/30 text-${item.color}-600 dark:text-${item.color}-400`}>
-										{item.icon}
-									</div>
-								</div>
-							</motion.div>
-						))}
-					</div>
-				);
-			case "marketing-performance":
-				return <MarketingMiniWidget />;
-			case "lead-funnel":
-				return <LeadFunnelWidget />;
-			case "performance-chart":
-				return (
-					<div>
-						<div className="flex items-center justify-between mb-4">
-							<div>
-								<span className="text-sm text-neutral-600 dark:text-neutral-400">Total Interaksi</span>
-								<div className="text-2xl font-black text-neutral-900 dark:text-white">
-									<AnimatedCounter end={seriesTotal} />
-								</div>
-							</div>
-							<Segmented
-								size="small"
-								options={["Mingguan", "Bulanan"]}
-								value={seriesMode}
-								onChange={(v) => setSeriesMode(v as SeriesMode)}
-							/>
-						</div>
-						<div className="flex items-end gap-2 h-40">
-							{activeSeries.map((point) => {
-								const ratio = point.value / maxSeriesValue;
-								const heightPercent = Math.round(Math.max(10, ratio * 100));
-								return (
-									<div key={point.label} className="flex-1 min-w-[40px]">
-										<motion.div
-											initial={{ height: 0 }}
-											animate={{ height: `${heightPercent}%` }}
-											className="bg-gradient-to-t from-ruby-600 to-teal-400 rounded-t-lg relative group"
-										>
-											<div className="absolute -top-6 left-1/2 -translate-x-1/2 text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity">
-												{point.value}
-											</div>
-										</motion.div>
-										<div className="text-center text-xs mt-1 text-neutral-500">{point.label}</div>
-									</div>
-								);
-								})}
-						</div>
-					</div>
-				);
-			case "recent-activity":
-				return (
-					<div className="space-y-3 max-h-64 overflow-y-auto">
-						{recentActivities.length > 0 ? (
-							recentActivities.slice(0, 6).map((item) => (
-								<Link
-									key={item.key}
-									to={item.link}
-									className="flex items-start gap-3 p-3 rounded-xl border border-neutral-200 dark:border-neutral-700 hover:border-ruby-300 hover:bg-ruby-50/30 dark:hover:bg-ruby-500/10 transition-all"
-								>
-									<span className={`mt-1.5 h-2.5 w-2.5 rounded-full ${activityToneClass[item.tone]}`} />
-									<div className="min-w-0 flex-1">
-										<p className="text-sm font-bold text-neutral-900 dark:text-white truncate">{item.title}</p>
-										<p className="text-xs text-neutral-500 truncate">{item.detail}</p>
-									</div>
-								</Link>
-							))
-						) : (
-							<Empty description="Belum ada aktivitas" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-						)}
-					</div>
-				);
-			case "ab-testing":
-				return <ABTestingWidget />;
-			case "campaign-tracker":
-				return <CampaignTrackerWidget />;
-			case "gamification":
-				return <GamificationWidget />;
-			default:
-				return <div className="p-4 text-neutral-500">Widget content</div>;
-		}
-	};
-
-	const enabledWidgets = widgets.filter((w) => w.enabled);
+	const chartSeries = [
+		{
+			name: "Aktivitas",
+			data: weeklySeries.map((d) => d.value),
+		},
+	];
 
 	return (
-		<div className="space-y-5">
-			{/* Header */}
-			<div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-				<div>
-					<motion.p
-						initial={{ opacity: 0, x: -20 }}
-						animate={{ opacity: 1, x: 0 }}
-						className="text-xs font-semibold uppercase tracking-[0.22em] text-neutral-600 dark:text-neutral-400"
-					>
-						Dashboard
-					</motion.p>
-					<motion.h1
-						initial={{ opacity: 0, x: -20 }}
-						animate={{ opacity: 1, x: 0 }}
-						transition={{ delay: 0.1 }}
-						className="text-2xl font-extrabold tracking-tight text-neutral-900 dark:text-white mt-1"
-					>
-						Analytics Operasional
-					</motion.h1>
-					<p className="text-sm text-neutral-500 mt-1">{dayString}</p>
+		<div className={`dashboard-container ${mode === "dark" ? "dashboard-dark" : ""}`}>
+			<style>{dashboardStyles}</style>
+
+			{/* Page Header */}
+			<div className="page-header">
+				<div className="header-content">
+					<h1 className="page-title">Dashboard Overview</h1>
+					<p className="page-subtitle">{dayString}</p>
 				</div>
-				<div className="flex flex-wrap items-center gap-3">
-					<Button icon={<SettingOutlined />} onClick={() => setCustomizableMode(!customizableMode)} type={customizableMode ? "primary" : "default"}>
-						{customizableMode ? "Selesai" : "Kustomisasi"}
-					</Button>
-					{customizableMode && <Button onClick={handleResetWidgets}>Reset Layout</Button>}
-					<Link
-						to="/admin/promo"
-						className="inline-flex h-10 items-center gap-2 rounded-xl bg-gradient-to-r from-ruby-600 to-blue-500 px-4 text-sm font-bold text-white shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5"
-					>
-						<PlusOutlined /> Tambah Promo
+				<div className="header-actions">
+					<button className="btn-theme-toggle" onClick={toggle} title={mode === "dark" ? "Mode Terang" : "Mode Gelap"}>
+						{mode === "dark" ? <SunOutlined /> : <MoonOutlined />}
+					</button>
+					<Link to="/admin/promo" className="btn-action-add">
+						<PlusOutlined />
+						<span>Tambah Promo</span>
 					</Link>
 				</div>
 			</div>
@@ -692,71 +391,928 @@ export default function DashboardPage() {
 			{/* Error Alerts */}
 			<AnimatePresence>
 				{errorMessages.length > 0 && (
-					<motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-2">
-						{errorMessages.map((msg, index) => (
-							<Alert key={`${msg}-${index}`} type="error" showIcon message="Gagal memuat data" description={msg} className="rounded-xl" />
-						))}
+					<motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+						<div className="alert alert-error">
+							<WarningOutlined />
+							<span>Gagal memuat beberapa data: {errorMessages[0]}</span>
+						</div>
 					</motion.div>
 				)}
 			</AnimatePresence>
 
-			{/* Notifications */}
-			<div className="grid gap-3 md:grid-cols-3">
-				{expiringPromo.length > 0 && (
-					<motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
-						<Alert type="warning" showIcon icon={<WarningOutlined />} message={`${expiringPromo.length} promo akan berakhir`} className="rounded-xl" />
-					</motion.div>
-				)}
-				{unreadMessagesCount > 0 && (
-					<motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }}>
-						<Alert type="info" showIcon icon={<MailOutlined />} message={`${unreadMessagesCount} pesan belum dibaca`} className="rounded-xl" />
-					</motion.div>
-				)}
-				{newPartnershipCount > 0 && (
-					<motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }}>
-						<Alert type="success" showIcon icon={<PhoneOutlined />} message={`${newPartnershipCount} lead kemitraan baru`} className="rounded-xl" />
-					</motion.div>
-				)}
+			{/* Notification Cards */}
+			{expiringPromo.length > 0 && (
+				<motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+					<div className="notification-row">
+						<NotificationCard
+							icon={<WarningOutlined />}
+							count={expiringPromo.length}
+							label="Promo berakhir"
+							description="Segera perpanjang atau hapus"
+							color="warning"
+							link="/admin/promo"
+						/>
+					</div>
+				</motion.div>
+			)}
+
+			{(unreadMessagesCount > 0 || newPartnershipCount > 0) && (
+				<motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+					<div className="notification-row">
+						{unreadMessagesCount > 0 && (
+							<NotificationCard
+								icon={<MailOutlined />}
+								count={unreadMessagesCount}
+								label="Pesan baru"
+								description="Belum dibaca"
+								color="info"
+								link="/admin/pesan"
+							/>
+						)}
+						{newPartnershipCount > 0 && (
+							<NotificationCard
+								icon={<PhoneOutlined />}
+								count={newPartnershipCount}
+								label="Lead baru"
+								description="Pendaftaran kemitraan"
+								color="success"
+								link="/admin/kemitraan"
+							/>
+						)}
+					</div>
+				</motion.div>
+			)}
+
+			{/* Stats Grid */}
+			<div className="stats-grid">
+				<StatCard
+					label="Cabang Aktif"
+					value={branchItems.length}
+					icon={<ShopOutlined />}
+					color="info"
+					trend={12}
+					link="/admin/cabang"
+				/>
+				<StatCard
+					label="Promo Aktif"
+					value={promoItems.length}
+					icon={<GiftOutlined />}
+					color="primary"
+					trend={8}
+					link="/admin/promo"
+				/>
+				<StatCard
+					label="Lowongan Terbuka"
+					value={jobs.length}
+					icon={<TeamOutlined />}
+					color="success"
+					link="/admin/loker"
+				/>
+				<StatCard
+					label="Pesan Masuk"
+					value={messages.length}
+					icon={<MailOutlined />}
+					color="warning"
+					link="/admin/pesan"
+				/>
 			</div>
 
-			{/* Customizable Widget Grid */}
-			<DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-				<SortableContext items={enabledWidgets.map((w) => w.id)}>
-					<div className="grid gap-5 md:grid-cols-6 xl:grid-cols-12">
-						{enabledWidgets.map((widget) => (
-							<SortableWidgetCard
-								key={widget.id}
-								widget={widget}
-								isCustomizing={customizableMode}
-								onToggle={handleToggleWidget}
-								onRemove={handleRemoveWidget}
-							>
-								<Card
-									title={
-										<div className="flex items-center gap-2">
-											{widget.icon}
-											<span className="font-semibold">{widget.title}</span>
-										</div>
-									}
-									className="h-full shadow-sm hover:shadow-md transition-shadow"
-								>
-									{renderWidgetContent(widget.id)}
-								</Card>
-							</SortableWidgetCard>
-						))}
+			{/* Main Content Grid */}
+			<div className="content-grid">
+				{/* Chart Card */}
+				<motion.div
+					initial={{ opacity: 0, y: 20 }}
+					animate={{ opacity: 1, y: 0 }}
+					transition={{ delay: 0.2 }}
+					className="card chart-card"
+				>
+					<div className="card-header">
+						<div className="card-title-group">
+							<div className="card-icon card-icon-red">
+								<BarChart3 size={20} />
+							</div>
+							<div>
+								<h3 className="card-title">Interaksi Mingguan</h3>
+								<p className="card-subtitle">Aktivitas pesan dan lead kemitraan</p>
+							</div>
+						</div>
+						<TrendingUp size={20} />
 					</div>
-				</SortableContext>
-			</DndContext>
+					<div className="card-body">
+						<ReactApexChart type="bar" options={chartOptions} series={chartSeries} height={200} />
+					</div>
+				</motion.div>
 
-			{/* Empty State */}
-			{enabledWidgets.length === 0 && (
-				<div className="text-center py-12">
-					<Empty description="Tidak ada widget aktif. Aktifkan widget dari mode kustomisasi." image={Empty.PRESENTED_IMAGE_SIMPLE} />
-					<Button type="primary" onClick={() => setCustomizableMode(true)} className="mt-4">
-						Kustomisasi Dashboard
-					</Button>
+				{/* KPI Card */}
+				<motion.div
+					initial={{ opacity: 0, y: 20 }}
+					animate={{ opacity: 1, y: 0 }}
+					transition={{ delay: 0.25 }}
+					className="card kpi-card-wrapper"
+				>
+					<div className="card-header">
+						<div className="card-title-group">
+							<div className="card-icon card-icon-blue">
+								<MessageSquare size={20} />
+							</div>
+							<div>
+								<h3 className="card-title">Ringkasan</h3>
+								<p className="card-subtitle">Statistik penting</p>
+							</div>
+						</div>
+					</div>
+					<div className="card-body kpi-grid">
+						<KPICard
+							label="Pesan Masuk"
+							value={messages.length}
+							icon={<MailOutlined />}
+							sparkline={[1, 2, 3, 2, 4, 3, 5]}
+						/>
+						<KPICard label="Lead Kemitraan" value={partnerships.length} icon={<PhoneOutlined />} />
+						<KPICard label="Cabang" value={branchItems.length} icon={<ShopOutlined />} />
+						<KPICard label="Promo" value={promoItems.length} icon={<GiftOutlined />} />
+					</div>
+				</motion.div>
+			</div>
+
+			{/* Recent Activity */}
+			<motion.div
+				initial={{ opacity: 0, y: 20 }}
+				animate={{ opacity: 1, y: 0 }}
+				transition={{ delay: 0.3 }}
+				className="card activity-card"
+			>
+				<div className="card-header">
+					<div className="card-title-group">
+						<div className="card-icon card-icon-violet">
+							<MessageSquare size={20} />
+						</div>
+						<div>
+							<h3 className="card-title">Aktivitas Terbaru</h3>
+							<p className="card-subtitle">Interaksi dan notifikasi terbaru</p>
+						</div>
+					</div>
 				</div>
-			)}
+				<div className="card-body">
+					{recentActivities.length > 0 ? (
+						<div className="activity-list">
+							{recentActivities.slice(0, 8).map((item) => (
+								<ActivityListItem key={item.key} item={item} />
+							))}
+						</div>
+					) : (
+						<div className="empty-state">
+							<MessageSquare size={36} />
+							<p>Belum ada aktivitas hari ini.</p>
+							<p className="empty-sub">Chill dulu, semua berjalan lancar!</p>
+						</div>
+					)}
+				</div>
+			</motion.div>
 		</div>
 	);
 }
+
+const dashboardStyles = `
+	/* ===== BASE (Light Mode) ===== */
+	.dashboard-container {
+		max-width: 1400px;
+		margin: 0 auto;
+	}
+
+	/* Page Header */
+	.page-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom: 24px;
+	}
+
+	.page-title {
+		font-size: 22px;
+		font-weight: 700;
+		color: #1E293B;
+		margin: 0;
+		line-height: 1.2;
+	}
+
+	.page-subtitle {
+		font-size: 13px;
+		color: #94A3B8;
+		margin: 4px 0 0;
+	}
+
+	.header-actions {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+
+	/* Theme Toggle — icon only */
+	.btn-theme-toggle {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 36px;
+		height: 36px;
+		border-radius: 10px;
+		border: none;
+		cursor: pointer;
+		background: #F1F5F9;
+		color: #64748B;
+		transition: all 0.2s;
+	}
+
+	.btn-theme-toggle:hover {
+		background: #E2E8F0;
+		color: #1E293B;
+	}
+
+	/* Action Button — Tambah Promo (indigo/violet) */
+	.btn-action-add {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		padding: 9px 18px;
+		font-size: 13px;
+		font-weight: 700;
+		border-radius: 10px;
+		border: none;
+		cursor: pointer;
+		transition: all 0.2s;
+		text-decoration: none;
+		background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+		color: #fff;
+		box-shadow: 0 2px 8px rgba(79, 70, 229, 0.35);
+		letter-spacing: 0.01em;
+	}
+
+	.btn-action-add:hover {
+		transform: translateY(-1px);
+		box-shadow: 0 4px 14px rgba(79, 70, 229, 0.45);
+	}
+
+	/* Alert */
+	.alert {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		padding: 12px 16px;
+		border-radius: 12px;
+		font-size: 13px;
+		font-weight: 500;
+		margin-bottom: 16px;
+	}
+
+	.alert-error {
+		background: #FEF2F2;
+		color: #DC2626;
+	}
+
+	/* Notification Cards */
+	.notification-row {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+		gap: 12px;
+		margin-bottom: 20px;
+	}
+
+	.notification-card {
+		display: flex;
+		align-items: center;
+		gap: 14px;
+		padding: 16px;
+		border-radius: 14px;
+		cursor: pointer;
+		transition: all 0.2s;
+		text-decoration: none;
+	}
+
+	.notification-card.warning {
+		background: #FFFBEB;
+	}
+
+	.notification-card.warning .notification-icon {
+		color: #D97706;
+		font-size: 20px;
+	}
+
+	.notification-card.info {
+		background: #EFF6FF;
+	}
+
+	.notification-card.info .notification-icon {
+		color: #3B82F6;
+		font-size: 20px;
+	}
+
+	.notification-card.success {
+		background: #F0FDF4;
+	}
+
+	.notification-card.success .notification-icon {
+		color: #16A34A;
+		font-size: 20px;
+	}
+
+	.notification-card:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+	}
+
+	.notification-content {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.notification-content .count {
+		font-size: 22px;
+		font-weight: 800;
+		color: #1E293B;
+		line-height: 1;
+	}
+
+	.notification-content .label {
+		font-size: 12px;
+		font-weight: 600;
+		color: #475569;
+		margin-top: 3px;
+	}
+
+	.notification-content .description {
+		font-size: 11px;
+		color: #94A3B8;
+		margin-top: 2px;
+	}
+
+	/* Stats Grid */
+	.stats-grid {
+		display: grid;
+		grid-template-columns: repeat(4, 1fr);
+		gap: 16px;
+		margin-bottom: 20px;
+	}
+
+	@media (max-width: 1200px) {
+		.stats-grid { grid-template-columns: repeat(2, 1fr); }
+	}
+
+	@media (max-width: 640px) {
+		.stats-grid { grid-template-columns: 1fr; }
+	}
+
+	.stat-card-link {
+		text-decoration: none;
+		display: block;
+	}
+
+	.stat-card {
+		background: #FFFFFF;
+		border-radius: 14px;
+		padding: 20px;
+		border: none;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+		transition: all 0.2s;
+	}
+
+	.stat-card:hover {
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+		transform: translateY(-2px);
+	}
+
+	.stat-card .card-header {
+		display: flex;
+		align-items: flex-start;
+		gap: 14px;
+		margin-bottom: 14px;
+	}
+
+	.stat-card .icon-container {
+		width: 44px;
+		height: 44px;
+		border-radius: 12px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 20px;
+		flex-shrink: 0;
+	}
+
+	.stat-card .icon-container svg {
+		color: #fff;
+	}
+
+	.stat-card .content {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.stat-card .value {
+		font-size: 26px;
+		font-weight: 800;
+		color: #1E293B;
+		line-height: 1;
+		letter-spacing: -0.02em;
+	}
+
+	.stat-card .label {
+		font-size: 12px;
+		color: #94A3B8;
+		margin-top: 4px;
+		font-weight: 500;
+	}
+
+	.stat-card .card-footer {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding-top: 12px;
+		border-top: 1px solid #F1F5F9;
+	}
+
+	/* Trend Pill Badges */
+	.trend-pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 3px;
+		padding: 3px 9px;
+		border-radius: 999px;
+		font-size: 11px;
+		font-weight: 700;
+		letter-spacing: 0.01em;
+	}
+
+	.trend-pill.pill-up {
+		background: #DCFCE7;
+		color: #16A34A;
+	}
+
+	.trend-pill.pill-down {
+		background: #FEE2E2;
+		color: #DC2626;
+	}
+
+	.stat-card .view-link {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		font-size: 12px;
+		font-weight: 600;
+		color: #94A3B8;
+		text-decoration: none;
+		transition: color 0.2s;
+	}
+
+	.stat-card .view-link:hover {
+		color: #4F46E5;
+	}
+
+	/* Content Grid */
+	.content-grid {
+		display: grid;
+		grid-template-columns: 2fr 1fr;
+		gap: 20px;
+		margin-bottom: 20px;
+	}
+
+	@media (max-width: 1024px) {
+		.content-grid { grid-template-columns: 1fr; }
+	}
+
+	/* Card Base — no border, subtle shadow, rounded-xl */
+	.card {
+		background: #FFFFFF;
+		border-radius: 14px;
+		border: none;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+		overflow: hidden;
+	}
+
+	.card .card-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 18px 20px;
+		border-bottom: 1px solid #F1F5F9;
+	}
+
+	.card-title-group {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+	}
+
+	.card-icon {
+		width: 38px;
+		height: 38px;
+		border-radius: 10px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+	}
+
+	.card-icon svg {
+		color: #fff;
+	}
+
+	.card .card-title {
+		font-size: 14px;
+		font-weight: 700;
+		color: #1E293B;
+		margin: 0;
+		letter-spacing: -0.01em;
+	}
+
+	.card .card-subtitle {
+		font-size: 11px;
+		color: #94A3B8;
+		margin: 2px 0 0;
+	}
+
+	.card .card-header svg {
+		color: #CBD5E1;
+	}
+
+	.card .card-body {
+		padding: 20px;
+	}
+
+	/* KPI Card */
+	.kpi-grid {
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 10px;
+	}
+
+	.kpi-card {
+		padding: 14px;
+		border-radius: 12px;
+		background: #F8FAFC;
+	}
+
+	.kpi-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom: 8px;
+	}
+
+	.kpi-label {
+		font-size: 11px;
+		color: #94A3B8;
+		font-weight: 600;
+		letter-spacing: 0.03em;
+	}
+
+	.kpi-icon {
+		font-size: 14px;
+	}
+
+	.kpi-icon svg {
+		color: #94A3B8;
+	}
+
+	.kpi-card:nth-child(1) .kpi-icon svg { color: #3B82F6; }
+	.kpi-card:nth-child(2) .kpi-icon svg { color: #14B8A6; }
+	.kpi-card:nth-child(3) .kpi-icon svg { color: #16A34A; }
+	.kpi-card:nth-child(4) .kpi-icon svg { color: #EF4444; }
+
+	.kpi-body {
+		display: flex;
+		align-items: baseline;
+		gap: 6px;
+	}
+
+	.kpi-value {
+		font-size: 20px;
+		font-weight: 800;
+		color: #1E293B;
+		letter-spacing: -0.02em;
+	}
+
+	.sparkline {
+		display: flex;
+		align-items: flex-end;
+		gap: 2px;
+		height: 20px;
+		margin-top: 8px;
+	}
+
+	.sparkline-bar {
+		flex: 1;
+		background: linear-gradient(to top, #C62828, #EF4444);
+		border-radius: 2px;
+		min-height: 3px;
+	}
+
+	/* Activity Card */
+	.activity-card .card-body {
+		padding: 0;
+	}
+
+	.activity-list {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.activity-item {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		padding: 14px 20px;
+		border-bottom: 1px solid #F8FAFC;
+		transition: background 0.15s;
+		cursor: pointer;
+	}
+
+	.activity-item:last-child {
+		border-bottom: none;
+	}
+
+	.activity-item:hover {
+		background: #F8FAFC;
+	}
+
+	.activity-item .indicator {
+		width: 8px;
+		height: 8px;
+		border-radius: 50%;
+		flex-shrink: 0;
+	}
+
+	.activity-item .content {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.activity-item .title {
+		font-size: 13px;
+		font-weight: 600;
+		color: #1E293B;
+		margin: 0;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.activity-item .detail {
+		font-size: 11px;
+		color: #94A3B8;
+		margin: 2px 0 0;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	/* Empty State */
+	.empty-state {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		padding: 40px 20px;
+		text-align: center;
+	}
+
+	.empty-state svg {
+		color: #CBD5E1;
+		margin-bottom: 4px;
+	}
+
+	.empty-state p {
+		margin: 0;
+		font-size: 13px;
+		font-weight: 600;
+		color: #64748B;
+	}
+
+	.empty-state .empty-sub {
+		font-size: 12px;
+		font-weight: 400;
+		color: #94A3B8;
+		margin-top: 4px;
+	}
+
+	/* Icon Gradients */
+	.icon-gradient-red { background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%); }
+	.icon-gradient-emerald { background: linear-gradient(135deg, #10B981 0%, #059669 100%); }
+	.icon-gradient-amber { background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%); }
+	.icon-gradient-blue { background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); }
+
+	.card-icon-red { background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%); }
+	.card-icon-blue { background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); }
+	.card-icon-violet { background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%); }
+
+	.indicator-red { background: #EF4444; }
+	.indicator-blue { background: #3B82F6; }
+	.indicator-teal { background: #14B8A6; }
+	.indicator-amber { background: #F59E0B; }
+
+	/* ===== DARK MODE ===== */
+	.dashboard-container.dashboard-dark {
+		background: #111827;
+	}
+
+	.dashboard-dark .page-title {
+		color: #F1F5F9;
+	}
+
+	.dashboard-dark .page-subtitle {
+		color: #64748B;
+	}
+
+	.dashboard-dark .btn-theme-toggle {
+		background: #1F2937;
+		color: #9CA3AF;
+	}
+
+	.dashboard-dark .btn-theme-toggle:hover {
+		background: #374151;
+		color: #F9FAFB;
+	}
+
+	.dashboard-dark .card {
+		background: #1F2937;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+	}
+
+	.dashboard-dark .card .card-header {
+		border-color: #374151;
+	}
+
+	.dashboard-dark .card .card-title {
+		color: #F1F5F9;
+	}
+
+	.dashboard-dark .card .card-subtitle {
+		color: #64748B;
+	}
+
+	.dashboard-dark .card .card-header svg {
+		color: #4B5563 !important;
+	}
+
+	.dashboard-dark .card-icon {
+		background: #374151 !important;
+	}
+
+	.dashboard-dark .card-icon svg {
+		color: #9CA3AF !important;
+	}
+
+	.dashboard-dark .stat-card {
+		background: #1F2937;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+	}
+
+	.dashboard-dark .stat-card:hover {
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+	}
+
+	.dashboard-dark .stat-card .value {
+		color: #F1F5F9;
+	}
+
+	.dashboard-dark .stat-card .label {
+		color: #64748B;
+	}
+
+	.dashboard-dark .stat-card .card-footer {
+		border-color: #374151;
+	}
+
+	.dashboard-dark .stat-card .view-link {
+		color: #64748B;
+	}
+
+	.dashboard-dark .stat-card .view-link:hover {
+		color: #818CF8;
+	}
+
+	/* Dark trend pills */
+	.dashboard-dark .trend-pill.pill-up {
+		background: rgba(22, 163, 74, 0.15);
+		color: #4ADE80;
+	}
+
+	.dashboard-dark .trend-pill.pill-down {
+		background: rgba(220, 38, 38, 0.15);
+		color: #F87171;
+	}
+
+	/* Dark notification cards */
+	.dashboard-dark .notification-card {
+		border: none;
+	}
+
+	.dashboard-dark .notification-card.warning {
+		background: #1C1917;
+	}
+
+	.dashboard-dark .notification-card.warning .notification-icon {
+		color: #D97706;
+	}
+
+	.dashboard-dark .notification-card.info {
+		background: #1E1B2E;
+	}
+
+	.dashboard-dark .notification-card.info .notification-icon {
+		color: #818CF8;
+	}
+
+	.dashboard-dark .notification-card.success {
+		background: #172554;
+	}
+
+	.dashboard-dark .notification-card.success .notification-icon {
+		color: #4ADE80;
+	}
+
+	.dashboard-dark .notification-content .count {
+		color: #F1F5F9;
+	}
+
+	.dashboard-dark .notification-content .label {
+		color: #9CA3AF;
+	}
+
+	.dashboard-dark .notification-content .description {
+		color: #64748B;
+	}
+
+	/* Dark KPI */
+	.dashboard-dark .kpi-card {
+		background: #1A1D27;
+	}
+
+	.dashboard-dark .kpi-label {
+		color: #64748B;
+	}
+
+	.dashboard-dark .kpi-value {
+		color: #F1F5F9;
+	}
+
+	.dashboard-dark .kpi-card:nth-child(1) .kpi-icon svg { color: #818CF8 !important; }
+	.dashboard-dark .kpi-card:nth-child(2) .kpi-icon svg { color: #2DD4BF !important; }
+	.dashboard-dark .kpi-card:nth-child(3) .kpi-icon svg { color: #4ADE80 !important; }
+	.dashboard-dark .kpi-card:nth-child(4) .kpi-icon svg { color: #F87171 !important; }
+
+	/* Dark activity */
+	.dashboard-dark .activity-item {
+		border-color: #374151;
+	}
+
+	.dashboard-dark .activity-item:hover {
+		background: #1A1D27;
+	}
+
+	.dashboard-dark .activity-item .title {
+		color: #F1F5F9;
+	}
+
+	.dashboard-dark .activity-item .detail {
+		color: #64748B;
+	}
+
+	/* Dark empty state */
+	.dashboard-dark .empty-state svg {
+		color: #374151 !important;
+	}
+
+	.dashboard-dark .empty-state p {
+		color: #9CA3AF;
+	}
+
+	.dashboard-dark .empty-state .empty-sub {
+		color: #64748B;
+	}
+
+	/* Dark alert */
+	.dashboard-dark .alert-error {
+		background: rgba(220, 38, 38, 0.12);
+		color: #F87171;
+	}
+
+	/* Dark sparkline */
+	.dashboard-dark .sparkline-bar {
+		background: linear-gradient(to top, #991B1B, #DC2626);
+	}
+
+	/* Dark icon gradients */
+	.dashboard-dark .icon-gradient-red { background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%); }
+	.dashboard-dark .icon-gradient-emerald { background: linear-gradient(135deg, #059669 0%, #047857 100%); }
+	.dashboard-dark .icon-gradient-amber { background: linear-gradient(135deg, #D97706 0%, #B45309 100%); }
+	.dashboard-dark .icon-gradient-blue { background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%); }
+
+	.dashboard-dark .card-icon-red { background: linear-gradient(135deg, #DC2626 0%, #B91C1C 100%); }
+	.dashboard-dark .card-icon-blue { background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%); }
+	.dashboard-dark .card-icon-violet { background: linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%); }
+
+	.dashboard-dark .indicator-red { background: #DC2626; }
+	.dashboard-dark .indicator-blue { background: #2563EB; }
+	.dashboard-dark .indicator-teal { background: #0F766E; }
+	.dashboard-dark .indicator-amber { background: #D97706; }
+`;
