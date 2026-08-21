@@ -34,4 +34,15 @@ uploads
 pb_data
 *.pid
 
+# temp / debug files
+temp_*
+*_err.txt
+*_out.txt
+*_output*.txt
+tsc_errors*.txt
+tsc-errors*.txt
+tsc_output*.txt
+build_log.txt
+trigger.txt
+
 referensi/

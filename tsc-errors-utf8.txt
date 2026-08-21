@@ -1,3 +1,0 @@
-﻿src/components/public/home/CabangSection.tsx(109,60): error TS2339: Property 'city' does not exist on type 'Branch'.
-src/components/public/home/KalkulatorSection.tsx(5,1): error TS6133: 'formatRupiah' is declared but its value is never read.
-src/components/public/layout/Footer.tsx(3,54): error TS2305: Module '"lucide-react"' has no exported member 'Tube'.
