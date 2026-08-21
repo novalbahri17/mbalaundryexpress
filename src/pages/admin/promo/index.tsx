@@ -1,4 +1,4 @@
-import { EyeOutlined, PlusOutlined } from "@ant-design/icons";
+import { DeleteOutlined, EyeOutlined, PlusOutlined } from "@ant-design/icons";
 import {
 	Button,
 	DatePicker,
@@ -21,6 +21,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createPromo, deletePromo, getPromoBranches, getPromos, setPromoBranches, updatePromo } from "@/api/promos.api";
 import type { Promo } from "@/types/database.types";
 import { ImageUpload } from "@/components/admin/ImageUpload";
+import { MetronicPage } from "@/components/admin/MetronicPage";
 import { RichTextEditor } from "@/components/admin/RichTextEditor";
 import { useBranches } from "@/hooks/useBranches";
 import { slugify } from "@/utils/slug";
@@ -43,62 +44,25 @@ export default function PromoAdminPage() {
 		},
 	});
 
-	const columns: ColumnsType<Promo> = [
-		{ title: "Judul", dataIndex: "title" },
-		{
-			title: "Status",
-			dataIndex: "status",
-			render: (value: Promo["status"]) => (
-				<Tag color={value === "published" ? "green" : value === "draft" ? "orange" : "default"}>{value}</Tag>
-			),
-		},
-		{ title: "Global", dataIndex: "is_global", render: (value: boolean) => (value ? "Ya" : "Tidak") },
-		{ title: "Prioritas", dataIndex: "priority" },
-		{
-			title: "Periode",
-			render: (_, record) =>
-				`${dayjs(record.start_date).format("DD/MM/YYYY HH:mm")} - ${dayjs(record.end_date).format("DD/MM/YYYY HH:mm")}`,
-		},
-		{
-			title: "Aksi",
-			render: (_, record) => (
-				<Space>
-					<Button
-						type="link"
-						onClick={async () => {
-							setEditing(record);
-							setIsGlobal(record.is_global);
-							const promoBranches = await getPromoBranches(record.id);
-							setSelectedBranches(promoBranches.map((item) => item.branch_id));
-							form.setFieldsValue({
-								...record,
-								start_date: dayjs(record.start_date),
-								end_date: dayjs(record.end_date),
-								distribution_mode: record.is_global ? "global" : "branch",
-							});
-							setOpen(true);
-						}}
-					>
-						Edit
-					</Button>
-					<Button type="link" icon={<EyeOutlined />}>
-						Preview
-					</Button>
-					<Button
-						type="link"
-						danger
-						onClick={async () => {
-							await deletePromo(record.id);
-							message.success("Promo dihapus");
-							await queryClient.invalidateQueries({ queryKey: ["admin-promos"] });
-						}}
-					>
-						Hapus
-					</Button>
-				</Space>
-			),
-		},
-	];
+	const handleEdit = async (record: Promo) => {
+		setEditing(record);
+		setIsGlobal(record.is_global);
+		const promoBranches = await getPromoBranches(record.id);
+		setSelectedBranches(promoBranches.map((item) => item.branch_id));
+		form.setFieldsValue({
+			...record,
+			start_date: dayjs(record.start_date),
+			end_date: dayjs(record.end_date),
+			distribution_mode: record.is_global ? "global" : "branch",
+		});
+		setOpen(true);
+	};
+
+	const handleDelete = async (id: string) => {
+		await deletePromo(id);
+		message.success("Promo dihapus");
+		await queryClient.invalidateQueries({ queryKey: ["admin-promos"] });
+	};
 
 	const buildPayload = async (): Promise<Partial<Promo> | FormData> => {
 		const values = await form.validateFields();
@@ -134,7 +98,7 @@ export default function PromoAdminPage() {
 		return formData;
 	};
 
-	const savePromo = async (status: Promo["status"]): Promise<void> => {
+	const savePromo = async (status: Promo["status"]) => {
 		form.setFieldValue("status", status);
 		const payload = await buildPayload();
 
@@ -159,54 +123,89 @@ export default function PromoAdminPage() {
 		await queryClient.invalidateQueries({ queryKey: ["admin-promos"] });
 	};
 
-	return (
-		<div className="admin-page-shell">
-			<div className="admin-page-head">
-				<div>
-					<h1 className="admin-page-title">Promo</h1>
-					<p className="admin-page-subtitle">Kelola campaign promo global maupun per cabang secara terstruktur.</p>
-				</div>
-				<Button
-					type="primary"
-					icon={<PlusOutlined />}
-					size="large"
-					onClick={() => {
-						setEditing(null);
-						setIsGlobal(true);
-						setSelectedBranches([]);
-						setImageFile(null);
-						form.setFieldsValue({
-							priority: 0,
-							show_on_home: true,
-							is_active: true,
-							distribution_mode: "global",
-							status: "draft",
-						});
-						setOpen(true);
-					}}
-				>
-					Tambah Promo
-				</Button>
-			</div>
+	const columns: ColumnsType<Promo> = [
+		{ title: "Judul", dataIndex: "title" },
+		{
+			title: "Status",
+			dataIndex: "status",
+			render: (value: Promo["status"]) => (
+				<Tag color={value === "published" ? "green" : value === "draft" ? "orange" : "default"}>{value}</Tag>
+			),
+		},
+		{ title: "Global", dataIndex: "is_global", render: (value: boolean) => (value ? "Ya" : "Tidak") },
+		{ title: "Prioritas", dataIndex: "priority" },
+		{
+			title: "Periode",
+			render: (_, record) =>
+				`${dayjs(record.start_date).format("DD/MM/YYYY HH:mm")} - ${dayjs(record.end_date).format("DD/MM/YYYY HH:mm")}`,
+		},
+		{
+			title: "Aksi",
+			width: 200,
+			render: (_, record) => (
+				<Space>
+					<Button
+						type="text"
+						icon={<EyeOutlined />}
+						className="action-btn action-btn-edit"
+						onClick={() => handleEdit(record)}
+					>
+						Edit
+					</Button>
+					<Button
+						type="text"
+						danger
+						icon={<DeleteOutlined />}
+						className="action-btn action-btn-delete"
+						onClick={() => handleDelete(record.id)}
+					>
+						Hapus
+					</Button>
+				</Space>
+			),
+		},
+	];
 
-			<div className="admin-page-body admin-data-table">
-				<Table
-					rowKey="id"
-					columns={columns}
-					dataSource={promos}
-					loading={isLoading}
-					pagination={{ pageSize: 10, showSizeChanger: false }}
-				/>
+	return (
+		<MetronicPage
+			title="Promo"
+			subtitle="Kelola campaign promo global maupun per cabang"
+			actionLabel="Tambah Promo"
+			onAction={() => {
+				setEditing(null);
+				setIsGlobal(true);
+				setSelectedBranches([]);
+				setImageFile(null);
+				form.resetFields();
+				form.setFieldsValue({
+					priority: 0,
+					show_on_home: true,
+					is_active: true,
+					distribution_mode: "global",
+					status: "draft",
+				});
+				setOpen(true);
+			}}
+		>
+			<div className="card">
+				<div className="table-container">
+					<Table
+						rowKey="id"
+						columns={columns}
+						dataSource={promos}
+						loading={isLoading}
+						pagination={{ pageSize: 10, showSizeChanger: false }}
+					/>
+				</div>
 			</div>
 
 			<Modal
 				title={editing ? "Edit Promo" : "Tambah Promo"}
 				open={open}
-				className="admin-modal"
 				onCancel={() => setOpen(false)}
 				footer={null}
 				width={920}
-				destroyOnClose
+				className="metronic-modal"
 			>
 				<Form
 					form={form}
@@ -219,12 +218,15 @@ export default function PromoAdminPage() {
 						status: "draft",
 					}}
 				>
-					<div className="grid gap-3 md:grid-cols-2">
+					<div className="form-grid">
 						<Form.Item label="Judul" name="title" rules={[{ required: true }]}>
-							<Input onChange={(event) => form.setFieldValue("slug", slugify(event.target.value))} />
+							<Input
+								className="form-input"
+								onChange={(event) => form.setFieldValue("slug", slugify(event.target.value))}
+							/>
 						</Form.Item>
 						<Form.Item label="Slug" name="slug" rules={[{ required: true }]}>
-							<Input />
+							<Input className="form-input" />
 						</Form.Item>
 					</div>
 
@@ -236,23 +238,23 @@ export default function PromoAdminPage() {
 						<RichTextEditor />
 					</Form.Item>
 					<Form.Item label="Syarat & Ketentuan" name="terms">
-						<Input.TextArea rows={4} />
+						<Input.TextArea rows={4} className="form-input" />
 					</Form.Item>
 
-					<div className="grid gap-3 md:grid-cols-2">
+					<div className="form-grid">
 						<Form.Item label="Tanggal Mulai" name="start_date" rules={[{ required: true }]}>
-							<DatePicker showTime className="w-full" />
+							<DatePicker showTime className="form-input w-full" />
 						</Form.Item>
 						<Form.Item label="Tanggal Berakhir" name="end_date" rules={[{ required: true }]}>
-							<DatePicker showTime className="w-full" />
+							<DatePicker showTime className="form-input w-full" />
 						</Form.Item>
 					</div>
 
 					<Form.Item label="Priority" name="priority">
-						<InputNumber className="w-full" min={0} />
+						<InputNumber className="form-input w-full" min={0} />
 					</Form.Item>
 
-					<div className="grid gap-3 md:grid-cols-2">
+					<div className="form-grid">
 						<Form.Item label="Tampilkan di Home" name="show_on_home" valuePropName="checked">
 							<Switch />
 						</Form.Item>
@@ -291,18 +293,13 @@ export default function PromoAdminPage() {
 					</Form.Item>
 
 					<div className="flex flex-wrap justify-end gap-2">
-						<Button className="admin-soft-btn" onClick={() => void savePromo("draft")}>
-							Simpan Draft
-						</Button>
-						<Button className="admin-soft-btn" type="default" icon={<EyeOutlined />}>
-							Preview
-						</Button>
-						<Button className="admin-soft-btn" type="primary" onClick={() => void savePromo("published")}>
+						<Button onClick={() => void savePromo("draft")}>Simpan Draft</Button>
+						<Button type="primary" onClick={() => void savePromo("published")}>
 							Publish Sekarang
 						</Button>
 					</div>
 				</Form>
 			</Modal>
-		</div>
+		</MetronicPage>
 	);
 }

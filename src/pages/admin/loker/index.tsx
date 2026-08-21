@@ -1,5 +1,4 @@
 import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
-import type { ColumnsType } from "antd/es/table";
 import {
 	Button,
 	Form,
@@ -7,6 +6,7 @@ import {
 	Input,
 	InputNumber,
 	Modal,
+	Popconfirm,
 	Radio,
 	Select,
 	Space,
@@ -15,12 +15,15 @@ import {
 	Tag,
 	message,
 } from "antd";
+import type { ColumnsType } from "antd/es/table";
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createJob, deleteJob, getJobs, updateJob } from "@/api/jobs.api";
 import { ImageUpload } from "@/components/admin/ImageUpload";
+import { MetronicPage } from "@/components/admin/MetronicPage";
 import type { Job } from "@/types/database.types";
 import { resolveImageUrl, sanitizeUrl } from "@/utils/format";
+import { useThemeStore } from "@/store/themeStore";
 
 type ImageSourceType = "upload" | "url";
 
@@ -61,6 +64,7 @@ async function downloadImageAsFile(url: string): Promise<File> {
 }
 
 export default function LokerAdminPage() {
+	const { mode } = useThemeStore();
 	const [form] = Form.useForm<JobFormValues>();
 	const [open, setOpen] = useState(false);
 	const [editing, setEditing] = useState<Job | null>(null);
@@ -69,6 +73,7 @@ export default function LokerAdminPage() {
 	const [imageUrl, setImageUrl] = useState("");
 	const queryClient = useQueryClient();
 
+	const isDark = mode === "dark";
 	const safePreviewUrl = sanitizeUrl(imageUrl);
 
 	const { data: jobs = [], isLoading } = useQuery({
@@ -204,22 +209,24 @@ export default function LokerAdminPage() {
 		{
 			title: "Gambar",
 			dataIndex: "image",
+			width: 100,
 			render: (image: string, record) =>
 				image ? (
-					<Image
+					<img
 						src={resolveImageUrl(image, record.title)}
 						alt={record.title}
 						className="h-12 w-20 rounded object-cover"
-						fallback="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
 					/>
 				) : (
-					<span className="text-gray-400">Tidak ada</span>
+					<span style={{ color: "var(--text-muted)" }}>-</span>
 				),
 		},
 		{
 			title: "Terbuka",
 			dataIndex: "is_open",
-			render: (value: boolean) => (value ? <Tag color="green">Aktif</Tag> : <Tag color="red">Tutup</Tag>),
+			render: (value: boolean) => (
+				<Tag color={value ? "green" : "red"}>{value ? "Aktif" : "Tutup"}</Tag>
+			),
 		},
 		{
 			title: "Gaji",
@@ -230,70 +237,63 @@ export default function LokerAdminPage() {
 				return `${min} - ${max}`;
 			},
 		},
+		{
+			title: "Aksi",
+			width: 150,
+			render: (_, record) => (
+				<Space>
+					<Button
+						type="text"
+						icon={<EditOutlined />}
+						className="action-btn action-btn-edit"
+						onClick={() => openEditModal(record)}
+					>
+						Edit
+					</Button>
+					<Popconfirm
+						title="Hapus lowongan ini?"
+						onConfirm={() => handleDelete(record.id)}
+						okText="Hapus"
+						cancelText="Batal"
+					>
+						<Button type="text" danger icon={<DeleteOutlined />} className="action-btn action-btn-delete">
+							Hapus
+						</Button>
+					</Popconfirm>
+				</Space>
+			),
+		},
 	];
 
 	return (
-		<div className="admin-page-shell">
-			<div className="admin-page-head">
-				<div>
-					<h1 className="admin-page-title">Lowongan Kerja</h1>
-					<p className="admin-page-subtitle">Kelola loker dengan mudah. Gambar bisa dari upload file lokal atau URL.</p>
+		<MetronicPage
+			title="Lowongan Kerja"
+			subtitle="Kelola lowongan kerja dan karir"
+			actionLabel="Tambah Loker"
+			onAction={openCreateModal}
+		>
+			<div className="card">
+				<div className="table-container">
+					<Table
+						rowKey="id"
+						columns={columns}
+						dataSource={jobs}
+						loading={isLoading}
+						pagination={{ pageSize: 10, showSizeChanger: false }}
+					/>
 				</div>
-				<Button type="primary" icon={<PlusOutlined />} size="large" onClick={openCreateModal}>
-					Tambah Loker
-				</Button>
-			</div>
-
-			<div className="admin-page-body admin-data-table">
-				<Table
-					rowKey="id"
-					columns={[
-						...columns,
-						{
-							title: "Aksi",
-							key: "actions",
-							width: 180,
-							render: (_, record) => (
-								<Space size={6}>
-									<Button
-										type="text"
-										size="small"
-										icon={<EditOutlined />}
-										className="admin-soft-btn !text-blue-600 hover:!bg-blue-50"
-										onClick={() => openEditModal(record)}
-									>
-										Edit
-									</Button>
-									<Button
-										type="text"
-										danger
-										size="small"
-										icon={<DeleteOutlined />}
-										className="admin-soft-btn hover:!bg-rose-50"
-										onClick={() => void handleDelete(record.id)}
-									>
-										Hapus
-									</Button>
-								</Space>
-							),
-						},
-					]}
-					dataSource={jobs}
-					loading={isLoading}
-					pagination={{ pageSize: 10, showSizeChanger: false }}
-				/>
 			</div>
 
 			<Modal
 				title={editing ? "Edit Lowongan" : "Tambah Lowongan Baru"}
 				open={open}
-				className="admin-modal"
 				onCancel={handleCloseModal}
 				onOk={() => void onSubmit()}
 				okText={editing ? "Simpan Perubahan" : "Simpan"}
 				cancelText="Batal"
 				destroyOnClose
 				width={700}
+				className="metronic-modal"
 			>
 				<Form
 					form={form}
@@ -324,27 +324,25 @@ export default function LokerAdminPage() {
 									value={imageUrl}
 									onChange={(event) => setImageUrl(event.target.value)}
 									placeholder="https://domain.com/poster-loker.jpg"
+									className="form-input"
 								/>
 								{safePreviewUrl ? (
-									<div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+									<div className="overflow-hidden rounded-xl border" style={{ borderColor: "var(--border)" }}>
 										<img src={safePreviewUrl} alt="Preview URL" className="h-44 w-full object-cover" />
 									</div>
-								) : null}
-								{imageUrl && !safePreviewUrl ? (
-									<p className="text-xs text-red-500">Gunakan URL http(s) yang valid.</p>
 								) : null}
 							</div>
 						)}
 					</Form.Item>
 
 					<Form.Item label="Judul Posisi" name="title" rules={[{ required: true, message: "Judul wajib diisi" }]}>
-						<Input placeholder="Contoh: Staff Laundry, Kasir, Admin" />
+						<Input placeholder="Contoh: Staff Laundry, Kasir, Admin" className="form-input" />
 					</Form.Item>
 
-					<div className="grid grid-cols-2 gap-4">
+					<div className="form-grid">
 						<Form.Item label="Tipe Pekerjaan" name="type" rules={[{ required: true }]}>
 							<Select
-								placeholder="Pilih tipe"
+								className="form-input"
 								options={[
 									{ value: "full-time", label: "Full Time" },
 									{ value: "part-time", label: "Part Time" },
@@ -355,37 +353,33 @@ export default function LokerAdminPage() {
 						</Form.Item>
 
 						<Form.Item label="WhatsApp Lamaran" name="whatsapp_apply">
-							<Input placeholder="6281234567890" />
+							<Input placeholder="6281234567890" className="form-input" />
 						</Form.Item>
 					</div>
 
-					<Form.Item
-						label="Deskripsi Pekerjaan"
-						name="description"
-						rules={[{ required: true, message: "Deskripsi wajib diisi" }]}
-					>
-						<Input.TextArea rows={4} placeholder="Jelaskan tugas dan tanggung jawab pekerjaan..." />
+					<Form.Item label="Deskripsi Pekerjaan" name="description" rules={[{ required: true, message: "Deskripsi wajib diisi" }]}>
+						<Input.TextArea rows={4} placeholder="Jelaskan tugas dan tanggung jawab pekerjaan..." className="form-input" />
 					</Form.Item>
 
 					<Form.Item label="Kualifikasi / Requirements" name="requirements">
-						<Input.TextArea rows={3} placeholder="Syarat-syarat yang dibutuhkan..." />
+						<Input.TextArea rows={3} placeholder="Syarat-syarat yang dibutuhkan..." className="form-input" />
 					</Form.Item>
 
 					<Form.Item label="Benefit" name="benefits">
-						<Input.TextArea rows={3} placeholder="Keuntungan yang didapat..." />
+						<Input.TextArea rows={3} placeholder="Keuntungan yang didapat..." className="form-input" />
 					</Form.Item>
 
-					<div className="grid grid-cols-2 gap-4">
+					<div className="form-grid">
 						<Form.Item label="Gaji Minimum" name="salary_min">
-							<InputNumber className="w-full" min={0} placeholder="5000000" />
+							<InputNumber className="form-input w-full" min={0} placeholder="5000000" />
 						</Form.Item>
 
 						<Form.Item label="Gaji Maksimum" name="salary_max">
-							<InputNumber className="w-full" min={0} placeholder="8000000" />
+							<InputNumber className="form-input w-full" min={0} placeholder="8000000" />
 						</Form.Item>
 					</div>
 
-					<div className="grid grid-cols-2 gap-4">
+					<div className="form-grid">
 						<Form.Item label="Tampilkan Gaji" name="show_salary" valuePropName="checked">
 							<Switch checkedChildren="Ya" unCheckedChildren="Tidak" />
 						</Form.Item>
@@ -396,6 +390,6 @@ export default function LokerAdminPage() {
 					</div>
 				</Form>
 			</Modal>
-		</div>
+		</MetronicPage>
 	);
 }

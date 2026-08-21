@@ -58,7 +58,7 @@ function SortableWidget({ widget, onRemove, onToggle }: SortableWidgetProps) {
 					<div className="flex items-center justify-between">
 						<div className="flex items-center gap-2">
 							<span className="cursor-move" {...attributes} {...listeners}>
-								<DragOutlined className="text-gray-400" />
+								<DragOutlined style={{ color: "var(--text-muted)" }} />
 							</span>
 							<span className="flex items-center gap-2">
 								{widget.icon}
@@ -75,7 +75,7 @@ function SortableWidget({ widget, onRemove, onToggle }: SortableWidgetProps) {
 									size="small"
 									icon={<CloseOutlined />}
 									onClick={() => onRemove(widget.id)}
-									className="text-gray-400 hover:text-red-500"
+									style={{ color: "var(--text-muted)" }}
 								/>
 							</Tooltip>
 						</Space>
@@ -86,7 +86,7 @@ function SortableWidget({ widget, onRemove, onToggle }: SortableWidgetProps) {
 				{widget.enabled ? (
 					widget.component
 				) : (
-					<div className="flex h-40 items-center justify-center text-gray-400">Widget dinonaktifkan</div>
+					<div className="flex h-40 items-center justify-center" style={{ color: "var(--text-muted)" }}>Widget dinonaktifkan</div>
 				)}
 			</Card>
 		</div>
@@ -236,7 +236,7 @@ function DashboardWidgets() {
 			<div className="mb-4 flex items-center justify-between">
 				<div>
 					<h2 className="text-lg font-bold">Dashboard Kustom</h2>
-					<p className="text-gray-600">Drag & drop untuk mengatur widget</p>
+					<p style={{ color: "var(--text-secondary)" }}>Drag & drop untuk mengatur widget</p>
 				</div>
 				<Space>
 					<Select value={selectedCategory} onChange={setSelectedCategory} style={{ width: 150 }}>
@@ -305,7 +305,7 @@ function DashboardWidgets() {
 							{widgets.map((widget) => (
 								<div key={widget.id} className="flex items-center justify-between rounded border p-3">
 									<div className="flex items-center gap-3">
-										<DragOutlined className="text-gray-400" />
+										<DragOutlined style={{ color: "var(--text-muted)" }} />
 										{widget.icon}
 										<span>{widget.title}</span>
 										<Tag>{widget.category}</Tag>

@@ -1,5 +1,6 @@
-import { CheckOutlined, CloseOutlined, DeleteOutlined, PlusOutlined } from "@ant-design/icons";
+import { CheckOutlined, CloseOutlined, DeleteOutlined, EditOutlined, PlusOutlined, StarOutlined } from "@ant-design/icons";
 import { Button, Form, Input, Modal, Rate, Select, Space, Table, Tabs, message } from "antd";
+import type { ColumnsType } from "antd/es/table";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -10,12 +11,17 @@ import {
 	rejectTestimonial,
 	updateTestimonial,
 } from "@/api/testimonials.api";
+import { MetronicPage } from "@/components/admin/MetronicPage";
 import type { Testimonial } from "@/types/database.types";
+import { useThemeStore } from "@/store/themeStore";
 
 export default function TestimoniAdminPage() {
+	const { mode } = useThemeStore();
 	const [form] = Form.useForm();
 	const [open, setOpen] = useState(false);
 	const [editing, setEditing] = useState<Testimonial | null>(null);
+
+	const isDark = mode === "dark";
 	const [tab, setTab] = useState("pending");
 	const queryClient = useQueryClient();
 
@@ -31,77 +37,47 @@ export default function TestimoniAdminPage() {
 		return testimonials.filter((item) => !item.is_approved && !item.comment.startsWith("[REJECTED]"));
 	}, [tab, testimonials]);
 
-	const columns = [
-		{ title: "Nama", dataIndex: "customer_name" },
-		{ title: "Rating", dataIndex: "rating", render: (value: number) => <Rate disabled value={value} /> },
-		{ title: "Komentar", dataIndex: "comment", render: (value: string) => value.replace("[REJECTED]", "").trim() },
-		{ title: "Sumber", dataIndex: "source" },
-		{
-			title: "Aksi",
-			render: (_: unknown, record: Testimonial) => (
-				<Space>
-					<Button
-						type="link"
-						icon={<CheckOutlined />}
-						onClick={async () => {
-							await approveTestimonial(record.id);
-							if (record.comment.startsWith("[REJECTED]")) {
-								await updateTestimonial(record.id, { comment: record.comment.replace("[REJECTED]", "").trim() });
-							}
-							await queryClient.invalidateQueries({ queryKey: ["admin-testimonials"] });
-						}}
-					>
-						Approve
-					</Button>
-					<Button
-						type="link"
-						danger
-						icon={<CloseOutlined />}
-						onClick={async () => {
-							await rejectTestimonial(record.id);
-							if (!record.comment.startsWith("[REJECTED]")) {
-								await updateTestimonial(record.id, { comment: `[REJECTED] ${record.comment}` });
-							}
-							await queryClient.invalidateQueries({ queryKey: ["admin-testimonials"] });
-						}}
-					>
-						Tolak
-					</Button>
-					<Button
-						type="link"
-						onClick={() => {
-							setEditing(record);
-							form.setFieldsValue(record);
-							setOpen(true);
-						}}
-					>
-						Edit
-					</Button>
-					<Button
-						type="link"
-						danger
-						icon={<DeleteOutlined />}
-						onClick={async () => {
-							await deleteTestimonial(record.id);
-							message.success("Testimoni dihapus");
-							await queryClient.invalidateQueries({ queryKey: ["admin-testimonials"] });
-						}}
-					>
-						Delete
-					</Button>
-				</Space>
-			),
-		},
-	];
+	const handleApprove = async (record: Testimonial) => {
+		await approveTestimonial(record.id);
+		if (record.comment.startsWith("[REJECTED]")) {
+			await updateTestimonial(record.id, { comment: record.comment.replace("[REJECTED]", "").trim() });
+		}
+		await queryClient.invalidateQueries({ queryKey: ["admin-testimonials"] });
+		message.success("Testimoni berhasil diapprove");
+	};
 
-	const submit = async (): Promise<void> => {
+	const handleReject = async (record: Testimonial) => {
+		await rejectTestimonial(record.id);
+		if (!record.comment.startsWith("[REJECTED]")) {
+			await updateTestimonial(record.id, { comment: `[REJECTED] ${record.comment}` });
+		}
+		await queryClient.invalidateQueries({ queryKey: ["admin-testimonials"] });
+		message.success("Testimoni ditolak");
+	};
+
+	const handleDelete = async (id: string) => {
+		await deleteTestimonial(id);
+		message.success("Testimoni dihapus");
+		await queryClient.invalidateQueries({ queryKey: ["admin-testimonials"] });
+	};
+
+	const handleEdit = (record: Testimonial) => {
+		setEditing(record);
+		form.setFieldsValue({
+			...record,
+			comment: record.comment.replace("[REJECTED]", "").trim(),
+		});
+		setOpen(true);
+	};
+
+	const handleSubmit = async () => {
 		const values = await form.validateFields();
 		if (editing) {
 			await updateTestimonial(editing.id, values);
-			message.success("Testimoni diperbarui");
+			message.success("Testimoni berhasil diperbarui");
 		} else {
 			await createTestimonial({ ...values, source: values.source ?? "manual", is_approved: false });
-			message.success("Testimoni ditambahkan");
+			message.success("Testimoni berhasil dibuat");
 		}
 		setOpen(false);
 		setEditing(null);
@@ -109,49 +85,146 @@ export default function TestimoniAdminPage() {
 		await queryClient.invalidateQueries({ queryKey: ["admin-testimonials"] });
 	};
 
+	const columns: ColumnsType<Testimonial> = [
+		{ title: "Nama", dataIndex: "customer_name", render: (text: string) => <span className="font-medium">{text}</span> },
+		{
+			title: "Rating",
+			dataIndex: "rating",
+			render: (value: number) => <Rate disabled value={value} />,
+		},
+		{
+			title: "Komentar",
+			dataIndex: "comment",
+			render: (value: string) => (
+				<span className="max-w-xs truncate block" style={{ color: "var(--text-secondary)" }}>{value.replace("[REJECTED]", "").trim()}</span>
+			),
+		},
+		{ title: "Sumber", dataIndex: "source" },
+		{
+			title: "Aksi",
+			width: 200,
+			render: (_, record) => (
+				<Space>
+					{!record.is_approved && !tab === "pending" && (
+						<Button
+							type="text"
+							icon={<CheckOutlined />}
+							className="action-btn bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
+							onClick={() => handleApprove(record)}
+						>
+							Approve
+						</Button>
+					)}
+					{!record.comment.startsWith("[REJECTED]") && (
+						<Button
+							type="text"
+							icon={<CloseOutlined />}
+							className="action-btn bg-amber-50 text-amber-600 hover:bg-amber-100"
+							onClick={() => handleReject(record)}
+						>
+							Tolak
+						</Button>
+					)}
+					<Button
+						type="text"
+						icon={<EditOutlined />}
+						className="action-btn action-btn-edit"
+						onClick={() => handleEdit(record)}
+					>
+						Edit
+					</Button>
+					<Button
+						type="text"
+						danger
+						icon={<DeleteOutlined />}
+						className="action-btn action-btn-delete"
+						onClick={() => handleDelete(record.id)}
+					>
+						Hapus
+					</Button>
+				</Space>
+			),
+		},
+	];
+
 	return (
-		<div className="space-y-4">
-			<div className="flex items-center justify-between">
-				<h1 className="text-xl font-bold">Manage Testimoni</h1>
-				<Button type="primary" icon={<PlusOutlined />} onClick={() => setOpen(true)}>
-					Tambah Manual
-				</Button>
+		<MetronicPage
+			title="Testimoni"
+			subtitle="Kelola testimoni dan review pelanggan"
+			actionLabel="Tambah Testimoni"
+			onAction={() => {
+				setEditing(null);
+				form.resetFields();
+				setOpen(true);
+			}}
+		>
+			<div className="card">
+				<div className="card-header" style={{ padding: 0, border: "none" }}>
+					<Tabs
+						activeKey={tab}
+						onChange={setTab}
+						className="px-5 pt-4"
+						items={[
+							{ key: "pending", label: "Menunggu Approve" },
+							{ key: "approved", label: "Approved" },
+							{ key: "rejected", label: "Ditolak" },
+						]}
+					/>
+				</div>
+				<div className="table-container">
+					<Table
+						rowKey="id"
+						loading={isLoading}
+						columns={columns}
+						dataSource={filtered}
+						pagination={{ pageSize: 10, showSizeChanger: false }}
+					/>
+				</div>
 			</div>
-			<Tabs
-				activeKey={tab}
-				onChange={setTab}
-				items={[
-					{ key: "pending", label: "Menunggu Approve" },
-					{ key: "approved", label: "Approved" },
-					{ key: "rejected", label: "Ditolak" },
-				]}
-			/>
-			<Table rowKey="id" loading={isLoading} columns={columns} dataSource={filtered} />
+
 			<Modal
-				open={open}
 				title={editing ? "Edit Testimoni" : "Tambah Testimoni"}
-				onCancel={() => setOpen(false)}
-				onOk={() => void submit()}
-				destroyOnClose
+				open={open}
+				onCancel={() => {
+					setOpen(false);
+					setEditing(null);
+					form.resetFields();
+				}}
+				onOk={handleSubmit}
+				okText={editing ? "Simpan" : "Buat"}
+				cancelText="Batal"
+				width={600}
+				className="metronic-modal"
 			>
-				<Form form={form} layout="vertical" initialValues={{ rating: 5, source: "manual" }}>
+				<Form form={form} layout="vertical">
 					<Form.Item label="Nama Pelanggan" name="customer_name" rules={[{ required: true }]}>
-						<Input />
+						<Input className="form-input" />
 					</Form.Item>
+
 					<Form.Item label="Rating" name="rating" rules={[{ required: true }]}>
 						<Rate />
 					</Form.Item>
+
 					<Form.Item label="Komentar" name="comment" rules={[{ required: true }]}>
-						<Input.TextArea rows={4} />
+						<Input.TextArea rows={4} className="form-input" />
 					</Form.Item>
-					<Form.Item label="Photo URL" name="photo">
-						<Input />
-					</Form.Item>
-					<Form.Item label="Source" name="source">
-						<Select options={["website", "google", "instagram", "manual"].map((value) => ({ label: value, value }))} />
-					</Form.Item>
+
+					<div className="form-grid">
+						<Form.Item label="Photo URL" name="photo">
+							<Input className="form-input" placeholder="https://..." />
+						</Form.Item>
+
+						<Form.Item label="Sumber" name="source">
+							<Select
+								options={["website", "google", "instagram", "manual"].map((value) => ({
+									label: value,
+									value,
+								}))}
+							/>
+						</Form.Item>
+					</div>
 				</Form>
 			</Modal>
-		</div>
+		</MetronicPage>
 	);
 }

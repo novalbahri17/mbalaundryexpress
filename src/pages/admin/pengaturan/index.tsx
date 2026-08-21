@@ -18,7 +18,7 @@ import {
 	Typography,
 	Space,
 } from "antd";
-import type { ColumnsType } from "antd/es/table";
+import { useThemeStore } from "@/store/themeStore";
 import { useEffect, useMemo, useState } from "react";
 import dayjs from "dayjs";
 import {
@@ -30,16 +30,16 @@ import {
 	ExclamationCircleOutlined,
 } from "@ant-design/icons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { CrudManager } from "@/components/admin/CrudManager";
 import { getPageContentValueMap, saveBulkPageContents } from "@/api/pageContents.api";
-import { deleteSiteSetting, getSiteSettings, saveBulkSettings, upsertSiteSetting } from "@/api/settings.api";
+import { getSiteSettings, saveBulkSettings } from "@/api/settings.api";
 import { PAGE_CONTENT_QUERY_KEY } from "@/hooks/usePageContent";
 import { SITE_SETTINGS_QUERY_KEY } from "@/hooks/useSiteSettings";
-import type { SiteSetting } from "@/types/database.types";
+import { MetronicPage } from "@/components/admin/MetronicPage";
 import { normalizeHexColor, validateHexColor } from "@/utils/validation";
 import { AnnouncementCard, type AnnouncementType } from "@/components/public/home/AnnouncementModal";
 import { pb } from "@/api/pocketbase";
 import { useNavigate } from "react-router-dom";
+import { Tabs, TabPanel } from "@/design-system/components/Tabs";
 
 const { Text } = Typography;
 const { confirm } = Modal;
@@ -89,34 +89,6 @@ type SecurityFormValues = {
 	confirmPassword: string;
 };
 
-const columns: ColumnsType<SiteSetting> = [
-	{ title: "Key", dataIndex: "key" },
-	{
-		title: "Value",
-		dataIndex: "value",
-		render: (value: string, record: SiteSetting) => {
-			if (record.key === "landing_bg_color_light" || record.key === "landing_bg_color_dark") {
-				const normalized = normalizeHexColor(
-					value,
-					record.key === "landing_bg_color_dark" ? DEFAULT_DARK_BG : DEFAULT_LIGHT_BG,
-				);
-				return (
-					<div className="flex items-center gap-2">
-						<span className="h-4 w-4 rounded border border-neutral-300" style={{ backgroundColor: normalized }} />
-						<span>{normalized}</span>
-					</div>
-				);
-			}
-			// Truncate long values (e.g. base64 images)
-			if (value && value.length > 80) {
-				return <span className="text-xs text-neutral-400">{value.substring(0, 60)}…</span>;
-			}
-			return value;
-		},
-	},
-	{ title: "Deskripsi", dataIndex: "description" },
-];
-
 const hexRule = {
 	validator: async (_: unknown, value: string) => {
 		const raw = value?.trim() ?? "";
@@ -132,12 +104,13 @@ const hexRule = {
 
 const TYPE_TITLES: Record<AnnouncementType, string> = {
 	info: "Informasi",
-	promo: "Promo Spesial! 🎉",
+	promo: "Promo Spesial!",
 	libur: "Pengumuman Libur",
 	maintenance: "Perbaikan Sistem",
 };
 
 export default function PengaturanAdminPage() {
+	const { mode } = useThemeStore();
 	const navigate = useNavigate();
 	const [appearanceForm] = Form.useForm<LandingAppearanceForm>();
 	const [announcementForm] = Form.useForm<AnnouncementFormValues>();
@@ -147,9 +120,13 @@ export default function PengaturanAdminPage() {
 	const [imageMode, setImageMode] = useState<"upload" | "url">("upload");
 	const [isFormsReady, setIsFormsReady] = useState(false);
 	const [securityModalOpen, setSecurityModalOpen] = useState(false);
+	const [activeTab, setActiveTab] = useState("umum");
+
+	const isDark = mode === "dark";
 	const [adminEmail, setAdminEmail] = useState("");
 	const [whatsappNumber, setWhatsappNumber] = useState("");
 	const [newLoginEmail, setNewLoginEmail] = useState("");
+	const [emailChangePassword, setEmailChangePassword] = useState("");
 
 	const { data: rows = [] } = useQuery({
 		queryKey: ["admin-site-settings"],
@@ -169,7 +146,6 @@ export default function PengaturanAdminPage() {
 		[rows],
 	);
 
-	// Delay form operations to ensure Form components are mounted
 	useEffect(() => {
 		const timer = setTimeout(() => {
 			setIsFormsReady(true);
@@ -230,15 +206,13 @@ export default function PengaturanAdminPage() {
 			module_kontak: pageContentMap.module_kontak !== "false",
 		});
 
-		// Load contact info
 		setAdminEmail(settingsMap.admin_email || pb.authStore.model?.email || "");
-		setWhatsappNumber(settingsMap.whatsapp_number || pageContentMap.whatsapp_number || "");
+		setWhatsappNumber(settingsMap.whatsapp_cs || pageContentMap.whatsapp_cs || settingsMap.whatsapp_number || pageContentMap.whatsapp_number || "");
 	}, [isFormsReady, appearanceForm, announcementForm, modulesForm, pageContentMap, settingsMap]);
 
 	const lightPreview = normalizeHexColor(Form.useWatch("landing_bg_color_light", appearanceForm), DEFAULT_LIGHT_BG);
 	const darkPreview = normalizeHexColor(Form.useWatch("landing_bg_color_dark", appearanceForm), DEFAULT_DARK_BG);
 
-	// Watch values for Smart Preview
 	const liveTitle = Form.useWatch("announcement_title", announcementForm);
 	const liveText = Form.useWatch("announcement_text", announcementForm);
 	const liveType: AnnouncementType = Form.useWatch("announcement_type", announcementForm) || "info";
@@ -249,7 +223,6 @@ export default function PengaturanAdminPage() {
 		| undefined;
 	const liveImageUrl = Form.useWatch("announcement_image_url", announcementForm);
 
-	// Resolve preview image: file upload thumb > URL field > existing saved image
 	const previewImage =
 		liveImageFile?.fileList?.[0]?.thumbUrl ||
 		(imageMode === "url" ? liveImageUrl : undefined) ||
@@ -259,7 +232,7 @@ export default function PengaturanAdminPage() {
 	const applyTemplate = (type: AnnouncementType) => {
 		const templates: Record<AnnouncementType, { title: string; text: string }> = {
 			promo: {
-				title: "Promo Spesial Hari Ini! 🎉",
+				title: "Promo Spesial Hari Ini!",
 				text: "Diskon Cuci 5Kg Gratis 1Kg. Yuk buruan mampir sebelum kehabisan mesin!",
 			},
 			libur: {
@@ -312,7 +285,6 @@ export default function PengaturanAdminPage() {
 			announcement_image_url: "",
 		});
 
-		// Hapus file dari branding_files juga
 		try {
 			const existing = await pb.collection("branding_files").getFullList({
 				filter: 'type = "announcement"',
@@ -341,10 +313,8 @@ export default function PengaturanAdminPage() {
 		message.success("Gambar banner berhasil dihapus");
 	};
 
-	// Upload announcement image to branding_files collection
 	const uploadAnnouncementImage = async (file: File): Promise<string> => {
 		try {
-			// Hapus file announcement lama
 			const existing = await pb.collection("branding_files").getFullList({
 				filter: 'type = "announcement"',
 			});
@@ -352,10 +322,9 @@ export default function PengaturanAdminPage() {
 				await pb.collection("branding_files").delete(record.id);
 			}
 		} catch (_e) {
-			// Ignore error jika tidak ada file lama
+			// Ignore error
 		}
 
-		// Upload file baru
 		const record = await pb.collection("branding_files").create({
 			type: "announcement",
 			file: file,
@@ -367,14 +336,11 @@ export default function PengaturanAdminPage() {
 	const saveAnnouncement = async () => {
 		const values = await announcementForm.validateFields();
 
-		// Resolve final image URL
 		let imageUrl = pageContentMap.announcement_image ?? "";
 
 		if (imageMode === "url") {
-			// Use URL field directly
 			imageUrl = values.announcement_image_url?.trim() ?? "";
 		} else {
-			// Use uploaded file — upload to branding_files collection
 			const uploadedFile = values.announcement_image_file?.fileList?.[0]?.originFileObj;
 			if (uploadedFile) {
 				imageUrl = await uploadAnnouncementImage(uploadedFile);
@@ -474,7 +440,6 @@ export default function PengaturanAdminPage() {
 
 		message.success("Pengumuman berhasil disimpan!");
 
-		// Clear file from form after successful upload to prevent re-upload
 		if (imageMode === "upload" && values.announcement_image_file?.fileList?.[0]?.originFileObj) {
 			announcementForm.setFieldValue("announcement_image_file", undefined);
 		}
@@ -575,21 +540,9 @@ export default function PengaturanAdminPage() {
 		]);
 	};
 
-	// Save Contact Info
 	const saveContactInfo = async () => {
-		// Update admin email in PocketBase
-		try {
-			if (adminEmail && adminEmail !== pb.authStore.model?.email) {
-				await pb.collection("_superusers").update(pb.authStore.model?.id || "", {
-					email: adminEmail,
-				});
-			}
-		} catch (_error) {
-			message.error("Gagal mengubah email admin");
-			return;
-		}
-
-		// Save to site_settings
+		// Save email and WhatsApp to settings/pagecontents only
+		// Note: Actual login email change is done in Keamanan tab with password verification
 		await saveBulkSettings([
 			{
 				key: "admin_email",
@@ -597,16 +550,15 @@ export default function PengaturanAdminPage() {
 				description: "Email admin untuk notifikasi",
 			},
 			{
-				key: "whatsapp_number",
+				key: "whatsapp_cs",
 				value: whatsappNumber,
 				description: "Nomor WhatsApp landing page (format: 628xxxxx)",
 			},
 		]);
 
-		// Also save to page_contents for easy access on landing page
 		await saveBulkPageContents([
 			{
-				key: "whatsapp_number",
+				key: "whatsapp_cs",
 				value: whatsappNumber,
 				type: "text",
 				label: "Nomor WhatsApp",
@@ -624,29 +576,45 @@ export default function PengaturanAdminPage() {
 		]);
 	};
 
-	// Change Email
 	const handleChangeEmail = async () => {
 		if (!newLoginEmail || newLoginEmail === pb.authStore.model?.email) {
 			message.error("Email baru tidak boleh kosong atau sama dengan email saat ini");
 			return;
 		}
 
+		if (!emailChangePassword) {
+			message.error("Password saat ini wajib diisi untuk konfirmasi");
+			return;
+		}
+
 		try {
-			await pb.collection("_superusers").update(pb.authStore.model?.id || "", {
+			const currentEmail = pb.authStore.model?.email || "";
+			const userId = pb.authStore.model?.id || "";
+
+			// Re-authenticate with current credentials to get fresh token
+			await pb.collection("_superusers").authWithPassword(currentEmail, emailChangePassword);
+
+			// PocketBase v0.23+ requires emailSelector for email updates
+			await pb.collection("_superusers").update(userId, {
 				email: newLoginEmail,
+				emailSelector: currentEmail,
 			});
+
 			message.success("Email login berhasil diubah! Silakan login ulang dengan email baru.");
 			setNewLoginEmail("");
-			// Logout setelah email berubah
+			setEmailChangePassword("");
 			setTimeout(() => {
 				handleLogout();
 			}, 2000);
-		} catch (_error) {
-			message.error("Gagal mengubah email. Pastikan email valid dan belum terdaftar.");
+		} catch (_error: unknown) {
+			const err = _error as { message?: string; status?: number; data?: Record<string, unknown> };
+			// Log full error for debugging
+			console.error("Email update error details:", JSON.stringify(err, null, 2));
+			const serverMessage = (err as { data?: { message?: string } })?.data?.message || err?.message;
+			message.error(`Gagal mengubah email: ${serverMessage || "Pastikan email valid dan belum terdaftar."}`);
 		}
 	};
 
-	// Security: Change Password
 	const handleChangePassword = async () => {
 		const values = await securityForm.validateFields();
 
@@ -656,17 +624,14 @@ export default function PengaturanAdminPage() {
 		}
 
 		try {
-			// Get current admin email from auth store
 			const adminEmail = pb.authStore.model?.email;
 			if (!adminEmail) {
 				message.error("Tidak dapat mendapatkan email admin");
 				return;
 			}
 
-			// Verify current password by attempting login
 			await pb.collection("_superusers").authWithPassword(adminEmail, values.currentPassword);
 
-			// Update password
 			await pb.collection("_superusers").update(pb.authStore.model?.id ?? "", {
 				password: values.newPassword,
 				passwordConfirm: values.newPassword,
@@ -680,7 +645,6 @@ export default function PengaturanAdminPage() {
 		}
 	};
 
-	// Logout with confirmation
 	const handleLogout = () => {
 		confirm({
 			title: "Konfirmasi Logout",
@@ -699,469 +663,524 @@ export default function PengaturanAdminPage() {
 
 	const hasExistingImage = Boolean(pageContentMap.announcement_image?.trim());
 
+	const tabs = [
+		{ id: "umum", label: "Umum" },
+		{ id: "landing", label: "Landing Page" },
+		{ id: "popup", label: "Popup" },
+		{ id: "kontak", label: "Kontak" },
+		{ id: "keamanan", label: "Keamanan" },
+	];
+
 	return (
-		<div className="space-y-4">
-			<div className="admin-page-shell">
-				<div className="admin-page-head">
-					<div>
-						<h1 className="admin-page-title">Pengaturan Global</h1>
-						<p className="admin-page-subtitle">Atur tampilan landing dan konfigurasi sistem dari dashboard admin.</p>
-					</div>
-				</div>
-				<div className="admin-page-body space-y-4">
-					{/* ── Modul Visibilitas ── */}
-					<Card title="Manajemen Modul & Halaman Publik" className="shadow-sm border-ruby-200">
-						<Alert
-							showIcon
-							type="info"
-							message="Pengaturan Visibilitas Global"
-							description="Matikan switch di bawah jika Anda tidak ingin menampilkan halaman atau menu tersebut di Landing Page Publik."
-							className="mb-6"
-						/>
-						<Form form={modulesForm} layout="horizontal">
-							<Row gutter={[24, 16]}>
-								{[
-									{ name: "module_cabang", on: "Cabang On", off: "Cabang Off" },
-									{ name: "module_promo", on: "Promo On", off: "Promo Off" },
-									{ name: "module_harga", on: "Harga On", off: "Harga Off" },
-									{
-										name: "module_carapakai",
-										on: "Cara Pakai On",
-										off: "Cara Pakai Off",
-									},
-									{ name: "module_galeri", on: "Galeri On", off: "Galeri Off" },
-									{ name: "module_blog", on: "Blog On", off: "Blog Off" },
-									{ name: "module_loker", on: "Loker On", off: "Loker Off" },
-									{
-										name: "module_kemitraan",
-										on: "Kemitraan On",
-										off: "Kemitraan Off",
-									},
-									{ name: "module_kontak", on: "Kontak On", off: "Kontak Off" },
-								].map((mod) => (
-									<Col key={mod.name} xs={24} sm={12} md={8} xl={6}>
-										<Form.Item name={mod.name} valuePropName="checked" className="mb-0">
-											<Switch checkedChildren={mod.on} unCheckedChildren={mod.off} />
-										</Form.Item>
-									</Col>
-								))}
-							</Row>
-							<div className="mt-6 border-t border-neutral-100 pt-4 dark:border-neutral-800">
-								<Button type="primary" onClick={() => void saveModules()}>
-									Simpan Pengaturan Visibilitas
-								</Button>
-							</div>
-						</Form>
-					</Card>
+		<MetronicPage
+			title="Pengaturan"
+			subtitle="Kelola konfigurasi sistem dan tampilan landing page"
+		>
+			{/* Tab Navigation */}
+			<div className="mb-6">
+				<Tabs
+					tabs={tabs}
+					activeTab={activeTab}
+					onChange={setActiveTab}
+					variant="underline"
+					size="md"
+				/>
+			</div>
 
-					{/* ── Pengumuman Popup Modal ── */}
-					<Card title="Pengumuman (Popup Modal)" className="shadow-sm">
+			{/* ====== TAB: UMUM ====== */}
+			<TabPanel id="umum" activeTab={activeTab}>
+				<Card
+					title="Visibilitas Halaman"
+					className="card"
+					style={{ borderColor: "var(--border)" }}
+				>
+					<h3 className="text-base font-semibold mb-1" style={{ color: "var(--text-primary)" }}>
+						Manajemen Modul &amp; Halaman Publik
+					</h3>
+					<p className="text-sm mb-4" style={{ color: "var(--text-muted)" }}>
+						Matikan switch jika tidak ingin menampilkan halaman tersebut di Landing Page Publik.
+					</p>
+
+					<Form form={modulesForm} layout="horizontal">
+						<Row gutter={[24, 16]}>
+							{[
+								{ name: "module_cabang", on: "Cabang On", off: "Cabang Off" },
+								{ name: "module_promo", on: "Promo On", off: "Promo Off" },
+								{ name: "module_harga", on: "Harga On", off: "Harga Off" },
+								{ name: "module_carapakai", on: "Cara Pakai On", off: "Cara Pakai Off" },
+								{ name: "module_galeri", on: "Galeri On", off: "Galeri Off" },
+								{ name: "module_blog", on: "Blog On", off: "Blog Off" },
+								{ name: "module_loker", on: "Locker On", off: "Locker Off" },
+								{ name: "module_kemitraan", on: "Kemitraan On", off: "Kemitraan Off" },
+								{ name: "module_kontak", on: "Kontak On", off: "Kontak Off" },
+							].map((mod) => (
+								<Col key={mod.name} xs={24} sm={12} md={8} xl={6}>
+									<Form.Item name={mod.name} valuePropName="checked" className="mb-0">
+										<Switch checkedChildren={mod.on} unCheckedChildren={mod.off} />
+									</Form.Item>
+								</Col>
+							))}
+						</Row>
+
+						<div className="mt-6 pt-4 flex justify-end" style={{ borderTop: "1px solid var(--border)" }}>
+							<Button type="primary" onClick={() => void saveModules()}>
+								Simpan Pengaturan
+							</Button>
+						</div>
+					</Form>
+				</Card>
+			</TabPanel>
+
+			{/* ====== TAB: LANDING PAGE ====== */}
+			<TabPanel id="landing" activeTab={activeTab}>
+				<Card
+					title="Tampilan Landing Page"
+					className="card"
+					style={{ borderColor: "var(--border)" }}
+				>
+					<h3 className="text-base font-semibold mb-1" style={{ color: "var(--text-primary)" }}>
+						Warna Background
+					</h3>
+					<p className="text-sm mb-4" style={{ color: "var(--text-muted)" }}>
+						Atur warna background landing page untuk mode terang dan gelap.
+					</p>
+
+					<Form form={appearanceForm} layout="vertical" autoComplete="off">
 						<Row gutter={24}>
-							{/* Left: Form */}
-							<Col xs={24} lg={14}>
-								{/* Magic Templates */}
-								<div className="mb-5 rounded-lg border border-ruby-200 bg-ruby-50 p-4 dark:border-ruby-900/50 dark:bg-ruby-900/20">
-									<div className="mb-2 text-sm font-semibold text-ruby-700 dark:text-ruby-400">
-										✨ Magic Templates (Jalur Cepat)
-									</div>
-									<div className="flex flex-wrap gap-2">
-										{(["promo", "libur", "maintenance", "info"] as AnnouncementType[]).map((t) => (
-											<Button key={t} size="small" onClick={() => applyTemplate(t)}>
-												{t === "promo" && "🎁 Mode Promo"}
-												{t === "libur" && "🔒 Mode Libur"}
-												{t === "maintenance" && "🔧 Mode Maintenance"}
-												{t === "info" && "ℹ️ Mode Info"}
-											</Button>
-										))}
-									</div>
+							<Col xs={24} md={12}>
+								<Form.Item
+									name="landing_bg_color_light"
+									label="Background Light Mode"
+									rules={[hexRule]}
+									extra="Format HEX, contoh: #FFFBF1"
+								>
+									<Input placeholder="#FAFAFA" />
+								</Form.Item>
+
+								<div className="rounded-xl border p-3" style={{ borderColor: "var(--border)" }}>
+									<p className="mb-2 text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>Preview Light</p>
+									<div className="h-16 rounded-lg" style={{ backgroundColor: lightPreview }} />
+									<p className="mt-2 text-xs font-mono" style={{ color: "var(--text-muted)" }}>{lightPreview}</p>
 								</div>
-
-								<Form form={announcementForm} layout="vertical">
-									{/* Row 1: Status + Tema */}
-									<Row gutter={16}>
-										<Col xs={24} sm={12}>
-											<Form.Item name="announcement_active" label="Status Penayangan" valuePropName="checked">
-												<Switch checkedChildren="Aktif" unCheckedChildren="Mati" />
-											</Form.Item>
-										</Col>
-										<Col xs={24} sm={12}>
-											<Form.Item name="announcement_type" label="Tema Tampilan">
-												<Select
-													options={[
-														{ label: "ℹ️ Informasi (Biru)", value: "info" },
-														{ label: "🎁 Promo (Oranye)", value: "promo" },
-														{ label: "🔒 Libur (Merah)", value: "libur" },
-														{ label: "🔧 Maintenance (Abu)", value: "maintenance" },
-													]}
-												/>
-											</Form.Item>
-										</Col>
-									</Row>
-
-									<Form.Item
-										name="announcement_title"
-										label="Judul Pengumuman"
-										extra="Kosongkan untuk menggunakan judul default sesuai tema"
-									>
-										<Input placeholder={TYPE_TITLES[liveType]} />
-									</Form.Item>
-
-									<Form.Item label="Isi Pengumuman" className="mb-2">
-										<div className="mb-2 flex flex-wrap gap-2">
-											<span className="text-xs text-neutral-500">Format:</span>
-											<Button size="small" onClick={() => insertTag("<b>", "</b>")}>
-												Bold
-											</Button>
-											<Button size="small" onClick={() => insertTag("<i>", "</i>")}>
-												Italic
-											</Button>
-											<Button size="small" onClick={() => insertTag("<u>", "</u>")}>
-												Underline
-											</Button>
-											<Button size="small" onClick={() => insertTag('<a href="#">', "</a>")}>
-												Link
-											</Button>
-											<Button size="small" onClick={() => insertTag("<br/>", "")}>
-												New Line
-											</Button>
-										</div>
-										<Form.Item name="announcement_text" noStyle>
-											<Input.TextArea
-												id="announcement_text"
-												rows={5}
-												placeholder="Tulis pengumuman di sini... HTML diperbolehkan."
-											/>
-										</Form.Item>
-									</Form.Item>
-
-									{/* Row: Jadwal */}
-									<Row gutter={16}>
-										<Col xs={24} sm={12}>
-											<Form.Item name="announcement_dates" label="Jadwal Tayang">
-												<DatePicker.RangePicker
-													showTime
-													format="DD MMM YYYY HH:mm"
-													className="w-full"
-													placeholder={["Mulai", "Selesai"]}
-												/>
-											</Form.Item>
-										</Col>
-										<Col xs={24} sm={12}>
-											<Form.Item name="announcement_recurring" label="Pengulangan">
-												<Select
-													options={[
-														{ label: "Sekali (tidak berulang)", value: "none" },
-														{ label: "Setiap Senin", value: "monday" },
-														{ label: "Setiap Akhir Pekan", value: "weekend" },
-														{ label: "Setiap Hari", value: "daily" },
-													]}
-												/>
-											</Form.Item>
-										</Col>
-									</Row>
-
-									{/* Banner Image Upload */}
-									<Row gutter={16}>
-										<Col xs={24}>
-											<Form.Item label="Banner/Gambar Header">
-												<div className="mb-2 flex gap-2">
-													<Button
-														size="small"
-														type={imageMode === "upload" ? "primary" : "default"}
-														icon={<UploadOutlined />}
-														onClick={() => setImageMode("upload")}
-													>
-														📤 Upload File
-													</Button>
-													<Button
-														size="small"
-														type={imageMode === "url" ? "primary" : "default"}
-														icon={<LinkOutlined />}
-														onClick={() => setImageMode("url")}
-													>
-														URL Gambar
-													</Button>
-												</div>
-
-												{/* Always render both Form.Items but conditionally show content */}
-												<div style={{ display: imageMode === "upload" ? "block" : "none" }}>
-													<Form.Item name="announcement_image_file" noStyle>
-														<Upload maxCount={1} beforeUpload={() => false} listType="picture" accept="image/*">
-															<Button icon={<UploadOutlined />}>Pilih Gambar</Button>
-														</Upload>
-													</Form.Item>
-												</div>
-
-												<div style={{ display: imageMode === "url" ? "block" : "none" }}>
-													<Form.Item name="announcement_image_url" noStyle>
-														<Input
-															placeholder="https://example.com/gambar.jpg"
-															prefix={<LinkOutlined className="text-neutral-400" />}
-														/>
-													</Form.Item>
-												</div>
-
-												{/* Status gambar tersimpan + tombol hapus */}
-												{hasExistingImage && (
-													<div className="mt-2 flex items-center justify-between rounded-lg bg-emerald-50 px-3 py-1.5 dark:bg-emerald-900/20">
-														<span className="text-xs text-emerald-700 dark:text-emerald-400">
-															✅ Banner aktif tersimpan
-														</span>
-														<Popconfirm
-															title="Hapus gambar banner?"
-															description="Tampilan header modal akan kembali ke gradien warna."
-															onConfirm={() => void handleRemoveImage()}
-															okText="Hapus"
-															cancelText="Batal"
-														>
-															<Button type="text" danger size="small" icon={<DeleteOutlined />} className="text-xs">
-																Hapus
-															</Button>
-														</Popconfirm>
-													</div>
-												)}
-											</Form.Item>
-										</Col>
-									</Row>
-
-									{/* CTA Button */}
-									<div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-700 dark:bg-neutral-800 mb-4">
-										<div className="mb-3 text-sm font-semibold text-neutral-600 dark:text-neutral-300">
-											🔗 Tombol Aksi (CTA){" "}
-											<Tag color="default" className="ml-1 font-normal">
-												Opsional
-											</Tag>
-										</div>
-										<Row gutter={12}>
-											<Col xs={24} sm={12}>
-												<Form.Item name="announcement_cta_label" label="Label Tombol">
-													<Input placeholder="Contoh: Lihat Promo" />
-												</Form.Item>
-											</Col>
-											<Col xs={24} sm={12}>
-												<Form.Item name="announcement_cta_url" label="URL Tujuan">
-													<Input placeholder="https://..." prefix={<LinkOutlined className="text-neutral-400" />} />
-												</Form.Item>
-											</Col>
-										</Row>
-									</div>
-
-									<Button
-										type="primary"
-										onClick={() => void saveAnnouncement()}
-										style={{
-											backgroundColor: "#F97316",
-											borderColor: "#ea580c",
-										}}
-										className="w-full sm:w-auto"
-										size="large"
-									>
-										Simpan Pengumuman
-									</Button>
-								</Form>
 							</Col>
+							<Col xs={24} md={12}>
+								<Form.Item
+									name="landing_bg_color_dark"
+									label="Background Dark Mode"
+									rules={[hexRule]}
+									extra="Format HEX, contoh: #0A0A0F"
+								>
+									<Input placeholder="#0A0A0F" />
+								</Form.Item>
 
-							{/* Right: Live Preview */}
-							<Col xs={24} lg={10}>
-								<div className="h-full rounded-xl border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-700 dark:bg-neutral-800 flex flex-col">
-									<h4 className="mb-1 font-semibold text-neutral-600 dark:text-neutral-400">👀 Smart Live Preview</h4>
-									<p className="mb-4 text-xs text-neutral-400">
-										Preview memantulkan tema, judul, dan tombol aksi secara langsung.
-									</p>
-									<div className="flex flex-1 items-start justify-center pointer-events-none relative">
-										<div className="w-[125%] max-w-sm origin-top scale-[0.78]">
-											<AnnouncementCard
-												title={liveTitle || undefined}
-												text={liveText || "Ketik sesuatu untuk melihat pratinjau langsung di sini..."}
-												type={liveType}
-												image={previewImage}
-												ctaLabel={liveCtaLabel || undefined}
-												ctaUrl={liveCtaUrl || "#"}
-											/>
-										</div>
-									</div>
-
-									{/* Info chips */}
-									<div className="mt-4 flex flex-wrap gap-2">
-										<Tag color="blue">Tema: {liveType}</Tag>
-										{liveTitle && <Tag color="green">Judul Custom ✓</Tag>}
-										{liveCtaLabel && <Tag color="orange">CTA: {liveCtaLabel}</Tag>}
-										{previewImage && <Tag color="purple">Banner ✓</Tag>}
-									</div>
+								<div className="rounded-xl border p-3" style={{ borderColor: "var(--border)" }}>
+									<p className="mb-2 text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>Preview Dark</p>
+									<div className="h-16 rounded-lg" style={{ backgroundColor: darkPreview }} />
+									<p className="mt-2 text-xs font-mono" style={{ color: "var(--text-muted)" }}>{darkPreview}</p>
 								</div>
 							</Col>
 						</Row>
-					</Card>
 
-					{/* ── Tampilan Landing Page ── */}
-					<Card title="Tampilan Landing Page" className="shadow-sm">
-						<Form form={appearanceForm} layout="vertical" autoComplete="off">
-							<Row gutter={16}>
-								<Col xs={24} md={12}>
-									<Form.Item
-										name="landing_bg_color_light"
-										label="Background Light Mode"
-										rules={[hexRule]}
-										extra="Format HEX, contoh: #FFFBF1"
-									>
-										<Input placeholder="#FAFAFA" />
-									</Form.Item>
-
-									<div className="rounded-xl border border-neutral-200 p-3">
-										<p className="mb-2 text-xs font-semibold text-neutral-600">Preview Light</p>
-										<div
-											className="h-16 rounded-lg border border-neutral-200"
-											style={{ backgroundColor: lightPreview }}
-										/>
-										<p className="mt-2 text-xs font-mono text-neutral-600">{lightPreview}</p>
-									</div>
-								</Col>
-								<Col xs={24} md={12}>
-									<Form.Item
-										name="landing_bg_color_dark"
-										label="Background Dark Mode"
-										rules={[hexRule]}
-										extra="Format HEX, contoh: #0A0A0F"
-									>
-										<Input placeholder="#0A0A0F" />
-									</Form.Item>
-
-									<div className="rounded-xl border border-neutral-200 p-3">
-										<p className="mb-2 text-xs font-semibold text-neutral-600">Preview Dark</p>
-										<div
-											className="h-16 rounded-lg border border-neutral-200"
-											style={{ backgroundColor: darkPreview }}
-										/>
-										<p className="mt-2 text-xs font-mono text-neutral-300">{darkPreview}</p>
-									</div>
-								</Col>
-							</Row>
-
+						<div className="mt-6 pt-4 flex justify-end" style={{ borderTop: "1px solid var(--border)" }}>
 							<Button type="primary" onClick={() => void saveLandingAppearance()}>
-								Simpan Warna Landing
+								Simpan Pengaturan
 							</Button>
-						</Form>
-					</Card>
+						</div>
+					</Form>
+				</Card>
+			</TabPanel>
 
-					{/* ── Kontak & Informasi ── */}
-					<Card title="📞 Kontak & Informasi" className="shadow-sm mt-4">
-						<Alert
-							showIcon
-							type="info"
-							message="Ubah Informasi Kontak"
-							description="Perbarui email admin dan nomor WhatsApp yang ditampilkan di landing page."
-							className="mb-4"
-						/>
-						<Form layout="vertical">
-							<Row gutter={16}>
-								<Col xs={24} md={12}>
-									<Form.Item label="Email Admin">
-										<Input
-											value={adminEmail}
-											onChange={(e) => setAdminEmail(e.target.value)}
-											placeholder="admin@mba-laundry.com"
-											type="email"
+			{/* ====== TAB: POPUP ====== */}
+			<TabPanel id="popup" activeTab={activeTab}>
+				<Row gutter={24}>
+					{/* Left: Form */}
+					<Col xs={24} lg={14}>
+						{/* PRESET BLOCK */}
+						<Card className="card mb-4" style={{ borderColor: "var(--border)" }}>
+							<h3 className="text-base font-semibold mb-1" style={{ color: "var(--text-primary)" }}>
+								Magic Templates
+							</h3>
+							<p className="text-sm mb-4" style={{ color: "var(--text-muted)" }}>
+								 mulai cepat dengan template siap pakai.
+							</p>
+							<div className="flex flex-wrap gap-2">
+								{(["promo", "libur", "maintenance", "info"] as AnnouncementType[]).map((t) => (
+									<Button key={t} onClick={() => applyTemplate(t)}>
+										{t === "promo" && "Mode Promo"}
+										{t === "libur" && "Mode Libur"}
+										{t === "maintenance" && "Mode Maintenance"}
+										{t === "info" && "Mode Info"}
+									</Button>
+								))}
+							</div>
+						</Card>
+
+						{/* KONTEN BLOCK */}
+						<Card className="card mb-4" style={{ borderColor: "var(--border)" }}>
+							<h3 className="text-base font-semibold mb-1" style={{ color: "var(--text-primary)" }}>
+								Konten Pengumuman
+							</h3>
+							<p className="text-sm mb-4" style={{ color: "var(--text-muted)" }}>
+								Judul, teks, dan tema popup yang akan ditampilkan kepada pengunjung.
+							</p>
+
+							<Form form={announcementForm} layout="vertical">
+								<Row gutter={16}>
+									<Col xs={24} sm={12}>
+										<Form.Item name="announcement_active" label="Status Penayangan" valuePropName="checked">
+											<Switch checkedChildren="Aktif" unCheckedChildren="Mati" />
+										</Form.Item>
+									</Col>
+									<Col xs={24} sm={12}>
+										<Form.Item name="announcement_type" label="Tema Tampilan">
+											<Select
+												options={[
+													{ label: "Informasi (Biru)", value: "info" },
+													{ label: "Promo (Oranye)", value: "promo" },
+													{ label: "Libur (Merah)", value: "libur" },
+													{ label: "Maintenance (Abu)", value: "maintenance" },
+												]}
+											/>
+										</Form.Item>
+									</Col>
+								</Row>
+
+								<Form.Item
+									name="announcement_title"
+									label="Judul Pengumuman"
+									extra="Kosongkan untuk menggunakan judul default sesuai tema"
+								>
+									<Input placeholder={TYPE_TITLES[liveType]} />
+								</Form.Item>
+
+								<Form.Item label="Isi Pengumuman" className="mb-2">
+									<div className="mb-2 flex flex-wrap gap-2">
+										<span className="text-xs" style={{ color: "var(--text-muted)" }}>Format:</span>
+										<Button size="small" onClick={() => insertTag("<b>", "</b>")}>Bold</Button>
+										<Button size="small" onClick={() => insertTag("<i>", "</i>")}>Italic</Button>
+										<Button size="small" onClick={() => insertTag("<u>", "</u>")}>Underline</Button>
+										<Button size="small" onClick={() => insertTag('<a href="#">', "</a>")}>Link</Button>
+										<Button size="small" onClick={() => insertTag("<br/>", "")}>New Line</Button>
+									</div>
+									<Form.Item name="announcement_text" noStyle>
+										<Input.TextArea
+											id="announcement_text"
+											rows={5}
+											placeholder="Tulis pengumuman di sini... HTML diperbolehkan."
 										/>
 									</Form.Item>
-								</Col>
-								<Col xs={24} md={12}>
-									<Form.Item label="Nomor WhatsApp Landing Page">
-										<Input
-											value={whatsappNumber}
-											onChange={(e) => setWhatsappNumber(e.target.value)}
-											placeholder="6281234567890"
-										/>
-										<p className="text-xs text-neutral-500 mt-1">
-											Format: 628xxxxx (tanpa spasi/tanda hubung)
-										</p>
-									</Form.Item>
-								</Col>
-							</Row>
-							<Button type="primary" onClick={() => void saveContactInfo()}>
-								Simpan Informasi Kontak
-							</Button>
-						</Form>
-					</Card>
+								</Form.Item>
+							</Form>
+						</Card>
 
-					{/* ── Keamanan Akun ── */}
-					<Card title="🔐 Keamanan Akun" className="shadow-sm mt-4">
-						<Alert
-							showIcon
-							type="warning"
-							message="Pengaturan Keamanan"
-							description="Ubah email login dan password admin di sini. Pastikan data yang dimasukkan benar."
-							className="mb-4"
-						/>
-						<div className="space-y-4">
-							{/* Ganti Email */}
-							<div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
-								<h4 className="font-semibold mb-3">Ganti Email Login</h4>
-								<Form layout="vertical">
-									<Row gutter={16}>
-										<Col xs={24} md={12}>
-											<Form.Item label="Email Login Saat Ini">
-												<Input value={pb.authStore.model?.email || ""} disabled />
+						{/* JADWAL BLOCK */}
+						<Card className="card mb-4" style={{ borderColor: "var(--border)" }}>
+							<h3 className="text-base font-semibold mb-1" style={{ color: "var(--text-primary)" }}>
+								Jadwal Tayang
+							</h3>
+							<p className="text-sm mb-4" style={{ color: "var(--text-muted)" }}>
+								Atur kapan popup mulai dan selesai ditampilkan.
+							</p>
+
+							<Form form={announcementForm} layout="vertical">
+								<Row gutter={16}>
+									<Col xs={24} sm={12}>
+										<Form.Item name="announcement_dates" label="Periode Tayang">
+											<DatePicker.RangePicker
+												showTime
+												format="DD MMM YYYY HH:mm"
+												className="w-full"
+												placeholder={["Mulai", "Selesai"]}
+											/>
+										</Form.Item>
+									</Col>
+									<Col xs={24} sm={12}>
+										<Form.Item name="announcement_recurring" label="Pengulangan">
+											<Select
+												options={[
+													{ label: "Sekali (tidak berulang)", value: "none" },
+													{ label: "Setiap Senin", value: "monday" },
+													{ label: "Setiap Akhir Pekan", value: "weekend" },
+													{ label: "Setiap Hari", value: "daily" },
+												]}
+											/>
+										</Form.Item>
+									</Col>
+								</Row>
+							</Form>
+						</Card>
+
+						{/* MEDIA & CTA BLOCK */}
+						<Card className="card mb-4" style={{ borderColor: "var(--border)" }}>
+							<h3 className="text-base font-semibold mb-1" style={{ color: "var(--text-primary)" }}>
+								Media &amp; CTA
+							</h3>
+							<p className="text-sm mb-4" style={{ color: "var(--text-muted)" }}>
+								Gambar header dan tombol aksi opsional untuk popup.
+							</p>
+
+							<Form form={announcementForm} layout="vertical">
+								<Form.Item label="Banner/Gambar Header">
+									<div className="mb-2 flex gap-2">
+										<Button
+											size="small"
+											type={imageMode === "upload" ? "primary" : "default"}
+											icon={<UploadOutlined />}
+											onClick={() => setImageMode("upload")}
+										>
+											Upload File
+										</Button>
+										<Button
+											size="small"
+											type={imageMode === "url" ? "primary" : "default"}
+											icon={<LinkOutlined />}
+											onClick={() => setImageMode("url")}
+										>
+											URL Gambar
+										</Button>
+									</div>
+
+									<div style={{ display: imageMode === "upload" ? "block" : "none" }}>
+										<Form.Item name="announcement_image_file" noStyle>
+											<Upload maxCount={1} beforeUpload={() => false} listType="picture" accept="image/*">
+												<Button icon={<UploadOutlined />}>Pilih Gambar</Button>
+											</Upload>
+										</Form.Item>
+									</div>
+
+									<div style={{ display: imageMode === "url" ? "block" : "none" }}>
+										<Form.Item name="announcement_image_url" noStyle>
+											<Input
+												placeholder="https://example.com/gambar.jpg"
+												prefix={<LinkOutlined style={{ color: "var(--text-muted)" }} />}
+											/>
+										</Form.Item>
+									</div>
+
+									{hasExistingImage && (
+										<div className="mt-2 flex items-center justify-between rounded-lg px-3 py-1.5" style={{ backgroundColor: "var(--success-bg)" }}>
+											<span className="text-xs" style={{ color: "var(--success)" }}>
+												Banner aktif tersimpan
+											</span>
+											<Popconfirm
+												title="Hapus gambar banner?"
+												description="Tampilan header modal akan kembali ke gradien warna."
+												onConfirm={() => void handleRemoveImage()}
+												okText="Hapus"
+												cancelText="Batal"
+											>
+												<Button type="text" danger size="small" icon={<DeleteOutlined />} className="text-xs">
+													Hapus
+												</Button>
+											</Popconfirm>
+										</div>
+									)}
+								</Form.Item>
+
+								<div className="rounded-xl border p-4" style={{ borderColor: "var(--border)", backgroundColor: "var(--bg-surface)" }}>
+									<div className="mb-3 text-sm font-semibold" style={{ color: "var(--text-secondary)" }}>
+										Tombol Aksi (CTA)
+										<Tag color="default" className="ml-1 font-normal">Opsional</Tag>
+									</div>
+									<Row gutter={12}>
+										<Col xs={24} sm={12}>
+											<Form.Item name="announcement_cta_label" label="Label Tombol" className="mb-3">
+												<Input placeholder="Contoh: Lihat Promo" />
 											</Form.Item>
 										</Col>
-										<Col xs={24} md={12}>
-											<Form.Item label="Email Baru">
-												<Input
-													value={newLoginEmail}
-													onChange={(e) => setNewLoginEmail(e.target.value)}
-													placeholder="admin-baru@mba-laundry.com"
-													type="email"
-												/>
+										<Col xs={24} sm={12}>
+											<Form.Item name="announcement_cta_url" label="URL Tujuan" className="mb-3">
+												<Input placeholder="https://..." prefix={<LinkOutlined style={{ color: "var(--text-muted)" }} />} />
 											</Form.Item>
 										</Col>
 									</Row>
-									<Button type="primary" onClick={() => void handleChangeEmail()}>
-										Simpan Email Baru
+								</div>
+
+								<div className="mt-6 pt-4 flex justify-end" style={{ borderTop: "1px solid var(--border)" }}>
+									<Button type="primary" onClick={() => void saveAnnouncement()}>
+										Simpan Pengaturan
 									</Button>
-								</Form>
+								</div>
+							</Form>
+						</Card>
+					</Col>
+
+					{/* Right: Sticky Preview */}
+					<Col xs={24} lg={10}>
+						<div
+							className="rounded-xl border p-4 sticky top-4"
+							style={{ borderColor: "var(--border)", backgroundColor: "var(--bg-surface)" }}
+						>
+							<h4 className="mb-1 font-semibold" style={{ color: "var(--text-secondary)" }}>Smart Live Preview</h4>
+							<p className="mb-4 text-xs" style={{ color: "var(--text-muted)" }}>
+								Preview memantulkan tema, judul, dan tombol aksi secara langsung.
+							</p>
+							<div className="flex flex-1 items-start justify-center pointer-events-none relative">
+								<div className="w-[125%] max-w-sm origin-top scale-[0.78]">
+									<AnnouncementCard
+										title={liveTitle || undefined}
+										text={liveText || "Ketik sesuatu untuk melihat pratinjau langsung di sini..."}
+										type={liveType}
+										image={previewImage}
+										ctaLabel={liveCtaLabel || undefined}
+										ctaUrl={liveCtaUrl || "#"}
+									/>
+								</div>
 							</div>
 
-							{/* Ganti Password */}
-							<div className="border border-neutral-200 dark:border-neutral-700 rounded-lg p-4">
-								<h4 className="font-semibold mb-3">Ganti Password</h4>
-								<Button type="default" icon={<LockOutlined />} onClick={() => setSecurityModalOpen(true)}>
-									Buka Form Ganti Password
-								</Button>
-							</div>
-
-							{/* Logout */}
-							<div className="border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-900/20 rounded-lg p-4">
-								<h4 className="font-semibold mb-3 text-red-700 dark:text-red-400">Logout</h4>
-								<p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
-									Keluar dari sesi admin saat ini.
-								</p>
-								<Button danger icon={<LogoutOutlined />} onClick={() => void handleLogout()}>
-									Logout Sekarang
-								</Button>
+							<div className="mt-4 flex flex-wrap gap-2">
+								<Tag color="blue">Tema: {liveType}</Tag>
+								{liveTitle && <Tag color="green">Judul Custom</Tag>}
+								{liveCtaLabel && <Tag color="orange">CTA: {liveCtaLabel}</Tag>}
+								{previewImage && <Tag color="purple">Banner</Tag>}
 							</div>
 						</div>
-					</Card>
-				</div>
-			</div>
+					</Col>
+				</Row>
+			</TabPanel>
 
-			{/* ── Site Settings Raw Table ── */}
-			<CrudManager<SiteSetting>
-				title="Pengaturan Lainnya"
-				queryKey="admin-site-settings"
-				fetcher={getSiteSettings}
-				createItem={upsertSiteSetting}
-				updateItem={(_, payload) => upsertSiteSetting(payload)}
-				deleteItem={deleteSiteSetting}
-				columns={columns}
-				fields={[
-					{ name: "key", label: "Key", type: "text", required: true },
-					{ name: "value", label: "Value", type: "text", required: true },
-					{ name: "description", label: "Deskripsi", type: "textarea" },
-				]}
-			/>
+			{/* ====== TAB: KONTAK ====== */}
+			<TabPanel id="kontak" activeTab={activeTab}>
+				<Card
+					title="Kontak &amp; Informasi"
+					className="card"
+					style={{ borderColor: "var(--border)" }}
+				>
+					<h3 className="text-base font-semibold mb-1" style={{ color: "var(--text-primary)" }}>
+						Informasi Kontak Landing Page
+					</h3>
+					<p className="text-sm mb-4" style={{ color: "var(--text-muted)" }}>
+						Email ini untuk notifikasi saja. Untuk mengubah email login, gunakan tab Keamanan.
+					</p>
+
+					<Form layout="vertical">
+						<Row gutter={16}>
+							<Col xs={24} md={12}>
+								<Form.Item label="Email Notifikasi">
+									<Input
+										value={adminEmail}
+										onChange={(e) => setAdminEmail(e.target.value)}
+										placeholder="admin@mba-laundry.com"
+										type="email"
+									/>
+								</Form.Item>
+							</Col>
+							<Col xs={24} md={12}>
+								<Form.Item label="Nomor WhatsApp Landing Page">
+									<Input
+										value={whatsappNumber}
+										onChange={(e) => setWhatsappNumber(e.target.value)}
+										placeholder="6281234567890"
+									/>
+									<p className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
+										Format: 628xxxxx (tanpa spasi/tanda hubung)
+									</p>
+								</Form.Item>
+							</Col>
+						</Row>
+
+						<div className="mt-6 pt-4 flex justify-end" style={{ borderTop: "1px solid var(--border)" }}>
+							<Button type="primary" onClick={() => void saveContactInfo()}>
+								Simpan Informasi
+							</Button>
+						</div>
+					</Form>
+				</Card>
+			</TabPanel>
+
+			{/* ====== TAB: KEAMANAN ====== */}
+			<TabPanel id="keamanan" activeTab={activeTab}>
+				{/* Ganti Email */}
+				<Card className="card mb-4" style={{ borderColor: "var(--border)" }}>
+					<h3 className="text-base font-semibold mb-1" style={{ color: "var(--text-primary)" }}>
+						Ganti Email Login
+					</h3>
+					<p className="text-sm mb-4" style={{ color: "var(--text-muted)" }}>
+						Ubah email yang digunakan untuk login ke panel admin. Masukkan password Anda untuk konfirmasi.
+					</p>
+
+					<Form layout="vertical">
+						<Row gutter={16}>
+							<Col xs={24} md={12}>
+								<Form.Item label="Email Login Saat Ini">
+									<Input value={pb.authStore.model?.email || ""} disabled />
+								</Form.Item>
+							</Col>
+							<Col xs={24} md={12}>
+								<Form.Item label="Email Baru">
+									<Input
+										value={newLoginEmail}
+										onChange={(e) => setNewLoginEmail(e.target.value)}
+										placeholder="admin baru@mba-laundry.com"
+										type="email"
+									/>
+								</Form.Item>
+							</Col>
+							<Col xs={24} md={12}>
+								<Form.Item label="Password Saat Ini (Konfirmasi)">
+									<Input.Password
+										placeholder="Masukkan password Anda"
+										prefix={<LockOutlined style={{ color: "var(--text-muted)" }} />}
+										value={emailChangePassword}
+										onChange={(e) => setEmailChangePassword(e.target.value)}
+									/>
+								</Form.Item>
+							</Col>
+						</Row>
+
+						<div className="mt-6 pt-4 flex justify-end" style={{ borderTop: "1px solid var(--border)" }}>
+							<Button type="primary" onClick={() => void handleChangeEmail()}>
+								Simpan Email Baru
+							</Button>
+						</div>
+					</Form>
+				</Card>
+
+				{/* Ganti Password */}
+				<Card className="card mb-4" style={{ borderColor: "var(--border)" }}>
+					<h3 className="text-base font-semibold mb-1" style={{ color: "var(--text-primary)" }}>
+						Ganti Password
+					</h3>
+					<p className="text-sm mb-4" style={{ color: "var(--text-muted)" }}>
+						Perbarui password login admin secara berkala untuk keamanan.
+					</p>
+
+					<div className="flex justify-start">
+						<Button icon={<LockOutlined />} onClick={() => setSecurityModalOpen(true)}>
+							Buka Form Ganti Password
+						</Button>
+					</div>
+				</Card>
+
+				{/* Danger Zone */}
+				<Card
+					className="card"
+					style={{ borderColor: "var(--danger)", backgroundColor: "var(--danger-bg)" }}
+				>
+					<h3 className="text-base font-semibold mb-1" style={{ color: "var(--danger)" }}>
+						Danger Zone
+					</h3>
+					<p className="text-sm mb-4" style={{ color: "var(--text-secondary)" }}>
+						Aksi sensitif yang mempengaruhi sesi login secara keseluruhan.
+					</p>
+
+					<Popconfirm
+						title="Logout dari Semua Sesi?"
+						description="Anda akan keluar dari semua perangkat yang terhubung. Login ulang diperlukan setelahnya."
+						okText="Ya, Logout Semua"
+						cancelText="Batal"
+						onConfirm={() => void handleLogout()}
+					>
+						<Button danger icon={<LogoutOutlined />}>
+							Logout dari Semua Sesi
+						</Button>
+					</Popconfirm>
+				</Card>
+			</TabPanel>
 
 			{/* Security Modal */}
 			<Modal
-				title="🔐 Ganti Password"
+				title="Ganti Password"
 				open={securityModalOpen}
 				onCancel={() => {
 					setSecurityModalOpen(false);
@@ -1204,6 +1223,6 @@ export default function PengaturanAdminPage() {
 					</Form.Item>
 				</Form>
 			</Modal>
-		</div>
+		</MetronicPage>
 	);
 }

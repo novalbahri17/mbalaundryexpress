@@ -1,9 +1,7 @@
-import { theme } from "antd";
+import { useThemeStore } from "@/store/themeStore";
 import { useMemo } from "react";
 import ReactApexChart from "react-apexcharts";
 import type { ApexOptions } from "apexcharts";
-
-const { useToken } = theme;
 
 interface ChartWrapperProps {
 	type: "line" | "area" | "bar" | "pie" | "donut" | "radialBar" | "scatter" | "bubble" | "heatmap" | "candlestick";
@@ -24,13 +22,13 @@ function ChartWrapper({
 	title,
 	subtitle,
 }: ChartWrapperProps) {
-	const { token } = useToken();
-	const isDark = document.documentElement.classList.contains("dark");
+	const { mode } = useThemeStore();
+	const isDark = mode === "dark";
 
 	const chartOptions = useMemo<ApexOptions>(() => {
-		const textColor = isDark ? "#e5e7eb" : "#374151";
+		const textColor = isDark ? "#e2e8f0" : "#374151";
 		const gridColor = isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)";
-		const backgroundColor = isDark ? "#1f2937" : "#ffffff";
+		const backgroundColor = isDark ? "#1a1d27" : "#ffffff";
 
 		const baseOptions: ApexOptions = {
 			chart: {
@@ -53,7 +51,6 @@ function ChartWrapper({
 				},
 				animations: {
 					enabled: true,
-					easing: "easeinout",
 					speed: 800,
 					animateGradually: {
 						enabled: true,
@@ -286,10 +283,16 @@ function ChartWrapper({
 			...baseOptions,
 			...customOptions,
 		};
-	}, [type, height, width, theme.isDarkMode, customOptions, title, subtitle]);
+	}, [type, height, width, mode, customOptions, title, subtitle]);
 
 	return (
-		<div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+		<div
+			className="rounded-xl border p-4 shadow-sm"
+			style={{
+				backgroundColor: "var(--bg-card)",
+				borderColor: "var(--border)",
+			}}
+		>
 			<ReactApexChart options={chartOptions} series={series} type={type} height={height} width={width} />
 		</div>
 	);

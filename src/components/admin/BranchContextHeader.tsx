@@ -57,7 +57,10 @@ export function BranchContextHeader({ branchId, activeTab }: BranchContextHeader
 
 	if (isLoading) {
 		return (
-			<div className="rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-neutral-900/70">
+			<div
+				className="rounded-2xl border p-4 shadow-sm"
+				style={{ backgroundColor: "var(--bg-card)", borderColor: "var(--border)" }}
+			>
 				<Skeleton active paragraph={{ rows: 2 }} />
 			</div>
 		);
@@ -78,19 +81,22 @@ export function BranchContextHeader({ branchId, activeTab }: BranchContextHeader
 	const statusInfo = statusMap[data.status] ?? statusMap.buka;
 
 	return (
-		<div className="rounded-2xl border border-neutral-200 bg-white/95 p-4 shadow-sm dark:border-neutral-700 dark:bg-neutral-900/70">
+		<div
+			className="rounded-2xl border p-4 shadow-sm"
+			style={{ backgroundColor: "var(--bg-card)", borderColor: "var(--border)" }}
+		>
 			<div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
 				<div>
-					<p className="text-xs font-semibold tracking-wide text-neutral-600 uppercase dark:text-neutral-300">
+					<p className="text-xs font-semibold tracking-wide uppercase" style={{ color: "var(--text-muted)" }}>
 						Sedang Mengelola Cabang
 					</p>
-					<h2 className="mt-1 text-lg font-bold text-neutral-900 dark:text-white">{data.name}</h2>
+					<h2 className="mt-1 text-lg font-bold" style={{ color: "var(--text-primary)" }}>{data.name}</h2>
 					<div className="mt-2 flex flex-wrap items-center gap-2">
 						<Tag color={statusInfo.color}>{statusInfo.text}</Tag>
 						<Tag color={data.is_active ? "blue" : "default"}>{data.is_active ? "Aktif" : "Nonaktif"}</Tag>
 						<Tag>{data.slug}</Tag>
 					</div>
-					<p className="mt-2 flex items-start gap-2 text-sm text-neutral-600 dark:text-neutral-300">
+					<p className="mt-2 flex items-start gap-2 text-sm" style={{ color: "var(--text-secondary)" }}>
 						<EnvironmentOutlined className="mt-0.5" />
 						<span>{data.address}</span>
 					</p>
@@ -98,7 +104,11 @@ export function BranchContextHeader({ branchId, activeTab }: BranchContextHeader
 
 				<Link
 					to="/admin/cabang"
-					className="inline-flex h-9 items-center justify-center rounded-lg border border-neutral-200 px-3 text-sm font-semibold text-neutral-600 transition-colors hover:border-ruby-400 hover:text-ruby-600 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-ruby-500/40 dark:hover:text-ruby-400"
+					className="inline-flex h-9 items-center justify-center rounded-lg border px-3 text-sm font-semibold transition-colors"
+					style={{
+						borderColor: "var(--border)",
+						color: "var(--text-secondary)",
+					}}
 				>
 					<ShopOutlined className="mr-2" />
 					Kembali ke Daftar Cabang
@@ -112,11 +122,19 @@ export function BranchContextHeader({ branchId, activeTab }: BranchContextHeader
 						<Link
 							key={item.key}
 							to={`/admin/cabang/${data.id}/${item.key}`}
-							className={`inline-flex h-9 items-center rounded-lg border px-3 text-sm font-semibold transition-all ${
+							className="inline-flex h-9 items-center rounded-lg border px-3 text-sm font-semibold transition-all"
+							style={
 								isActive
-									? "border-ruby-400 bg-ruby-50 text-ruby-700 shadow-sm dark:border-ruby-500/30 dark:bg-ruby-500/10 dark:text-ruby-300"
-									: "border-neutral-200 text-neutral-600 hover:border-ruby-400 hover:text-ruby-600 dark:border-neutral-700 dark:text-neutral-300 dark:hover:border-ruby-500/30 dark:hover:text-ruby-400"
-							}`}
+									? {
+											borderColor: "var(--brand)",
+											backgroundColor: "var(--brand-bg)",
+											color: "var(--brand)",
+									  }
+									: {
+											borderColor: "var(--border)",
+											color: "var(--text-secondary)",
+									  }
+							}
 						>
 							<span className="mr-2 text-xs">{item.icon}</span>
 							{item.label}
@@ -127,4 +145,3 @@ export function BranchContextHeader({ branchId, activeTab }: BranchContextHeader
 		</div>
 	);
 }
-

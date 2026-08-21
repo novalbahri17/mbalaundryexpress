@@ -10,16 +10,25 @@ type StatCardProps = {
 
 export function StatCard({ title, value, icon, extra, helper }: StatCardProps) {
 	return (
-		<div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md dark:border-white/10 dark:bg-[#1e1e2d] dark:shadow-none">
+		<div
+			className="rounded-xl border p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+			style={{
+				backgroundColor: "var(--bg-card)",
+				borderColor: "var(--border)",
+			}}
+		>
 			<div className="flex items-start justify-between gap-3">
 				<div>
-					<p className="text-xs uppercase tracking-[0.12em] text-[var(--text-muted)]">{title}</p>
-					<p className="mt-2 text-[2rem] font-bold text-gray-900 dark:text-white tabular-nums leading-none">{value}</p>
-					{helper ? <p className="mt-2 text-xs font-medium text-gray-400">{helper}</p> : null}
-					{extra ? <div className="mt-2 text-xs text-gray-400">{extra}</div> : null}
+					<p className="text-xs uppercase tracking-[0.12em]" style={{ color: "var(--text-muted)" }}>{title}</p>
+					<p className="mt-2 text-[2rem] font-bold tabular-nums leading-none" style={{ color: "var(--text-primary)" }}>{value}</p>
+					{helper ? <p className="mt-2 text-xs font-medium" style={{ color: "var(--text-muted)" }}>{helper}</p> : null}
+					{extra ? <div className="mt-2 text-xs" style={{ color: "var(--text-muted)" }}>{extra}</div> : null}
 				</div>
 				{icon ? (
-					<div className="grid h-[50px] w-[50px] place-items-center rounded-lg bg-blue-50 text-xl text-blue-500 dark:bg-white/5 dark:text-blue-400">
+					<div
+						className="grid h-[50px] w-[50px] place-items-center rounded-lg text-xl"
+						style={{ backgroundColor: "var(--info-bg)", color: "var(--info)" }}
+					>
 						{icon}
 					</div>
 				) : null}

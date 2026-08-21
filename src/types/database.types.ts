@@ -142,13 +142,6 @@ export interface PageContent extends BaseTable {
 	group?: string;
 }
 
-export interface Subscriber extends BaseTable {
-	phone: string;
-	branch_id?: string;
-	is_active: boolean;
-	source: string;
-}
-
 export interface SpinReward extends BaseTable {
 	name: string;
 	description?: string;
@@ -223,7 +216,6 @@ export type CollectionRecordMap = {
 	testimonials: Testimonial;
 	faqs: Faq;
 	page_contents: PageContent;
-	subscribers: Subscriber;
 	spin_rewards: SpinReward;
 	spin_plays: SpinPlay;
 	loyalty_members: LoyaltyMember;

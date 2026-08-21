@@ -1,65 +1,223 @@
-import { Search } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { motion } from "framer-motion";
+import { ArrowRight, CalendarDays, Clock3, Eye, Search, SearchX } from "lucide-react";
 import { getArticles } from "@/api/articles.api";
-import { GlassCard } from "@/components/public/shared/GlassCard";
 import { PageHeader } from "@/components/public/shared/PageHeader";
 import { SafeImage } from "@/components/public/shared/SafeImage";
 import { formatDate } from "@/utils/format";
+import type { Article, ArticleCategory } from "@/types/database.types";
+
+const CATEGORY_META: Record<ArticleCategory, { label: string; className: string }> = {
+	"tips-mencuci": { label: "Tips Mencuci", className: "bg-sapphire-500/10 text-sapphire-600 dark:text-sapphire-400" },
+	"tips-kering": { label: "Tips Kering", className: "bg-teal-500/10 text-teal-600 dark:text-teal-400" },
+	"perawatan-bahan": { label: "Perawatan Bahan", className: "bg-violet-500/10 text-violet-600 dark:text-violet-400" },
+	noda: { label: "Noda", className: "bg-amber-500/10 text-amber-600 dark:text-amber-400" },
+	umum: { label: "Umum", className: "bg-neutral-500/10 text-neutral-600 dark:text-neutral-400" },
+	berita: { label: "Berita", className: "bg-ruby-500/10 text-ruby-600 dark:text-ruby-400" },
+	"promo-info": { label: "Promo", className: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" },
+};
+
+const FILTERS: Array<{ value: ArticleCategory | "all"; label: string }> = [
+	{ value: "all", label: "Semua" },
+	{ value: "tips-mencuci", label: "Tips Mencuci" },
+	{ value: "tips-kering", label: "Tips Kering" },
+	{ value: "perawatan-bahan", label: "Perawatan Bahan" },
+	{ value: "noda", label: "Noda" },
+	{ value: "berita", label: "Berita" },
+	{ value: "promo-info", label: "Promo" },
+];
+
+function ArticleCard({ article, index }: { article: Article; index: number }) {
+	const meta = CATEGORY_META[article.category] ?? CATEGORY_META.umum;
+	return (
+		<motion.div
+			initial={{ opacity: 0, y: 16 }}
+			animate={{ opacity: 1, y: 0 }}
+			transition={{ duration: 0.35, delay: Math.min(index * 0.05, 0.3) }}
+		>
+			<Link to={`/blog/${article.slug}`} className="group flex h-full flex-col overflow-hidden rounded-2xl border border-neutral-200/70 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl dark:border-neutral-700/70 dark:bg-neutral-800">
+				<div className="relative aspect-[16/10] w-full overflow-hidden">
+					<SafeImage
+						src={article.thumbnail}
+						fallbackLabel={article.title}
+						alt={article.title}
+						className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+						loading="lazy"
+					/>
+					<span className={`absolute left-4 top-4 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wide backdrop-blur-sm ${meta.className}`}>
+						{meta.label}
+					</span>
+				</div>
+				<div className="flex flex-1 flex-col p-5">
+					<h3 className="line-clamp-2 text-lg font-bold leading-snug text-neutral-900 transition-colors group-hover:text-ruby-600 dark:text-white dark:group-hover:text-ruby-400">
+						{article.title}
+					</h3>
+					<p className="mt-2 line-clamp-3 text-sm leading-relaxed text-neutral-600 dark:text-neutral-300">{article.excerpt}</p>
+					<div className="mt-auto flex items-center justify-between border-t border-neutral-100 pt-4 text-xs text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
+						<span className="inline-flex items-center gap-1.5">
+							<CalendarDays className="h-3.5 w-3.5" />
+							{formatDate(article.published_at ?? article.created ?? new Date())}
+						</span>
+						<span className="inline-flex items-center gap-1.5">
+							<Clock3 className="h-3.5 w-3.5" />
+							{article.read_time ?? 5} mnt
+						</span>
+					</div>
+				</div>
+			</Link>
+		</motion.div>
+	);
+}
+
+function FeaturedCard({ article }: { article: Article }) {
+	const meta = CATEGORY_META[article.category] ?? CATEGORY_META.umum;
+	return (
+		<motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
+			<Link to={`/blog/${article.slug}`} className="group grid overflow-hidden rounded-3xl border border-neutral-200/70 bg-white shadow-sm transition-all duration-300 hover:shadow-2xl dark:border-neutral-700/70 dark:bg-neutral-800 md:grid-cols-2">
+				<div className="relative aspect-[16/10] w-full overflow-hidden md:aspect-auto md:h-full">
+					<SafeImage
+						src={article.thumbnail}
+						fallbackLabel={article.title}
+						alt={article.title}
+						className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+						loading="lazy"
+					/>
+					<span className={`absolute left-5 top-5 rounded-full px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-wide backdrop-blur-sm ${meta.className}`}>
+						{meta.label}
+					</span>
+				</div>
+				<div className="flex flex-col justify-center p-7 md:p-10">
+					<p className="text-xs font-semibold uppercase tracking-[0.14em] text-ruby-500">Artikel Pilihan</p>
+					<h2 className="mt-3 text-2xl font-bold leading-tight text-neutral-900 transition-colors group-hover:text-ruby-600 dark:text-white dark:group-hover:text-ruby-400 md:text-3xl">
+						{article.title}
+					</h2>
+					<p className="mt-4 line-clamp-4 text-sm leading-relaxed text-neutral-600 dark:text-neutral-300 md:text-base">{article.excerpt}</p>
+					<div className="mt-6 flex items-center gap-4 text-xs text-neutral-500 dark:text-neutral-400">
+						<span className="inline-flex items-center gap-1.5">
+							<CalendarDays className="h-4 w-4" />
+							{formatDate(article.published_at ?? article.created ?? new Date())}
+						</span>
+						<span className="inline-flex items-center gap-1.5">
+							<Clock3 className="h-4 w-4" />
+							{article.read_time ?? 5} menit baca
+						</span>
+						<span className="inline-flex items-center gap-1.5">
+							<Eye className="h-4 w-4" />
+							{article.views}
+						</span>
+					</div>
+					<span className="mt-7 inline-flex items-center gap-2 text-sm font-bold text-ruby-600 dark:text-ruby-400">
+						Baca Selengkapnya
+						<ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+					</span>
+				</div>
+			</Link>
+		</motion.div>
+	);
+}
+
+function SkeletonCard() {
+	return (
+		<div className="overflow-hidden rounded-2xl border border-neutral-200/70 bg-white dark:border-neutral-700/70 dark:bg-neutral-800">
+			<div className="aspect-[16/10] w-full animate-pulse bg-neutral-200 dark:bg-neutral-700" />
+			<div className="space-y-3 p-5">
+				<div className="h-4 w-3/4 animate-pulse rounded bg-neutral-200 dark:bg-neutral-700" />
+				<div className="h-3 w-full animate-pulse rounded bg-neutral-200 dark:bg-neutral-700" />
+				<div className="h-3 w-2/3 animate-pulse rounded bg-neutral-200 dark:bg-neutral-700" />
+			</div>
+		</div>
+	);
+}
 
 export default function BlogListPage() {
 	const [search, setSearch] = useState("");
-	const { data: articles = [] } = useQuery({
+	const [category, setCategory] = useState<ArticleCategory | "all">("all");
+
+	const { data: articles = [], isLoading } = useQuery({
 		queryKey: ["articles", search],
 		queryFn: () => getArticles({ publishedOnly: true, search: search || undefined }),
 	});
 
+	const filtered = useMemo(() => {
+		if (category === "all") return articles;
+		return articles.filter((item) => item.category === category);
+	}, [articles, category]);
+
+	const featured = filtered[0];
+	const rest = filtered.slice(1);
+
 	return (
-		<section className="pb-20">
+		<section className="pb-24">
 			<PageHeader
-				kicker="Blog"
+				kicker="Blog & Tips"
 				title="Tips dan"
 				highlight="Artikel"
-				description="Panduan merawat pakaian, tips hemat waktu, dan update promo MBA Laundry."
+				description="Panduan merawat pakaian, tips hemat waktu, dan update promo terbaru dari MBA Laundry Express."
 			/>
+
 			<div className="mx-auto max-w-7xl px-4 md:px-8">
-				<div className="relative mb-6 max-w-md">
-					<Search className="pointer-events-none absolute left-3 top-3.5 h-4 w-4 text-slate-400" />
-					<input
-						value={search}
-						onChange={(event) => setSearch(event.target.value)}
-						placeholder="Cari artikel..."
-						className="glass-card h-11 w-full rounded-xl pl-10 pr-3 text-sm focus:border-red-400 focus:outline-none"
-					/>
+				{/* Search + Filter */}
+				<div className="mb-10 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+					<div className="relative w-full md:max-w-sm">
+						<Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+						<input
+							value={search}
+							onChange={(event) => setSearch(event.target.value)}
+							placeholder="Cari artikel..."
+							className="h-11 w-full rounded-xl border border-neutral-200 bg-white pl-10 pr-4 text-sm text-neutral-900 shadow-sm outline-none transition-colors placeholder:text-neutral-400 focus:border-ruby-400 focus:ring-2 focus:ring-ruby-500/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
+						/>
+					</div>
+					<div className="flex flex-wrap gap-2">
+						{FILTERS.map((filter) => (
+							<button
+								key={filter.value}
+								type="button"
+								onClick={() => setCategory(filter.value)}
+								className={`rounded-full px-4 py-2 text-xs font-semibold transition-all ${
+									category === filter.value
+										? "bg-ruby-600 text-white shadow-md shadow-ruby-500/25"
+										: "border border-neutral-200 bg-white text-neutral-600 hover:border-ruby-300 hover:text-ruby-600 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:text-ruby-400"
+								}`}
+							>
+								{filter.label}
+							</button>
+						))}
+					</div>
 				</div>
 
-				<div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-					{articles.map((article) => (
-						<Link key={article.id} to={`/blog/${article.slug}`} className="block h-full">
-							<GlassCard className="h-full overflow-hidden p-0">
-								<SafeImage
-									src={article.thumbnail}
-									fallbackLabel={article.title}
-									alt={article.title}
-									className="h-44 w-full object-cover"
-									loading="lazy"
-								/>
-								<div className="p-4">
-									<p className="inline-flex rounded-full bg-ruby-100/80 px-2.5 py-1 text-xs font-semibold capitalize text-slate-700 dark:text-slate-200">
-										{article.category}
-									</p>
-									<p className="mt-2 line-clamp-2 text-lg font-bold">{article.title}</p>
-									<p className="mt-2 line-clamp-3 text-sm text-[var(--text-muted)]">{article.excerpt}</p>
-									<p className="mt-3 text-xs text-[var(--text-muted)]">
-										{formatDate(article.published_at ?? article.created ?? new Date())} · {article.read_time ?? 5} menit baca
-									</p>
-								</div>
-							</GlassCard>
-						</Link>
-					))}
-				</div>
-				{articles.length === 0 ? <p className="mt-6 text-sm text-[var(--text-muted)]">Belum ada artikel yang cocok.</p> : null}
+				{/* Loading */}
+				{isLoading ? (
+					<div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+						{Array.from({ length: 6 }).map((_, i) => (
+							// biome-ignore lint/suspicious/noArrayIndexKey: skeleton placeholders
+							<SkeletonCard key={i} />
+						))}
+					</div>
+				) : filtered.length === 0 ? (
+					<div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-neutral-300 bg-white/50 py-20 text-center dark:border-neutral-700 dark:bg-neutral-800/40">
+						<SearchX className="h-12 w-12 text-neutral-300 dark:text-neutral-600" />
+						<p className="mt-4 text-lg font-bold text-neutral-900 dark:text-white">Tidak ada artikel ditemukan</p>
+						<p className="mt-1 max-w-sm text-sm text-neutral-500 dark:text-neutral-400">
+							Coba ubah kata kunci pencarian atau pilih kategori lain.
+						</p>
+					</div>
+				) : (
+					<>
+						{/* Featured */}
+						{featured ? <FeaturedCard article={featured} /> : null}
+
+						{/* Grid */}
+						{rest.length > 0 ? (
+							<div className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+								{rest.map((article, index) => (
+									<ArticleCard key={article.id} article={article} index={index} />
+								))}
+							</div>
+						) : null}
+					</>
+				)}
 			</div>
 		</section>
 	);

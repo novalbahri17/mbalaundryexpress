@@ -84,7 +84,8 @@ export function CrudManager<T extends { id: string }>({
 							type="text"
 							size="small"
 							icon={<EditOutlined />}
-							className="admin-soft-btn !text-blue-600 hover:!bg-blue-50 hover:!text-blue-700 dark:hover:!bg-blue-500/15 dark:hover:!text-blue-300"
+							className="admin-soft-btn"
+							style={{ color: "var(--info)" }}
 							onClick={() => {
 								setEditing(record);
 								setOpen(true);
@@ -103,7 +104,7 @@ export function CrudManager<T extends { id: string }>({
 								danger
 								size="small"
 								icon={<DeleteOutlined />}
-								className="admin-soft-btn hover:!bg-rose-50 dark:hover:!bg-rose-500/15"
+								className="admin-soft-btn"
 							/>
 						</Popconfirm>
 					</Space>

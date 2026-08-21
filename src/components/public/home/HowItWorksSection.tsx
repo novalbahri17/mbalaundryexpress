@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, CircleDollarSign, Clock, LayoutGrid } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ScrollReveal, StaggerContainer, StaggerItem } from "@/components/public/shared/ScrollReveal";
+import { cn } from "@/utils";
 
 const steps = [
 	{
@@ -9,30 +10,27 @@ const steps = [
 		title: "Pilih Mesin Kosong",
 		description: "Cari mesin cuci atau pengering yang tersedia. Cek kondisi mesin bersih.",
 		icon: LayoutGrid,
-		color: "ruby",
 		gradient: "from-ruby-500 to-rose-600",
-		bgLight: "bg-ruby-100",
-		bgDark: "bg-ruby-500/20",
+		bgClass: "bg-ruby-100 dark:bg-ruby-900/30",
+		iconClass: "text-ruby-600 dark:text-ruby-400",
 	},
 	{
 		number: "2",
 		title: "Bayar & Mulai",
 		description: "Scan QRIS atau masukkan koin sesuai tarif. Mesin otomatis mulai bekerja.",
 		icon: CircleDollarSign,
-		color: "sapphire",
 		gradient: "from-sapphire-500 to-blue-600",
-		bgLight: "bg-sapphire-100",
-		bgDark: "bg-sapphire-500/20",
+		bgClass: "bg-sapphire-100 dark:bg-sapphire-900/30",
+		iconClass: "text-sapphire-600 dark:text-sapphire-400",
 	},
 	{
 		number: "3",
 		title: "Tunggu & Ambil",
 		description: "Estimasi 30-40 menit cuci, 20-30 menit kering. Ambil pakaian setelah selesai.",
 		icon: Clock,
-		color: "teal",
 		gradient: "from-teal-500 to-emerald-600",
-		bgLight: "bg-teal-100",
-		bgDark: "bg-teal-500/20",
+		bgClass: "bg-teal-100 dark:bg-teal-900/30",
+		iconClass: "text-teal-600 dark:text-teal-400",
 	},
 ];
 
@@ -40,7 +38,7 @@ export function HowItWorksSection() {
 	return (
 		<section className="relative overflow-hidden bg-neutral-50 px-6 py-24 md:px-12 md:py-32 dark:bg-neutral-900">
 			{/* Background Pattern */}
-			<div className="pointer-events-none absolute inset-0 opacity-[0.03]">
+			<div className="pointer-events-none absolute inset-0 opacity-[0.03] dark:opacity-[0.05]">
 				<div
 					className="absolute inset-0"
 					style={{
@@ -79,14 +77,13 @@ export function HowItWorksSection() {
 									whileHover={{ y: -8 }}
 									transition={{ duration: 0.3 }}
 									className="group relative flex flex-col items-center rounded-[24px] border border-neutral-200 bg-white p-8 shadow-sm transition-all duration-300 hover:border-transparent hover:shadow-2xl md:p-10 dark:border-neutral-700 dark:bg-neutral-800"
-									style={{
-										background:
-											"linear-gradient(white, white) padding-box, linear-gradient(to bottom right, var(--tw-gradient-from), var(--tw-gradient-to)) border-box",
-									}}
 								>
 									{/* Step Number Badge */}
 									<div
-										className={`absolute -top-4 left-1/2 flex h-8 -translate-x-1/2 items-center justify-center rounded-full bg-gradient-to-r ${step.gradient} px-4 text-[14px] font-bold text-white shadow-lg`}
+										className={cn(
+											"absolute -top-4 left-1/2 flex h-8 -translate-x-1/2 items-center justify-center rounded-full bg-gradient-to-r px-4 text-[14px] font-bold text-white shadow-lg",
+											step.gradient,
+										)}
 									>
 										Langkah {step.number}
 									</div>
@@ -94,9 +91,9 @@ export function HowItWorksSection() {
 									{/* Icon */}
 									<motion.div
 										whileHover={{ scale: 1.1, rotate: 5 }}
-										className={`mt-4 flex h-[90px] w-[90px] items-center justify-center rounded-[24px] ${step.bgLight} shadow-inner transition-colors group-hover:${step.bgDark}`}
+										className={cn("mt-4 flex h-[90px] w-[90px] items-center justify-center rounded-[24px] shadow-inner transition-colors", step.bgClass)}
 									>
-										<step.icon className={`h-10 w-10 text-${step.color}-500`} />
+										<step.icon className={cn("h-10 w-10", step.iconClass)} />
 									</motion.div>
 
 									{/* Content */}

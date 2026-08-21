@@ -1,39 +1,23 @@
 import {
-	ApartmentOutlined,
-	AppstoreOutlined,
 	ArrowLeftOutlined,
-	BellOutlined,
 	DashboardOutlined,
-	GiftOutlined,
-	HomeOutlined,
-	LineChartOutlined,
-	LogouteOutlined,
-	MessageOutlined,
-	PictureOutlined,
-	QuestionCircleOutlined,
-	ReadOutlined,
+	LockOutlined,
+	LogoutOutlined,
 	SettingOutlined,
-	StarOutlined,
-	TeamOutlined,
 } from "@ant-design/icons";
-import { Avatar, Button, Tooltip } from "antd";
+import { Avatar, Button, Dropdown, Tooltip } from "antd";
 import type { MenuProps } from "antd";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import {
 	BarChart3,
 	GitBranch,
-	Home,
 	LucideBookOpen,
-	LucideCalendarClock,
-	LuceneImage,
 	Image,
-	LuceneMegaphone,
 	Megaphone,
 	MessageSquareMore,
 	Settings2,
 	ShieldCheck,
-	ShoppingBag,
 	Star,
 	Users,
 } from "lucide-react";
@@ -230,7 +214,7 @@ function getMenuIcon(key: string): React.ReactNode {
 		case "/admin/testimoni":
 			return <Star size={18} />;
 		case "/admin/faq":
-			return <QuestionCircleOutlined style={{ fontSize: 18 }} />;
+			return <SettingOutlined style={{ fontSize: 18 }} />;
 		case "/admin/galeri":
 			return <Image size={18} />;
 		case "/admin/marketing":
@@ -242,7 +226,7 @@ function getMenuIcon(key: string): React.ReactNode {
 		case "/admin/pengaturan":
 			return <Settings2 size={18} />;
 		default:
-			return <SettingsOutlined />;
+			return <SettingOutlined />;
 	}
 }
 
@@ -260,7 +244,6 @@ export default function AdminLayout() {
 		[location.pathname],
 	);
 
-	const selectedGroup = menuByKey.get(selected)?.group;
 	const pageTitle = menuByKey.get(selected)?.label ?? "Dashboard";
 	const isDashboard = selected === dashboardMenuEntry.key;
 
@@ -269,19 +252,36 @@ export default function AdminLayout() {
 		setMobileOpen(false);
 	};
 
-	const handleBack = () => {
-		if (window.history.length > 1) {
-			navigate(-1);
-			return;
-		}
-		navigate("/admin/dashboard");
-	};
-
 	const handleLogout = () => {
 		clearUserInfoAndToken();
 		toast.success("Logout berhasil. Sampai jumpa lagi.");
 		navigate("/admin/login", { replace: true });
 	};
+
+	// User dropdown menu
+	const userMenuItems: MenuProps["items"] = [
+		{
+			key: "security",
+			label: "Keamanan",
+			icon: <LockOutlined />,
+			onClick: () => navigate("/admin/pengaturan?tab=keamanan"),
+		},
+		{
+			type: "divider",
+		},
+		{
+			key: "logout",
+			label: "Logout",
+			icon: <LogoutOutlined />,
+			danger: true,
+			onClick: handleLogout,
+		},
+	];
+
+	// Get display name from user
+	const displayName = user.username ?? user.email?.split("@")[0] ?? "Admin";
+	const displayEmail = user.email ?? "";
+	const avatarInitial = (user.username ?? user.email ?? "A").slice(0, 1).toUpperCase();
 
 	return (
 		<div className="metronic-admin-layout">
@@ -324,7 +324,7 @@ export default function AdminLayout() {
 
 			{/* Main Content Area */}
 			<div className={`main-wrapper ${sidebarCollapsed ? "sidebar-collapsed" : ""}`}>
-				{/* Header */}
+				{/* CLEAN NAVBAR */}
 				<header className="app-header">
 					<div className="header-left">
 						<button className="mobile-menu-btn" onClick={() => setMobileOpen(true)}>
@@ -332,13 +332,6 @@ export default function AdminLayout() {
 								<path d="M3 5H17M3 10H17M3 15H17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
 							</svg>
 						</button>
-
-						{!isDashboard && (
-							<button className="back-btn" onClick={handleBack}>
-								<ArrowLeftOutlined />
-								<span>Kembali</span>
-							</button>
-						)}
 
 						<div className="page-title-container">
 							<h1 className="page-title">{pageTitle}</h1>
@@ -355,29 +348,21 @@ export default function AdminLayout() {
 					<div className="header-right">
 						<NotificationCenter />
 
-						<div className="user-menu">
-							<div className="user-info">
-								<span className="user-name">{user.username ?? user.email ?? "Admin"}</span>
-								<span className="user-role">Administrator</span>
-							</div>
-							<Avatar size={36} className="user-avatar">
-								{(user.username ?? user.email ?? "A").slice(0, 1).toUpperCase()}
-							</Avatar>
-						</div>
-
-						<Tooltip title="Logout">
-							<button className="logout-btn" onClick={handleLogout}>
-								<svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-									<path
-										d="M6 15H3C2.46957 15 1.96086 14.7893 1.58579 14.4142C1.21071 14.0391 1 13.5304 1 13V5C1 4.46957 1.21071 3.96086 1.58579 3.58579C1.96086 3.21071 2.46957 3 3 3H6M12 12L17 9M17 9L12 6M17 9H7"
-										stroke="currentColor"
-										strokeWidth="1.5"
-										strokeLinecap="round"
-										strokeLinejoin="round"
-									/>
-								</svg>
+						<Dropdown
+							menu={{ items: userMenuItems }}
+							trigger={["click"]}
+							placement="bottomRight"
+						>
+							<button className="user-dropdown-trigger">
+								<Avatar size={32} className="user-avatar">
+									{avatarInitial}
+								</Avatar>
+								<div className="user-dropdown-info">
+									<span className="user-dropdown-name">{displayName}</span>
+									{displayEmail && <span className="user-dropdown-email">{displayEmail}</span>}
+								</div>
 							</button>
-						</Tooltip>
+						</Dropdown>
 					</div>
 				</header>
 
@@ -394,23 +379,40 @@ const metronicAdminStyles = `
 	.metronic-admin-layout {
 		display: flex;
 		min-height: 100vh;
-		background: #F9FAFB;
+		background: var(--bg-app);
 		font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 	}
 
-	/* Sidebar */
+	/* ===== SIDEBAR TOKENS ===== */
+	:root {
+		--sidebar-bg: linear-gradient(180deg, #1e1e2d 0%, #191924 100%);
+		--sidebar-border: rgba(255, 255, 255, 0.05);
+		--sidebar-scrollbar: rgba(255, 255, 255, 0.1);
+		--sidebar-text: #9CA3AF;
+		--sidebar-text-active: #ffffff;
+		--mobile-overlay: rgba(0, 0, 0, 0.5);
+	}
+
+	:root.dark {
+		--sidebar-border: rgba(255, 255, 255, 0.08);
+		--sidebar-text: #d1d5db;
+		--sidebar-text-active: #ffffff;
+		--mobile-overlay: rgba(0, 0, 0, 0.7);
+	}
+
+	/* ===== Sidebar */
 	.app-sidebar {
 		position: fixed;
 		left: 0;
 		top: 0;
 		bottom: 0;
 		width: ${SIDEBAR_WIDTH}px;
-		background: linear-gradient(180deg, #1e1e2d 0%, #191924 100%);
+		background: var(--sidebar-bg);
 		display: flex;
 		flex-direction: column;
 		z-index: 100;
 		transition: width 0.3s ease;
-		border-right: 1px solid rgba(255, 255, 255, 0.05);
+		border-right: 1px solid var(--sidebar-border);
 	}
 
 	.app-sidebar.sidebar-collapsed {
@@ -431,20 +433,20 @@ const metronicAdminStyles = `
 		width: 24px;
 		height: 24px;
 		border-radius: 50%;
-		background: #2D2E3F;
-		border: 1px solid rgba(255, 255, 255, 0.1);
+		background: var(--bg-surface);
+		border: 1px solid var(--border);
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		cursor: pointer;
 		z-index: 10;
 		transition: all 0.2s;
-		color: #9CA3AF;
+		color: var(--text-muted);
 	}
 
 	.sidebar-toggle-btn:hover {
-		background: #3D3E4F;
-		color: #fff;
+		background: var(--border);
+		color: var(--text-primary);
 	}
 
 	.toggle-icon {
@@ -471,7 +473,7 @@ const metronicAdminStyles = `
 	}
 
 	.sidebar-menu-container::-webkit-scrollbar-thumb {
-		background: rgba(255, 255, 255, 0.1);
+		background: var(--sidebar-scrollbar);
 		border-radius: 2px;
 	}
 
@@ -490,7 +492,7 @@ const metronicAdminStyles = `
 		padding: 10px 12px;
 		border: none;
 		background: transparent;
-		color: #9CA3AF;
+		color: var(--sidebar-text);
 		font-size: 13px;
 		font-weight: 500;
 		border-radius: 8px;
@@ -501,12 +503,12 @@ const metronicAdminStyles = `
 
 	.menu-item-link:hover {
 		background: rgba(255, 255, 255, 0.05);
-		color: #fff;
+		color: var(--sidebar-text-active);
 	}
 
 	.menu-item-link.menu-item-active {
 		background: linear-gradient(90deg, rgba(198, 40, 40, 0.9) 0%, rgba(239, 68, 68, 0.8) 100%);
-		color: #fff;
+		color: var(--sidebar-text-active);
 		box-shadow: 0 4px 12px rgba(198, 40, 40, 0.3);
 	}
 
@@ -535,7 +537,7 @@ const metronicAdminStyles = `
 		font-weight: 700;
 		text-transform: uppercase;
 		letter-spacing: 0.08em;
-		color: #6B7280;
+		color: var(--sidebar-text);
 		padding: 8px 12px 4px;
 	}
 
@@ -559,7 +561,7 @@ const metronicAdminStyles = `
 		margin-left: ${SIDEBAR_COLLAPSED_WIDTH}px;
 	}
 
-	/* Header */
+	/* ===== CLEAN HEADER ===== */
 	.app-header {
 		position: sticky;
 		top: 0;
@@ -569,8 +571,8 @@ const metronicAdminStyles = `
 		justify-content: space-between;
 		height: 64px;
 		padding: 0 24px;
-		background: #fff;
-		border-bottom: 1px solid #E5E7EB;
+		background: var(--bg-card);
+		border-bottom: 1px solid var(--border);
 	}
 
 	.header-left {
@@ -587,33 +589,13 @@ const metronicAdminStyles = `
 		height: 40px;
 		border: none;
 		background: transparent;
-		color: #374151;
+		color: var(--text-secondary);
 		cursor: pointer;
 		border-radius: 8px;
 	}
 
 	.mobile-menu-btn:hover {
-		background: #F3F4F6;
-	}
-
-	.back-btn {
-		display: flex;
-		align-items: center;
-		gap: 6px;
-		padding: 8px 12px;
-		border: 1px solid #E5E7EB;
-		background: #fff;
-		color: #374151;
-		font-size: 13px;
-		font-weight: 500;
-		border-radius: 8px;
-		cursor: pointer;
-		transition: all 0.2s;
-	}
-
-	.back-btn:hover {
-		border-color: #C62828;
-		color: #C62828;
+		background: var(--bg-surface);
 	}
 
 	.page-title-container {
@@ -624,7 +606,7 @@ const metronicAdminStyles = `
 	.page-title {
 		font-size: 16px;
 		font-weight: 700;
-		color: #111827;
+		color: var(--text-primary);
 		margin: 0;
 		line-height: 1.2;
 	}
@@ -638,89 +620,79 @@ const metronicAdminStyles = `
 	}
 
 	.breadcrumb-item {
-		color: #6B7280;
+		color: var(--text-muted);
 		cursor: pointer;
 		transition: color 0.2s;
 	}
 
 	.breadcrumb-item:hover {
-		color: #C62828;
+		color: var(--brand);
 	}
 
 	.breadcrumb-separator {
 		width: 4px;
 		height: 4px;
 		border-radius: 50%;
-		background: #D1D5DB;
+		background: var(--border-strong);
 	}
 
 	.breadcrumb-current {
-		color: #111827;
+		color: var(--text-primary);
 		font-weight: 500;
 	}
 
 	.header-right {
 		display: flex;
 		align-items: center;
-		gap: 12px;
+		gap: 16px;
 	}
 
-	.user-menu {
+	/* User Dropdown */
+	.user-dropdown-trigger {
 		display: flex;
 		align-items: center;
-		gap: 12px;
-		padding: 6px 12px;
+		gap: 10px;
+		padding: 6px 10px;
+		border: none;
+		background: transparent;
 		border-radius: 10px;
 		cursor: pointer;
 		transition: background 0.2s;
 	}
 
-	.user-menu:hover {
-		background: #F3F4F6;
-	}
-
-	.user-info {
-		display: flex;
-		flex-direction: column;
-		align-items: flex-end;
-	}
-
-	.user-name {
-		font-size: 13px;
-		font-weight: 600;
-		color: #111827;
-		line-height: 1.2;
-	}
-
-	.user-role {
-		font-size: 11px;
-		color: #6B7280;
+	.user-dropdown-trigger:hover {
+		background: var(--bg-surface);
 	}
 
 	.user-avatar {
-		background: linear-gradient(135deg, #C62828 0%, #1565C0 100%);
-		color: #fff;
+		background: var(--brand);
+		color: var(--brand-text);
 		font-weight: 700;
-		font-size: 14px;
+		font-size: 13px;
+		flex-shrink: 0;
 	}
 
-	.logout-btn {
+	.user-dropdown-info {
 		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 36px;
-		height: 36px;
-		border: none;
-		background: transparent;
-		color: #6B7280;
-		cursor: pointer;
-		border-radius: 8px;
-		transition: all 0.2s;
+		flex-direction: column;
+		align-items: flex-start;
 	}
 
-	.logout-btn:hover {
-		background: #FEE2E2;
-		color: #DC2626;
+	.user-dropdown-name {
+		font-size: 13px;
+		font-weight: 600;
+		color: var(--text-primary);
+		line-height: 1.2;
+	}
+
+	.user-dropdown-email {
+		font-size: 11px;
+		color: var(--text-muted);
+		line-height: 1.2;
+		max-width: 160px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
 	/* Page Content */
@@ -734,7 +706,7 @@ const metronicAdminStyles = `
 		display: none;
 		position: fixed;
 		inset: 0;
-		background: rgba(0, 0, 0, 0.5);
+		background: var(--mobile-overlay);
 		z-index: 90;
 	}
 
@@ -746,7 +718,7 @@ const metronicAdminStyles = `
 		top: 0;
 		bottom: 0;
 		width: 280px;
-		background: linear-gradient(180deg, #1e1e2d 0%, #191924 100%);
+		background: var(--sidebar-bg);
 		z-index: 95;
 		transform: translateX(-100%);
 		transition: transform 0.3s ease;
@@ -801,72 +773,40 @@ const metronicAdminStyles = `
 			padding: 16px;
 		}
 
-		.user-info {
+		.user-dropdown-info {
 			display: none;
 		}
 
-		.back-btn span {
-			display: none;
-		}
-
-		.back-btn {
-			padding: 8px;
+		.header-right {
+			gap: 12px;
 		}
 	}
 
-	/* Dark Mode Support */
-	@media (prefers-color-scheme: dark) {
-		.metronic-admin-layout {
-			background: #0F0F12;
-		}
+	/* Dark Mode */
+	.dark .sidebar-toggle-btn {
+		background: var(--bg-surface);
+		color: var(--text-muted);
+	}
 
-		.app-header {
-			background: #1A1A24;
-			border-color: #2D2E3F;
-		}
+	.dark .sidebar-toggle-btn:hover {
+		background: var(--border);
+		color: var(--text-primary);
+	}
 
-		.page-title {
-			color: #F9FAFB;
-		}
+	.dark .menu-item-link:hover {
+		color: var(--brand-text);
+	}
 
-		.breadcrumb-item {
-			color: #9CA3AF;
-		}
+	.dark .menu-item-link.menu-item-active {
+		color: var(--brand-text);
+	}
 
-		.breadcrumb-current {
-			color: #F9FAFB;
-		}
+	.dark .user-avatar {
+		background: var(--brand);
+		color: var(--brand-text);
+	}
 
-		.breadcrumb-separator {
-			background: #4B5563;
-		}
-
-		.user-name {
-			color: #F9FAFB;
-		}
-
-		.user-role {
-			color: #9CA3AF;
-		}
-
-		.user-menu:hover {
-			background: #2D2E3F;
-		}
-
-		.back-btn {
-			background: transparent;
-			border-color: #2D2E3F;
-			color: #9CA3AF;
-		}
-
-		.back-btn:hover {
-			border-color: #C62828;
-			color: #EF4444;
-		}
-
-		.logout-btn:hover {
-			background: rgba(220, 38, 38, 0.15);
-			color: #EF4444;
-		}
+	.dark .user-dropdown-trigger:hover {
+		background: var(--bg-surface);
 	}
 `;

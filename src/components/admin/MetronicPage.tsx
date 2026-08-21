@@ -87,14 +87,14 @@ const metronicPageStyles = `
 	.page-title {
 		font-size: 22px;
 		font-weight: 700;
-		color: #111827;
+		color: var(--text-primary);
 		margin: 0;
 		line-height: 1.2;
 	}
 
 	.page-subtitle {
 		font-size: 13px;
-		color: #6B7280;
+		color: var(--text-muted);
 		margin: 4px 0 0;
 	}
 
@@ -118,8 +118,8 @@ const metronicPageStyles = `
 	}
 
 	.btn-primary {
-		background: linear-gradient(135deg, #C62828 0%, #EF4444 100%);
-		color: #fff;
+		background: var(--brand);
+		color: var(--brand-text);
 		box-shadow: 0 4px 12px rgba(198, 40, 40, 0.3);
 	}
 
@@ -129,21 +129,21 @@ const metronicPageStyles = `
 	}
 
 	.btn-secondary {
-		background: #fff;
-		color: #374151;
-		border: 1px solid #E5E7EB;
+		background: var(--bg-card);
+		color: var(--text-secondary);
+		border: 1px solid var(--border);
 	}
 
 	.btn-secondary:hover {
-		background: #F9FAFB;
-		border-color: #D1D5DB;
+		background: var(--bg-surface);
+		border-color: var(--border-strong);
 	}
 
 	/* Card */
 	.card {
-		background: #fff;
+		background: var(--bg-card);
 		border-radius: 16px;
-		border: 1px solid #E5E7EB;
+		border: 1px solid var(--border);
 		overflow: hidden;
 		margin-bottom: 20px;
 	}
@@ -153,7 +153,7 @@ const metronicPageStyles = `
 		align-items: center;
 		justify-content: space-between;
 		padding: 20px;
-		border-bottom: 1px solid #F3F4F6;
+		border-bottom: 1px solid var(--border);
 	}
 
 	.card-title-group {
@@ -169,15 +169,15 @@ const metronicPageStyles = `
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		background: #FEE2E2;
-		color: #C62828;
+		background: var(--brand-bg);
+		color: var(--brand);
 		font-size: 18px;
 	}
 
 	.card .card-title {
 		font-size: 15px;
 		font-weight: 700;
-		color: #111827;
+		color: var(--text-primary);
 		margin: 0;
 	}
 
@@ -200,7 +200,7 @@ const metronicPageStyles = `
 	}
 
 	.table-container thead {
-		background: #F9FAFB;
+		background: var(--bg-surface);
 	}
 
 	.table-container th {
@@ -209,21 +209,21 @@ const metronicPageStyles = `
 		font-weight: 700;
 		text-transform: uppercase;
 		letter-spacing: 0.05em;
-		color: #6B7280;
+		color: var(--text-muted);
 		text-align: left;
-		border-bottom: 1px solid #E5E7EB;
+		border-bottom: 1px solid var(--border);
 	}
 
 	.table-container td {
 		padding: 14px 16px;
 		font-size: 13px;
-		color: #374151;
-		border-bottom: 1px solid #F3F4F6;
+		color: var(--text-secondary);
+		border-bottom: 1px solid var(--border);
 		vertical-align: middle;
 	}
 
 	.table-container tbody tr:hover {
-		background: #F9FAFB;
+		background: var(--bg-surface);
 	}
 
 	.table-container tbody tr:last-child td {
@@ -241,23 +241,23 @@ const metronicPageStyles = `
 	}
 
 	.badge-success {
-		background: #D1FAE5;
-		color: #059669;
+		background: var(--success-bg);
+		color: var(--success);
 	}
 
 	.badge-warning {
-		background: #FEF3C7;
-		color: #D97706;
+		background: var(--warning-bg);
+		color: var(--warning);
 	}
 
 	.badge-danger {
-		background: #FEE2E2;
-		color: #DC2626;
+		background: var(--danger-bg);
+		color: var(--danger);
 	}
 
 	.badge-info {
-		background: #DBEAFE;
-		color: #2563EB;
+		background: var(--info-bg);
+		color: var(--info);
 	}
 
 	/* Action Buttons */
@@ -277,21 +277,21 @@ const metronicPageStyles = `
 	}
 
 	.action-btn-edit {
-		background: #EFF6FF;
-		color: #2563EB;
+		background: var(--info-bg);
+		color: var(--info);
 	}
 
 	.action-btn-edit:hover {
-		background: #DBEAFE;
+		background: var(--info-bg);
 	}
 
 	.action-btn-delete {
-		background: #FEE2E2;
-		color: #DC2626;
+		background: var(--danger-bg);
+		color: var(--danger);
 	}
 
 	.action-btn-delete:hover {
-		background: #FECACA;
+		background: var(--danger-bg);
 	}
 
 	/* Form Styles */
@@ -309,7 +309,7 @@ const metronicPageStyles = `
 		display: block;
 		font-size: 13px;
 		font-weight: 600;
-		color: #374151;
+		color: var(--text-secondary);
 		margin-bottom: 6px;
 	}
 
@@ -317,14 +317,14 @@ const metronicPageStyles = `
 		width: 100%;
 		padding: 10px 12px;
 		font-size: 13px;
-		border: 1px solid #E5E7EB;
+		border: 1px solid var(--border);
 		border-radius: 10px;
 		transition: all 0.2s;
 	}
 
 	.form-input:focus {
 		outline: none;
-		border-color: #C62828;
+		border-color: var(--brand);
 		box-shadow: 0 0 0 3px rgba(198, 40, 40, 0.1);
 	}
 
@@ -345,96 +345,22 @@ const metronicPageStyles = `
 
 	.empty-state-icon {
 		font-size: 48px;
-		color: #D1D5DB;
+		color: var(--border-strong);
 		margin-bottom: 16px;
 	}
 
 	.empty-state-title {
 		font-size: 16px;
 		font-weight: 600;
-		color: #374151;
+		color: var(--text-secondary);
 		margin: 0 0 8px;
 	}
 
 	.empty-state-description {
 		font-size: 13px;
-		color: #6B7280;
+		color: var(--text-muted);
 		margin: 0;
 	}
 
-	/* Dark Mode */
-	@media (prefers-color-scheme: dark) {
-		.page-title {
-			color: #F9FAFB;
-		}
-
-		.page-subtitle {
-			color: #9CA3AF;
-		}
-
-		.card {
-			background: #1A1A24;
-			border-color: #2D2E3F;
-		}
-
-		.card .card-title {
-			color: #F9FAFB;
-		}
-
-		.card .card-header {
-			border-color: #2D2E3F;
-		}
-
-		.table-container thead {
-			background: #0F0F12;
-		}
-
-		.table-container th {
-			color: #9CA3AF;
-			border-color: #2D2E3F;
-		}
-
-		.table-container td {
-			color: #D1D5DB;
-			border-color: #2D2E3F;
-		}
-
-		.table-container tbody tr:hover {
-			background: #0F0F12;
-		}
-
-		.form-label {
-			color: #D1D5DB;
-		}
-
-		.form-input {
-			background: #0F0F12;
-			border-color: #2D2E3F;
-			color: #F9FAFB;
-		}
-
-		.form-input:focus {
-			border-color: #C62828;
-		}
-
-		.badge-success {
-			background: rgba(5, 150, 105, 0.2);
-			color: #34D399;
-		}
-
-		.badge-warning {
-			background: rgba(217, 119, 6, 0.2);
-			color: #FBBF24;
-		}
-
-		.badge-danger {
-			background: rgba(220, 38, 38, 0.2);
-			color: #F87171;
-		}
-
-		.badge-info {
-			background: rgba(37, 99, 235, 0.2);
-			color: #60A5FA;
-		}
-	}
+	/* Dark Mode — :root.dark in tokens.css sets CSS vars globally */
 `;

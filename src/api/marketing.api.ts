@@ -6,7 +6,7 @@ import {
 	listRecords,
 	updateRecord,
 } from "@/api/pocketbase";
-import type { Promo, Subscriber, ContactMessage, PaginatedResponse } from "@/types/database.types";
+import type { Promo, ContactMessage, PaginatedResponse } from "@/types/database.types";
 
 export interface MarketingMetric {
 	date: string;

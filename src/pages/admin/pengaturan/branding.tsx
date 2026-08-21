@@ -4,14 +4,19 @@ import { UploadOutlined, SaveOutlined, EyeOutlined, ReloadOutlined } from "@ant-
 import { useBranding, useUpdateBranding } from "@/hooks/useBranding";
 import { DynamicLogo } from "@/components/public/layout/DynamicLogo";
 import { updateFavicon } from "@/components/public/layout/DynamicFavicon";
+import { MetronicPage } from "@/components/admin/MetronicPage";
 import type { UploadFile } from "antd/es/upload/interface";
+import { useThemeStore } from "@/store/themeStore";
 
 const { TextArea } = Input;
 const { TabPane } = Tabs;
 
 export default function BrandingPage() {
+	const { mode } = useThemeStore();
 	const { data: branding, isLoading, refetch } = useBranding();
 	const updateBranding = useUpdateBranding();
+
+	const isDark = mode === "dark";
 	const [form] = Form.useForm();
 	const [activeTab, setActiveTab] = useState("logo");
 	const [previewVisible, setPreviewVisible] = useState(false);
@@ -19,7 +24,6 @@ export default function BrandingPage() {
 	const [logoPreview, setLogoPreview] = useState<string>("");
 	const [isSaving, setIsSaving] = useState(false);
 
-	// Set form values when data loads
 	useEffect(() => {
 		if (branding) {
 			form.setFieldsValue({
@@ -59,28 +63,17 @@ export default function BrandingPage() {
 		try {
 			setIsSaving(true);
 			const values = await form.validateFields();
-
-			console.log("[BrandingPage] Saving with logo file:", logoFile?.name);
-
 			await updateBranding.mutateAsync({
 				...values,
 				logo_file: logoFile || undefined,
 			});
-
-			// Clear file state
 			setLogoFile(null);
-
-			// Refetch to get new URLs
 			await refetch();
-
-			// Update favicon immediately
 			setTimeout(() => {
 				updateFavicon();
 			}, 500);
-
 			message.success("Branding berhasil disimpan!");
 		} catch (error) {
-			console.error("[BrandingPage] Save error:", error);
 			message.error("Gagal menyimpan branding: " + (error instanceof Error ? error.message : "Unknown error"));
 		} finally {
 			setIsSaving(false);
@@ -102,16 +95,17 @@ export default function BrandingPage() {
 	}
 
 	return (
-		<div className="space-y-6">
-			<div className="flex items-center justify-between">
-				<div>
-					<h1 className="text-2xl font-bold text-gray-900">Pengaturan Branding</h1>
-					<p className="text-gray-500">Kelola logo, favicon, dan identitas brand</p>
-				</div>
-				<div className="flex gap-2">
-					<Button icon={<ReloadOutlined />} onClick={handleRefreshFavicon} title="Refresh Favicon">
-						Refresh Favicon
-					</Button>
+		<MetronicPage
+			title="Pengaturan Branding"
+			subtitle="Kelola logo, favicon, dan identitas brand"
+		>
+			<div className="card">
+				<div className="flex items-center justify-between mb-6">
+					<div className="flex gap-2">
+						<Button icon={<ReloadOutlined />} onClick={handleRefreshFavicon}>
+							Refresh Favicon
+						</Button>
+					</div>
 					<Button
 						type="primary"
 						icon={<SaveOutlined />}
@@ -121,17 +115,14 @@ export default function BrandingPage() {
 						Simpan Perubahan
 					</Button>
 				</div>
-			</div>
 
-			<Form form={form} layout="vertical">
-				<Card>
+				<Form form={form} layout="vertical">
 					<Tabs activeKey={activeTab} onChange={setActiveTab}>
 						<TabPane tab="Logo & Favicon" key="logo">
 							<div className="max-w-xl">
 								<h3 className="text-lg font-semibold mb-4">Logo Website & Favicon</h3>
 								<p className="text-sm text-gray-500 mb-4">
-									Upload logo yang akan digunakan sebagai logo website dan favicon (ikon tab browser). Format yang
-									disarankan: PNG atau SVG dengan background transparan.
+									Upload logo yang akan digunakan sebagai logo website dan favicon (ikon tab browser).
 								</p>
 
 								<Form.Item label="Upload Logo">
@@ -144,19 +135,15 @@ export default function BrandingPage() {
 									>
 										<Button icon={<UploadOutlined />}>Pilih File Logo</Button>
 									</Upload>
-									<p className="text-xs text-gray-500 mt-1">
-										Format: PNG, JPG, SVG, WebP. Ukuran maks: 5MB. Logo akan otomatis digunakan sebagai favicon juga.
-									</p>
 								</Form.Item>
 
 								{logoPreview && (
-									<div className="mt-4 p-4 bg-gray-50 rounded-lg">
-										<p className="text-sm text-gray-600 mb-2">Preview Logo:</p>
+									<div className="mt-4 p-4 rounded-lg" style={{ backgroundColor: "var(--bg-surface)" }}>
+										<p className="text-sm mb-2" style={{ color: "var(--text-secondary)" }}>Preview Logo:</p>
 										<div className="flex items-center gap-4">
 											<img src={logoPreview} alt="Logo Preview" className="h-16 object-contain" />
 											<img src={logoPreview} alt="Favicon Preview" className="w-8 h-8 object-contain" />
 										</div>
-										<p className="text-xs text-gray-400 mt-2 break-all">{logoPreview}</p>
 									</div>
 								)}
 
@@ -281,42 +268,43 @@ export default function BrandingPage() {
 							</div>
 						</TabPane>
 					</Tabs>
+				</Form>
+
+				{/* Live Preview */}
+				<Card
+					title={
+						<div className="flex items-center justify-between">
+							<span>Preview Brand</span>
+							<Button type="link" icon={<EyeOutlined />} onClick={() => setPreviewVisible(!previewVisible)}>
+								{previewVisible ? "Sembunyikan" : "Tampilkan"} Preview
+							</Button>
+						</div>
+					}
+					className="mt-4"
+				>
+					<div className="flex items-center gap-4 p-4 rounded-lg border" style={{ backgroundColor: "var(--bg-card)", borderColor: "var(--border)" }}>
+						<DynamicLogo />
+					</div>
+
+					{previewVisible && (
+						<div className="mt-6 space-y-4">
+							<div className="p-4 rounded-lg" style={{ backgroundColor: "var(--bg-surface)" }}>
+								<h4 className="font-semibold mb-2" style={{ color: "var(--text-primary)" }}>Header Preview:</h4>
+								<div className="flex items-center gap-4 p-4 rounded border" style={{ backgroundColor: "var(--bg-card)", borderColor: "var(--border)" }}>
+									<DynamicLogo />
+								</div>
+							</div>
+
+							<div className="p-4 rounded-lg" style={{ backgroundColor: "var(--bg-surface)" }}>
+								<h4 className="font-semibold mb-2" style={{ color: "var(--text-primary)" }}>Footer Preview:</h4>
+								<div className="flex items-center gap-4 p-4 rounded" style={{ backgroundColor: isDark ? "#1a1d27" : "#111827" }}>
+									<DynamicLogo />
+								</div>
+							</div>
+						</div>
+					)}
 				</Card>
-			</Form>
-
-			{/* Live Preview */}
-			<Card
-				title={
-					<div className="flex items-center justify-between">
-						<span>Preview Brand</span>
-						<Button type="link" icon={<EyeOutlined />} onClick={() => setPreviewVisible(!previewVisible)}>
-							{previewVisible ? "Sembunyikan" : "Tampilkan"} Preview
-						</Button>
-					</div>
-				}
-			>
-				<div className="flex items-center gap-4 p-4 bg-white rounded-lg border">
-					<DynamicLogo />
-				</div>
-
-				{previewVisible && (
-					<div className="mt-6 space-y-4">
-						<div className="p-4 bg-gray-50 rounded-lg">
-							<h4 className="font-semibold mb-2">Header Preview:</h4>
-							<div className="flex items-center gap-4 p-4 bg-white rounded border">
-								<DynamicLogo />
-							</div>
-						</div>
-
-						<div className="p-4 bg-gray-50 rounded-lg">
-							<h4 className="font-semibold mb-2">Footer Preview:</h4>
-							<div className="flex items-center gap-4 p-4 bg-gray-900 rounded">
-								<DynamicLogo />
-							</div>
-						</div>
-					</div>
-				)}
-			</Card>
-		</div>
+			</div>
+		</MetronicPage>
 	);
 }

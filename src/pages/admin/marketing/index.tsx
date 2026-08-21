@@ -24,12 +24,17 @@ import {
 	type ABTestResult,
 } from "@/api/marketing.api";
 import { formatDate, formatCurrency } from "@/utils/format";
+import { MetronicPage } from "@/components/admin/MetronicPage";
+import { useThemeStore } from "@/store/themeStore";
 
 const { Option } = Select;
 
 export default function MarketingDashboardPage() {
+	const { mode } = useThemeStore();
 	const [dateRange, setDateRange] = useState<"7days" | "30days" | "90days">("30days");
 	const [campaignPlatform, setCampaignPlatform] = useState<string>("all");
+
+	const isDark = mode === "dark";
 
 	const { data: metrics = [], isLoading: metricsLoading } = useQuery({
 		queryKey: ["marketing-metrics", dateRange],
@@ -143,28 +148,10 @@ export default function MarketingDashboardPage() {
 			key: "impressions",
 			render: (value) => value.toLocaleString("id-ID"),
 		},
-		{
-			title: "Clicks",
-			dataIndex: "clicks",
-			key: "clicks",
-		},
-		{
-			title: "Conversions",
-			dataIndex: "conversions",
-			key: "conversions",
-		},
-		{
-			title: "CTR",
-			dataIndex: "ctr",
-			key: "ctr",
-			render: (value) => `${value}%`,
-		},
-		{
-			title: "CPC",
-			dataIndex: "cpc",
-			key: "cpc",
-			render: (value) => formatCurrency(value),
-		},
+		{ title: "Clicks", dataIndex: "clicks", key: "clicks" },
+		{ title: "Conversions", dataIndex: "conversions", key: "conversions" },
+		{ title: "CTR", dataIndex: "ctr", key: "ctr", render: (value) => `${value}%` },
+		{ title: "CPC", dataIndex: "cpc", key: "cpc", render: (value) => formatCurrency(value) },
 		{
 			title: "ROI",
 			dataIndex: "roi",
@@ -174,41 +161,25 @@ export default function MarketingDashboardPage() {
 	];
 
 	const funnelColumns: ColumnsType<LeadFunnelData> = [
-		{
-			title: "Stage",
-			dataIndex: "stage",
-			key: "stage",
-		},
-		{
-			title: "Count",
-			dataIndex: "count",
-			key: "count",
-		},
+		{ title: "Stage", dataIndex: "stage", key: "stage" },
+		{ title: "Count", dataIndex: "count", key: "count" },
 		{
 			title: "Percentage",
 			dataIndex: "percentage",
 			key: "percentage",
 			render: (value) => `${value.toFixed(1)}%`,
 		},
-		{
-			title: "Avg Duration",
-			dataIndex: "avg_duration",
-			key: "avg_duration",
-		},
+		{ title: "Avg Duration", dataIndex: "avg_duration", key: "avg_duration" },
 		{
 			title: "Drop-off Rate",
 			dataIndex: "dropoff_rate",
 			key: "dropoff_rate",
-			render: (value) => <div className={value > 50 ? "text-red-600" : "text-gray-600"}>{value.toFixed(1)}%</div>,
+			render: (value) => <div style={{ color: value > 50 ? (isDark ? "#f87171" : "#dc2626") : (isDark ? "#94a3b8" : "#4b5563") }}>{value.toFixed(1)}%</div>,
 		},
 	];
 
 	const abTestColumns: ColumnsType<ABTestResult> = [
-		{
-			title: "Test",
-			dataIndex: "test_name",
-			key: "test_name",
-		},
+		{ title: "Test", dataIndex: "test_name", key: "test_name" },
 		{
 			title: "Variant A",
 			key: "variant_a",
@@ -253,79 +224,53 @@ export default function MarketingDashboardPage() {
 	];
 
 	return (
-		<div className="space-y-6">
-			<div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-				<div>
-					<h1 className="m-0 text-[1.7rem] font-extrabold tracking-tight text-neutral-900 dark:text-white">
-						Marketing Performance Dashboard
-					</h1>
-					<p className="m-0 mt-1 text-sm font-medium text-neutral-600 dark:text-neutral-300">
-						Track and analyze marketing campaign performance, conversions, and ROI
-					</p>
-				</div>
-				<div className="flex flex-wrap items-center gap-3">
-					<Segmented
-						options={[
-							{ label: "7 Hari", value: "7days" },
-							{ label: "30 Hari", value: "30days" },
-							{ label: "90 Hari", value: "90days" },
-						]}
-						value={dateRange}
-						onChange={(value) => setDateRange(value as any)}
-					/>
-					<Select value={campaignPlatform} onChange={setCampaignPlatform} style={{ width: 150 }}>
-						<Option value="all">All Platforms</Option>
-						<Option value="instagram">Instagram</Option>
-						<Option value="tiktok">TikTok</Option>
-						<Option value="facebook">Facebook</Option>
-						<Option value="google_ads">Google Ads</Option>
-					</Select>
-				</div>
-			</div>
-
+		<MetronicPage
+			title="Marketing Performance"
+			subtitle="Track and analyze marketing campaign performance, conversions, and ROI"
+		>
 			{/* Summary Stats */}
-			<Row gutter={[16, 16]}>
+			<Row gutter={[16, 16]} className="mb-4">
 				<Col xs={24} sm={12} lg={6}>
-					<Card className="h-full border-0 shadow-lg">
+					<Card className="stat-card">
 						<Statistic
 							title="Total Visitors"
 							value={totalStats?.visitors || 0}
 							prefix={<BarChartOutlined />}
-							valueStyle={{ color: "#3f51b5" }}
+							valueStyle={{ color: isDark ? "#60a5fa" : "#3f51b5" }}
 							suffix="orang"
 						/>
 					</Card>
 				</Col>
 				<Col xs={24} sm={12} lg={6}>
-					<Card className="h-full border-0 shadow-lg">
+					<Card className="stat-card">
 						<Statistic
 							title="WhatsApp Clicks"
 							value={totalStats?.whatsappClicks || 0}
 							prefix={<RiseOutlined />}
-							valueStyle={{ color: "#4caf50" }}
+							valueStyle={{ color: isDark ? "#4ade80" : "#4caf50" }}
 							suffix="klik"
 						/>
 					</Card>
 				</Col>
 				<Col xs={24} sm={12} lg={6}>
-					<Card className="h-full border-0 shadow-lg">
+					<Card className="stat-card">
 						<Statistic
 							title="Branch Visits"
 							value={totalStats?.branchVisits || 0}
 							prefix={<AreaChartOutlined />}
-							valueStyle={{ color: "#ff9800" }}
+							valueStyle={{ color: isDark ? "#facc15" : "#ff9800" }}
 							suffix="kunjungan"
 						/>
 					</Card>
 				</Col>
 				<Col xs={24} sm={12} lg={6}>
-					<Card className="h-full border-0 shadow-lg">
+					<Card className="stat-card">
 						<Statistic
 							title="Conversion Rate"
 							value={totalStats?.conversionRate || 0}
 							precision={2}
 							prefix={<LineChartOutlined />}
-							valueStyle={{ color: "#f44336" }}
+							valueStyle={{ color: isDark ? "#f87171" : "#f44336" }}
 							suffix="%"
 						/>
 					</Card>
@@ -345,7 +290,7 @@ export default function MarketingDashboardPage() {
 							</span>
 						),
 						children: (
-							<Card title="Lead Funnel Analysis" className="shadow-sm">
+							<Card title="Lead Funnel Analysis" className="card">
 								<Table
 									columns={funnelColumns}
 									dataSource={leadFunnel}
@@ -365,7 +310,7 @@ export default function MarketingDashboardPage() {
 							</span>
 						),
 						children: (
-							<Card title="Promo Performance & ROI Analysis" className="shadow-sm">
+							<Card title="Promo Performance & ROI Analysis" className="card">
 								<Table
 									columns={promoColumns}
 									dataSource={promoEffectiveness}
@@ -385,7 +330,7 @@ export default function MarketingDashboardPage() {
 							</span>
 						),
 						children: (
-							<Card title="Social Media & Campaign Performance" className="shadow-sm">
+							<Card title="Social Media & Campaign Performance" className="card">
 								<Table
 									columns={campaignColumns}
 									dataSource={filteredCampaigns}
@@ -405,7 +350,7 @@ export default function MarketingDashboardPage() {
 							</span>
 						),
 						children: (
-							<Card title="A/B Testing Dashboard" className="shadow-sm">
+							<Card title="A/B Testing Dashboard" className="card">
 								<Table
 									columns={abTestColumns}
 									dataSource={abTests}
@@ -418,6 +363,6 @@ export default function MarketingDashboardPage() {
 					},
 				]}
 			/>
-		</div>
+		</MetronicPage>
 	);
 }

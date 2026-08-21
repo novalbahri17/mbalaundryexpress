@@ -50,8 +50,8 @@ export function GallerySection() {
 	return (
 		<section className="relative overflow-hidden bg-neutral-50 px-6 py-24 md:px-12 md:py-32 dark:bg-neutral-900">
 			<div className="pointer-events-none absolute inset-0">
-				<div className="absolute -left-20 top-1/3 h-[300px] w-[300px] rounded-full bg-sapphire-200/30 blur-[100px]" />
-				<div className="absolute -right-20 bottom-1/3 h-[300px] w-[300px] rounded-full bg-ruby-200/30 blur-[100px]" />
+				<div className="absolute -left-20 top-1/3 h-[300px] w-[300px] rounded-full bg-sapphire-200/30 blur-[100px] dark:bg-sapphire-900/20" />
+				<div className="absolute -right-20 bottom-1/3 h-[300px] w-[300px] rounded-full bg-ruby-200/30 blur-[100px] dark:bg-ruby-900/20" />
 			</div>
 
 			<div className="relative mx-auto flex max-w-[1200px] flex-col items-center">

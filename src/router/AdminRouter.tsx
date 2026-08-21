@@ -18,7 +18,6 @@ const TestimoniPage = lazy(() => import("@/pages/admin/testimoni"));
 const FaqPage = lazy(() => import("@/pages/admin/faq"));
 const GaleriPage = lazy(() => import("@/pages/admin/galeri"));
 
-const SubscribersPage = lazy(() => import("@/pages/admin/subscribers"));
 const KemitraanPage = lazy(() => import("@/pages/admin/kemitraan"));
 const PesanPage = lazy(() => import("@/pages/admin/pesan"));
 const PengaturanPage = lazy(() => import("@/pages/admin/pengaturan"));
@@ -69,7 +68,6 @@ export const adminRoutes: RouteObject = {
 						{ path: "testimoni", element: <TestimoniPage /> },
 						{ path: "faq", element: <FaqPage /> },
 						{ path: "galeri", element: <GaleriPage /> },
-						{ path: "subscribers", element: <SubscribersPage /> },
 						{ path: "kemitraan", element: <KemitraanPage /> },
 						{ path: "pesan", element: <PesanPage /> },
 						{ path: "pengaturan", element: <PengaturanPage /> },

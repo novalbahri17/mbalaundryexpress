@@ -6,10 +6,10 @@ import { useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getBranchGallery, saveBranchGallery, deleteBranchGallery } from "@/api/branches.api";
 import { BranchContextHeader } from "@/components/admin/BranchContextHeader";
+import { MetronicPage } from "@/components/admin/MetronicPage";
 import type { BranchGallery } from "@/types/database.types";
 import { resolveImageUrl } from "@/utils/format";
 
-// Form values now only include optional caption
 type GaleriFormValues = {
 	caption?: string;
 };
@@ -28,6 +28,19 @@ export default function CabangGaleriPage() {
 		enabled: Boolean(id),
 	});
 
+	const handleEdit = (record: BranchGallery) => {
+		setEditing(record);
+		setFileList([]);
+		form.setFieldsValue({ caption: record.caption });
+		setOpen(true);
+	};
+
+	const handleDelete = async (record: BranchGallery) => {
+		await deleteBranchGallery(record.id);
+		message.success("Gambar dihapus");
+		await queryClient.invalidateQueries({ queryKey: ["branch-gallery", id] });
+	};
+
 	const onSubmit = async (): Promise<void> => {
 		if (!id) return;
 		const values = await form.validateFields();
@@ -40,7 +53,6 @@ export default function CabangGaleriPage() {
 		message.loading({ content: "Menyimpan...", key: "uploading" });
 
 		if (editing) {
-			// EDIT MODE: single item
 			const isNewFile = fileList[0]?.originFileObj;
 			if (isNewFile) {
 				const formData = new FormData();
@@ -57,7 +69,6 @@ export default function CabangGaleriPage() {
 				});
 			}
 		} else {
-			// BULK CREATE MODE
 			for (const fileItem of fileList) {
 				if (!fileItem.originFileObj) continue;
 				const formData = new FormData();
@@ -76,85 +87,84 @@ export default function CabangGaleriPage() {
 		await queryClient.invalidateQueries({ queryKey: ["branch-gallery", id] });
 	};
 
-	return (
-		<div className="space-y-4">
-			<BranchContextHeader branchId={id} activeTab="galeri" />
+	const columns: ColumnsType<BranchGallery> = [
+		{
+			title: "Gambar",
+			dataIndex: "image",
+			width: 120,
+			render: (value: string, row: BranchGallery) => (
+				<img
+					src={resolveImageUrl(value, row.caption || "Galeri")}
+					alt={row.caption || "galeri"}
+					className="h-14 w-24 rounded object-cover"
+				/>
+			),
+		},
+		{ title: "Caption", dataIndex: "caption", render: (value?: string) => value || "-" },
+		{
+			title: "Aksi",
+			width: 150,
+			render: (_, record: BranchGallery) => (
+				<Space>
+					<Button
+						type="text"
+						icon={<EditOutlined />}
+						className="action-btn action-btn-edit"
+						onClick={() => handleEdit(record)}
+					>
+						Edit
+					</Button>
+					<Popconfirm
+						title="Hapus gambar ini?"
+						okText="Hapus"
+						cancelText="Batal"
+						onConfirm={() => handleDelete(record)}
+					>
+						<Button type="text" danger icon={<DeleteOutlined />} className="action-btn action-btn-delete">
+							Hapus
+						</Button>
+					</Popconfirm>
+				</Space>
+			),
+		},
+	];
 
-			<div className="flex items-center justify-between">
-				<h1 className="text-xl font-bold">Kelola Galeri Cabang</h1>
-				<Button
-					type="primary"
-					icon={<PlusOutlined />}
-					onClick={() => {
-						setEditing(null);
-						setFileList([]);
-						form.setFieldsValue({ caption: "" });
-						setOpen(true);
-					}}
-				>
-					Tambah Gambar
-				</Button>
+	return (
+		<MetronicPage
+			title="Kelola Galeri Cabang"
+			subtitle="Upload dan kelola foto galeri cabang"
+			actionLabel="Tambah Gambar"
+			onAction={() => {
+				setEditing(null);
+				setFileList([]);
+				form.setFieldsValue({ caption: "" });
+				setOpen(true);
+			}}
+		>
+			<div className="card">
+				<BranchContextHeader branchId={id} activeTab="galeri" />
 			</div>
 
-			<Table
-				rowKey="id"
-				loading={isLoading}
-				dataSource={data}
-				columns={[
-					{
-						title: "Gambar",
-						dataIndex: "image",
-						render: (value: string, row: BranchGallery) => (
-							<img
-								src={resolveImageUrl(value, row.caption || "Galeri Cabang")}
-								alt={row.caption || "galeri"}
-								className="h-14 w-24 rounded object-cover"
-							/>
-						),
-					},
-					{ title: "Caption", dataIndex: "caption", render: (value?: string) => value || "-" },
-					{
-						title: "Aksi",
-						render: (_, record: BranchGallery) => (
-							<Space>
-								<Button
-									type="link"
-									icon={<EditOutlined />}
-									onClick={() => {
-										setEditing(record);
-										setFileList([]);
-										form.setFieldsValue({ caption: record.caption });
-										setOpen(true);
-									}}
-								>
-									Edit
-								</Button>
-								<Popconfirm
-									title="Hapus gambar ini?"
-									okText="Hapus"
-									cancelText="Batal"
-									onConfirm={async () => {
-										await deleteBranchGallery(record.id);
-										message.success("Gambar dihapus");
-										await queryClient.invalidateQueries({ queryKey: ["branch-gallery", id] });
-									}}
-								>
-									<Button type="link" danger icon={<DeleteOutlined />}>
-										Hapus
-									</Button>
-								</Popconfirm>
-							</Space>
-						),
-					},
-				]}
-			/>
+			<div className="card mt-4">
+				<div className="table-container">
+					<Table rowKey="id" loading={isLoading} dataSource={data} columns={columns} />
+				</div>
+			</div>
 
 			<Modal
 				title={editing ? "Edit Gambar Galeri" : "Tambah Gambar Galeri"}
 				open={open}
-				onCancel={() => setOpen(false)}
+				onCancel={() => {
+					setOpen(false);
+					setEditing(null);
+					setFileList([]);
+					form.resetFields();
+				}}
 				onOk={() => void onSubmit()}
+				okText="Simpan"
+				cancelText="Batal"
 				destroyOnClose
+				className="metronic-modal"
 			>
 				<Form layout="vertical" form={form}>
 					<Form.Item label="Gambar">
@@ -187,10 +197,10 @@ export default function CabangGaleriPage() {
 						)}
 					</Form.Item>
 					<Form.Item label="Caption" name="caption">
-						<Input />
+						<Input className="form-input" />
 					</Form.Item>
 				</Form>
 			</Modal>
-		</div>
+		</MetronicPage>
 	);
 }

@@ -25,6 +25,7 @@
 		"noUnusedParameters": true,
 		"noFallthroughCasesInSwitch": true,
 		"useUnknownInCatchVariables": false,
+		"ignoreDeprecations": "6.0",
 
 		"baseUrl": ".",
 		"paths": {

@@ -347,7 +347,7 @@ export default function DashboardPage() {
 	];
 
 	return (
-		<div className={`dashboard-container ${mode === "dark" ? "dashboard-dark" : ""}`}>
+		<div className="dashboard-container">
 			<style>{dashboardStyles}</style>
 
 			{/* Page Header */}
@@ -554,25 +554,6 @@ export default function DashboardPage() {
 }
 
 const dashboardStyles = `
-	/* ===== DESIGN TOKENS — LIGHT MODE ===== */
-	:root {
-		--bg-app: #f6f7fb;
-		--bg-card: #ffffff;
-		--bg-surface: #f1f5f9;
-		--border: #e5e7eb;
-		--text-primary: #0f172a;
-		--text-muted: #64748b;
-		--brand: #2563eb;
-		--brand-hover: #1d4ed8;
-		--success: #16a34a;
-		--danger: #dc2626;
-		--warning: #ca8a04;
-		--radius-card: 16px;
-		--radius-sm: 12px;
-		--shadow-card: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
-		--shadow-card-hover: 0 4px 12px rgba(0,0,0,0.1);
-	}
-
 	/* ===== BASE ===== */
 	.dashboard-container {
 		max-width: 1400px;
@@ -642,7 +623,7 @@ const dashboardStyles = `
 		transition: all 0.15s;
 		text-decoration: none;
 		background: var(--brand);
-		color: #fff;
+		color: var(--brand-text);
 	}
 
 	.btn-action-add:hover {
@@ -663,7 +644,7 @@ const dashboardStyles = `
 	}
 
 	.alert-error {
-		background: #FEF2F2;
+		background: var(--danger-bg);
 		color: var(--danger);
 	}
 
@@ -692,7 +673,7 @@ const dashboardStyles = `
 	}
 
 	.notification-card.warning {
-		background: #FEF9C3;
+		background: var(--warning-bg);
 	}
 
 	.notification-card.warning .notification-icon {
@@ -701,7 +682,7 @@ const dashboardStyles = `
 	}
 
 	.notification-card.info {
-		background: #EFF6FF;
+		background: var(--info-bg);
 	}
 
 	.notification-card.info .notification-icon {
@@ -710,7 +691,7 @@ const dashboardStyles = `
 	}
 
 	.notification-card.success {
-		background: #F0FDF4;
+		background: var(--success-bg);
 	}
 
 	.notification-card.success .notification-icon {
@@ -796,7 +777,7 @@ const dashboardStyles = `
 	}
 
 	.stat-icon svg {
-		color: #fff;
+		color: var(--brand-text);
 	}
 
 	.stat-info {
@@ -839,12 +820,12 @@ const dashboardStyles = `
 	}
 
 	.trend-pill.pill-up {
-		background: #DCFCE7;
+		background: var(--success-bg);
 		color: var(--success);
 	}
 
 	.trend-pill.pill-down {
-		background: #FEE2E2;
+		background: var(--brand-bg);
 		color: var(--danger);
 	}
 
@@ -910,7 +891,7 @@ const dashboardStyles = `
 	}
 
 	.card-icon svg {
-		color: #fff;
+		color: var(--brand-text);
 	}
 
 	/* Brand blue icon */
@@ -987,8 +968,8 @@ const dashboardStyles = `
 
 	.kpi-icon-default svg { color: var(--text-muted); }
 	.kpi-icon-brand svg { color: var(--brand); }
-	.kpi-icon-info svg { color: #3B82F6; }
-	.kpi-icon-teal svg { color: #0D9488; }
+	.kpi-icon-info svg { color: var(--info); }
+	.kpi-icon-teal svg { color: var(--accent-teal); }
 	.kpi-icon-warning svg { color: var(--warning); }
 
 	.kpi-body {
@@ -1056,7 +1037,7 @@ const dashboardStyles = `
 
 	.activity-item .indicator.indicator-red { background: var(--danger); }
 	.activity-item .indicator.indicator-blue { background: var(--brand); }
-	.activity-item .indicator.indicator-teal { background: #0D9488; }
+	.activity-item .indicator.indicator-teal { background: var(--accent-teal); }
 	.activity-item .indicator.indicator-amber { background: var(--warning); }
 
 	.activity-item .content {
@@ -1114,178 +1095,20 @@ const dashboardStyles = `
 	}
 
 	/* ===== DARK MODE ===== */
-	.dashboard-container.dashboard-dark {
-		--bg-app: #0f1117;
-		--bg-card: #1a1d27;
-		--bg-surface: #232736;
-		--border: #2a2e3f;
-		--text-primary: #e2e8f0;
-		--text-muted: #64748b;
-		--brand: #3B82F6;
-		--brand-hover: #60A5FA;
-		--success: #4ADE80;
-		--danger: #F87171;
-		--warning: #FACC15;
-		--shadow-card: 0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
-		--shadow-card-hover: 0 4px 12px rgba(0,0,0,0.5);
-	}
+	/* CSS variables are set globally via :root.dark in tokens.css */
+	/* Dashboard uses var() references — dark mode applies automatically */
 
-	.dashboard-dark .page-title {
-		color: var(--text-primary);
-	}
+	.notification-card.warning { background: var(--warning-bg); }
+	.notification-card.info { background: var(--info-bg); }
+	.notification-card.success { background: var(--success-bg); }
 
-	.dashboard-dark .page-subtitle {
-		color: var(--text-muted);
-	}
+	.kpi-icon-brand svg { color: var(--brand) !important; }
+	.kpi-icon-info svg { color: var(--info) !important; }
+	.kpi-icon-teal svg { color: var(--accent-teal) !important; }
+	.kpi-icon-warning svg { color: var(--warning) !important; }
 
-	.dashboard-dark .btn-theme-toggle {
-		background: var(--bg-surface);
-		color: var(--text-muted);
-	}
+	.trend-pill.pill-up { background: var(--success-bg); color: var(--success); }
+	.trend-pill.pill-down { background: var(--danger-bg); color: var(--danger); }
 
-	.dashboard-dark .btn-theme-toggle:hover {
-		background: var(--border);
-		color: var(--text-primary);
-	}
-
-	.dashboard-dark .btn-action-add {
-		background: var(--brand);
-	}
-
-	.dashboard-dark .btn-action-add:hover {
-		background: var(--brand-hover);
-	}
-
-	.dashboard-dark .stat-card {
-		background: var(--bg-card);
-	}
-
-	.dashboard-dark .stat-value {
-		color: var(--text-primary);
-	}
-
-	.dashboard-dark .stat-label {
-		color: var(--text-muted);
-	}
-
-	.dashboard-dark .stat-card-bottom {
-		border-color: var(--border);
-	}
-
-	.dashboard-dark .stat-icon {
-		background: var(--brand);
-	}
-
-	.dashboard-dark .stat-action {
-		color: var(--brand);
-	}
-
-	.dashboard-dark .stat-action:hover {
-		color: var(--brand-hover);
-	}
-
-	.dashboard-dark .trend-pill.pill-up {
-		background: rgba(74, 222, 128, 0.12);
-		color: var(--success);
-	}
-
-	.dashboard-dark .trend-pill.pill-down {
-		background: rgba(248, 113, 113, 0.12);
-		color: var(--danger);
-	}
-
-	.dashboard-dark .card {
-		background: var(--bg-card);
-	}
-
-	.dashboard-dark .card-header {
-		border-color: var(--border);
-	}
-
-	.dashboard-dark .card .card-title {
-		color: var(--text-primary);
-	}
-
-	.dashboard-dark .card .card-subtitle {
-		color: var(--text-muted);
-	}
-
-	.dashboard-dark .card-icon-muted {
-		background: var(--bg-surface);
-	}
-
-	.dashboard-dark .card-icon-muted svg {
-		color: var(--text-muted) !important;
-	}
-
-	.dashboard-dark .notification-card {
-		border: none;
-	}
-
-	.dashboard-dark .notification-card.warning {
-		background: #1C1917;
-	}
-
-	.dashboard-dark .notification-card.info {
-		background: #1E293B;
-	}
-
-	.dashboard-dark .notification-card.success {
-		background: #052e16;
-	}
-
-	.dashboard-dark .notification-content .count {
-		color: var(--text-primary);
-	}
-
-	.dashboard-dark .kpi-card {
-		background: var(--bg-surface);
-	}
-
-	.dashboard-dark .kpi-value {
-		color: var(--text-primary);
-	}
-
-	.dashboard-dark .kpi-icon svg {
-		color: var(--text-muted) !important;
-	}
-
-	.dashboard-dark .kpi-icon-brand svg { color: var(--brand) !important; }
-	.dashboard-dark .kpi-icon-info svg { color: #60A5FA !important; }
-	.dashboard-dark .kpi-icon-teal svg { color: #2DD4BF !important; }
-	.dashboard-dark .kpi-icon-warning svg { color: var(--warning) !important; }
-
-	.dashboard-dark .activity-item {
-		border-color: var(--border);
-	}
-
-	.dashboard-dark .activity-item:hover {
-		background: var(--bg-surface);
-	}
-
-	.dashboard-dark .activity-item .title {
-		color: var(--text-primary);
-	}
-
-	.dashboard-dark .activity-item .detail {
-		color: var(--text-muted);
-	}
-
-	.dashboard-dark .empty-state svg {
-		color: var(--border) !important;
-	}
-
-	.dashboard-dark .empty-state p {
-		color: var(--text-muted);
-	}
-
-	.dashboard-dark .alert-error {
-		background: rgba(248, 113, 113, 0.1);
-		color: var(--danger);
-	}
-
-	.dashboard-dark .sparkline-bar {
-		background: var(--brand);
-		opacity: 0.6;
-	}
+	.alert-error { background: var(--danger-bg); color: var(--danger); }
 `;
