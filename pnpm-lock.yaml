@@ -71,6 +71,9 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.60.2
         version: 5.74.4(react@19.1.0)
+      '@tiptap/core':
+        specifier: 2.27.2
+        version: 2.27.2(@tiptap/pm@2.27.2)
       '@tiptap/extension-image':
         specifier: ^2.11.7
         version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))
