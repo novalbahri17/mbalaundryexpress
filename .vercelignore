@@ -9,9 +9,32 @@ node_modules
 
 # PocketBase local data
 pb_data
+pb_data_local
+pb_data_backup_*
+pb_data_online.zip
 pb_migrations
+pb_users_schema.json
 pocketbase
 pocketbase.exe
+Dockerfile.pocketbase
+nixpacks.toml
+deploy
+ecosystem.config.js
+backup-mba.sh
+init_pb.bat
+
+# Temp/debug files
+temp_*
+*_err.txt
+*_out.txt
+*_output.txt
+bootstrap_*.txt
+build_log.txt
+tsc_*.txt
+tsc-*.txt
+stats.html
+trigger.txt
+test_pb_auth.mjs
 
 # Scripts not needed for build
 scripts

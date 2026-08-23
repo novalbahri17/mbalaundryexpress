@@ -39,7 +39,7 @@ export default function Header({ leftSlot }: HeaderProps) {
 					variant="ghost"
 					size="icon"
 					className="rounded-full"
-					onClick={() => window.open("https://mba-laundry.com")}
+					onClick={() => window.open("https://mbalaundryexpress.com"))}
 				>
 					<Icon icon="mdi:github" size={24} />
 				</Button>

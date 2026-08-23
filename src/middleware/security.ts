@@ -21,8 +21,8 @@ export const SECURITY_CONFIG = {
 	// CORS Settings
 	CORS: {
 		allowedOrigins: [
-			'https://mba-laundry.com',
-			'https://www.mba-laundry.com',
+			'https://mbalaundryexpress.com',
+			'https://www.mbalaundryexpress.com',
 			'https://*.vercel.app', // Only for development
 		],
 		allowedMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -36,7 +36,7 @@ export const SECURITY_CONFIG = {
 		'style-src': ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
 		'img-src': ["'self'", "data:", "https:", "blob:"],
 		'font-src': ["'self'", "https://fonts.gstatic.com"],
-		'connect-src': ["'self'", "https://api.mba-laundry.com", "https://*.pocketbase.io"],
+		'connect-src': ["'self'", "https://pb.mbalaundryexpress.com", "https://*.pocketbase.io"],
 		'frame-ancestors': ["'none'"],
 		'base-uri': ["'self'"],
 		'form-action': ["'self'"],

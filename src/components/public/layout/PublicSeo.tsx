@@ -43,7 +43,7 @@ export function PublicSeo() {
 	const location = useLocation();
 	const { data: branding } = useBranding();
 	
-	const siteUrl = import.meta.env.VITE_SITE_URL || "https://mba-laundry.com";
+	const siteUrl = import.meta.env.VITE_SITE_URL || "https://mbalaundryexpress.com";
 	const normalizedPath = location.pathname.endsWith("/") && location.pathname !== "/"
 		? location.pathname.slice(0, -1)
 		: location.pathname;

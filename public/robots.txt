@@ -4,5 +4,5 @@ Disallow: /admin/
 Disallow: /admin/*
 Disallow: /pb-api/
 
-Sitemap: https://mba-laundry.com/sitemap.xml
+Sitemap: https://mbalaundryexpress.com/sitemap.xml
 
