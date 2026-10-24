@@ -8,6 +8,7 @@
 		"dev": "vite",
 		"build": "vite build",
 		"preview": "vite preview",
+		"start": "node server/index.mjs",
 		"api": "node server/index.mjs",
 		"api:dev": "node --watch server/index.mjs",
 		"mysql:create": "node scripts/create-mysql-tables.mjs",

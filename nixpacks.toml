@@ -1,49 +1,25 @@
 # Nixpacks configuration untuk deploy Dokploy
-# - [variables]: env build-time (VITE_*) di-bake ke bundle Vite saat `pnpm build`
-# - [staticAssets].Caddyfile: override Caddyfile bawaan Nixpacks SPA,
-#   meneruskan /api/* dan /uploads/* ke API server Express + MySQL (port 3002).
+# -----------------------------------------------------------------------------
+# Satu container, satu proses, satu port.
+#
+#   node server/index.mjs
+#     - /api/*      -> REST API (Express + MySQL)
+#     - /uploads/*  -> file upload (dilayani API)
+#     - /*          -> hasil `vite build` (dist/) + SPA fallback
+#
+# Tidak perlu Caddy/reverse proxy terpisah: Express mendengarkan PORT dari
+# Dokploy dan menyajikan frontend sekaligus backend.
 
 [variables]
+# Di-bake saat `pnpm build`, jadi harus ada di sini (env dashboard tidak
+# selalu ikut ter-bake ke bundle Vite).
 VITE_API_BASE_PATH = '/api'
 VITE_PUBLIC_PATH = '/'
-VITE_SITE_URL = 'https://mba-laundry.com'
+VITE_SITE_URL = 'https://mbalaundryexpress.com'
 VITE_SITE_NAME = 'MBA Laundry Express'
+# CATATAN: NODE_ENV sengaja TIDAK ditaruh di sini. Kalau di-set saat build,
+# pnpm bisa melewati devDependencies (vite & typescript ada di sana) sehingga
+# `pnpm build` gagal. Set NODE_ENV=production dari dashboard Dokploy (runtime).
 
-[staticAssets]
-Caddyfile = '''
-{
-	admin off
-	persist_config off
-	auto_https off
-	log {
-		format json
-	}
-	servers {
-		trusted_proxies static private_ranges 100.0.0.0/8
-	}
-}
-
-:{$PORT:3000} {
-	log {
-		format json
-	}
-
-	rewrite /health /*
-
-	handle /api/* {
-		reverse_proxy http://127.0.0.1:3002
-	}
-
-	handle /uploads/* {
-		reverse_proxy http://127.0.0.1:3002
-	}
-
-	root * ../app/{$NIXPACKS_SPA_OUTPUT_DIR}
-
-	encode gzip
-
-	file_server
-
-	try_files {path} /index.html
-}
-'''
+[start]
+cmd = 'node server/index.mjs'

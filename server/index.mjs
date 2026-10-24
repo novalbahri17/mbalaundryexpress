@@ -47,7 +47,9 @@ function loadEnv() {
 }
 loadEnv();
 
-const PORT = Number(process.env.API_PORT || process.env.PORT || 3002);
+// PORT dari platform (Dokploy/Nixpacks/HF Spaces) menang supaya health-check
+// platform menemukan app-nya. API_PORT hanya untuk pemakaian lokal.
+const PORT = Number(process.env.PORT || process.env.API_PORT || 3002);
 const UPLOAD_DIR = resolve(process.cwd(), process.env.UPLOAD_DIR || "uploads");
 const IS_PRODUCTION = process.env.NODE_ENV === "production";
 
@@ -1272,6 +1274,49 @@ app.delete("/api/collections/:collection/records/:id", async (req, res) => {
 		jsonError(res, 500, error.message);
 	}
 });
+
+// ---------------------------------------------------------------------------
+// Frontend (hasil `vite build`) disajikan oleh proses yang sama.
+// Satu container, satu port, tanpa reverse proxy terpisah.
+// ---------------------------------------------------------------------------
+const SPA_DIR = resolve(process.cwd(), process.env.SPA_DIST_DIR || "dist");
+const SPA_INDEX = join(SPA_DIR, "index.html");
+const SERVE_SPA = process.env.SERVE_SPA !== "false" && existsSync(SPA_INDEX);
+
+// Route /api yang tidak dikenal tetap dijawab JSON, bukan HTML.
+app.use("/api", (_req, res) => {
+	jsonError(res, 404, "Endpoint tidak ditemukan.");
+});
+
+if (SERVE_SPA) {
+	app.use(
+		express.static(SPA_DIR, {
+			index: false,
+			etag: true,
+			setHeaders: (res, filePath) => {
+				// File ber-hash di /assets boleh di-cache selamanya.
+				if (filePath.includes(`${sep}assets${sep}`)) {
+					res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+					return;
+				}
+				// index.html & service worker jangan di-cache, biar update langsung kebaca.
+				if (/[\\/](index\.html|sw\.js|registerSW\.js|manifest\.webmanifest)$/.test(filePath)) {
+					res.setHeader("Cache-Control", "no-cache, must-revalidate");
+					return;
+				}
+				res.setHeader("Cache-Control", "public, max-age=3600");
+			},
+		}),
+	);
+
+	// SPA fallback: semua path selain /api dikembalikan ke index.html.
+	app.get(/^\/(?!api\/).*/, (_req, res) => {
+		res.setHeader("Cache-Control", "no-cache, must-revalidate");
+		res.sendFile(SPA_INDEX);
+	});
+
+	console.log(`[api] frontend disajikan dari ${SPA_DIR}`);
+}
 
 // Penangan error terakhir: jangan pernah kirim stack trace ke klien.
 app.use((error, _req, res, _next) => {
