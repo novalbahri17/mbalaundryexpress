@@ -21,5 +21,14 @@ VITE_SITE_NAME = 'MBA Laundry Express'
 # pnpm bisa melewati devDependencies (vite & typescript ada di sana) sehingga
 # `pnpm build` gagal. Set NODE_ENV=production dari dashboard Dokploy (runtime).
 
+# Install eksplisit: paksa NODE_ENV=development supaya devDependencies (vite,
+# typescript) PASTI terpasang, walaupun NODE_ENV=production dari dashboard
+# ikut bocor ke fase build.
+[phases.install]
+cmds = ['NODE_ENV=development pnpm install --frozen-lockfile']
+
+[phases.build]
+cmds = ['pnpm build']
+
 [start]
 cmd = 'node server/index.mjs'

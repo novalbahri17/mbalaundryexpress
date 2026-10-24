@@ -25,21 +25,19 @@
 		"noUnusedParameters": true,
 		"noFallthroughCasesInSwitch": true,
 		"useUnknownInCatchVariables": false,
-		"ignoreDeprecations": "5.0",
 
-		"baseUrl": ".",
 		"paths": {
-			"@/*": ["src/*"],
-			"@/api/*": ["src/api/*"],
-			"@/components/*": ["src/components/*"],
-			"@/hooks/*": ["src/hooks/*"],
-			"@/pages/*": ["src/pages/*"],
-			"@/router/*": ["src/router/*"],
-			"@/store/*": ["src/store/*"],
-			"@/types/*": ["src/types/*"],
-			"@/utils": ["src/utils/index.ts"],
-			"@/utils/*": ["src/utils/*"],
-			"#/*": ["src/types/*"]
+			"@/*": ["./src/*"],
+			"@/api/*": ["./src/api/*"],
+			"@/components/*": ["./src/components/*"],
+			"@/hooks/*": ["./src/hooks/*"],
+			"@/pages/*": ["./src/pages/*"],
+			"@/router/*": ["./src/router/*"],
+			"@/store/*": ["./src/store/*"],
+			"@/types/*": ["./src/types/*"],
+			"@/utils": ["./src/utils/index.ts"],
+			"@/utils/*": ["./src/utils/*"],
+			"#/*": ["./src/types/*"]
 		}
 	},
 	"include": [
