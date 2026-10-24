@@ -1,0 +1,57 @@
+# Abaikan folder besar dari Docker build context.
+#
+# Kenapa penting untuk Dokploy/Nixpacks:
+# Nixpacks memakai SELURUH folder project sebagai Docker build context. Kalau
+# `node_modules` lokal (1,3 GB / 158.000 file) ikut dikirim ke server build,
+# upload context + hashing jadi sangat lambat ("buffering" di Dokploy) dan
+# konteksnya bisa ditolak. `node_modules` TIDAK boleh dikirim — dependensi
+# selalu di-install ulang di dalam image lewat `pnpm install`.
+#
+# `.git` juga dibuang: Dokploy sudah melakukan git clone, jadi riwayat tidak
+# perlu dikirim dua kali.
+
+node_modules
+**/node_modules
+
+.git
+.gitignore
+
+# Output build & runtime lokal
+dist
+dist-ssr
+build
+stats.html
+uploads
+*.log
+
+# Folder kerja lokal
+anti-slop
+referensi
+.cursor
+.vscode
+
+# Database lokal / PocketBase (app sekarang pakai MySQL)
+pb_data
+pb_data_local
+pb_data_backup_*
+pocketbase
+pocketbase.exe
+*.pb
+pb_migrations
+
+# Env rahasia — jangan pernah masuk image
+.env
+.env.*
+!.env.example
+
+# Temp / debug
+temp_*
+*_err.txt
+*_out.txt
+*_output*.txt
+tsc-errors*.txt
+tsc_errors*.txt
+tsc_output*.txt
+build_log.txt
+trigger.txt
+ts_test.log
