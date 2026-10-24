@@ -21,6 +21,11 @@ export interface BrandingSettings {
 }
 
 const BRANDING_TEXT_KEYS = [
+	// logo_url & favicon_url WAJIB ada di sini. Tanpa keduanya, hasil upload
+	// hanya tersimpan di tabel branding_files dan `site_settings` tetap
+	// menunjuk file lama (atau file yang sudah dihapus).
+	"logo_url",
+	"favicon_url",
 	"logo_width",
 	"logo_height",
 	"text_mba_size",
@@ -60,18 +65,27 @@ interface BrandingFileRecord {
 	file: string;
 }
 
-// Semua file branding lama dihapus, lalu file baru diunggah.
+// Semua file branding lama (khusus type "logo") dihapus, lalu file baru diunggah.
+//
+// PENTING: file harus dikirim sebagai multipart/form-data. Kalau objek File
+// dimasukkan ke JSON, `JSON.stringify` mengubahnya menjadi teks biasa dan
+// server menyimpannya sebagai nama file — akibatnya logo gagal tampil.
+// Gambar artikel/gambar pengumuman TIDAK ikut terhapus karena type-nya beda.
 async function uploadBrandingFile(file: File): Promise<string> {
-	const existing = await pb.collection("branding_files").getFullList<{ id: string }>();
+	const existing = await pb.collection("branding_files").getFullList<{ id: string; type?: string }>();
 	for (const record of existing) {
+		if (record.type !== "logo") continue;
 		await pb.collection("branding_files").delete(record.id);
 	}
 
-	const record = await pb.collection("branding_files").create<BrandingFileRecord>({
-		type: "logo",
-		file,
-	});
+	const formData = new FormData();
+	formData.append("type", "logo");
+	formData.append("file", file);
 
+	const record = await pb.collection("branding_files").create<BrandingFileRecord>(formData);
+
+	// URL selalu berubah karena memakai id record baru, jadi browser tidak
+	// akan memakai logo lama dari cache.
 	return pb.files.getURL({ id: record.id, collectionName: "branding_files" }, record.file);
 }
 

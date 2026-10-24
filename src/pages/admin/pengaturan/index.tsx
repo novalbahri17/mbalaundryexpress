@@ -331,10 +331,13 @@ export default function PengaturanAdminPage() {
 			// Ignore error
 		}
 
-		const record = await pb.collection("branding_files").create<{ id: string; file: string }>({
-			type: "announcement",
-			file,
-		});
+		// File harus dikirim sebagai multipart/form-data; kalau dimasukkan ke
+		// JSON, objek File berubah jadi teks dan gambarnya gagal tampil.
+		const formData = new FormData();
+		formData.append("type", "announcement");
+		formData.append("file", file);
+
+		const record = await pb.collection("branding_files").create<{ id: string; file: string }>(formData);
 
 		return pb.files.getURL({ id: record.id, collectionName: "branding_files" }, record.file);
 	};

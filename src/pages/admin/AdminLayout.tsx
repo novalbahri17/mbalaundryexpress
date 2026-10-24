@@ -59,6 +59,9 @@ const menuEntries: AdminMenuEntry[] = [
 	{ key: "/admin/marketing", label: "Marketing", group: "group-konten" },
 	{ key: "/admin/kemitraan", label: "Kemitraan", group: "group-komunikasi" },
 	{ key: "/admin/pesan", label: "Pesan", group: "group-komunikasi" },
+	// Harus di atas "/admin/pengaturan" supaya pencocokan path terpanjang
+	// memilih menu Branding saat halaman /admin/pengaturan/branding dibuka.
+	{ key: "/admin/pengaturan/branding", label: "Logo & Branding", group: "group-komunikasi" },
 	{ key: "/admin/pengaturan", label: "Pengaturan", group: "group-komunikasi" },
 ];
 
@@ -219,6 +222,8 @@ function getMenuIcon(key: string): React.ReactNode {
 			return <MessageSquareMore size={18} />;
 		case "/admin/pengaturan":
 			return <Settings2 size={18} />;
+		case "/admin/pengaturan/branding":
+			return <Image size={18} />;
 		default:
 			return <SettingOutlined />;
 	}
@@ -234,7 +239,12 @@ export default function AdminLayout() {
 	const [mobileOpen, setMobileOpen] = useState(false);
 
 	const selected = useMemo(
-		() => menuEntries.find((item) => location.pathname.startsWith(item.key))?.key ?? dashboardMenuEntry.key,
+		() =>
+			// Cocokkan path terpanjang: /admin/pengaturan/branding harus memilih
+			// menu Branding, bukan menu Pengaturan.
+			[...menuEntries]
+				.filter((item) => location.pathname === item.key || location.pathname.startsWith(`${item.key}/`))
+				.sort((a, b) => b.key.length - a.key.length)[0]?.key ?? dashboardMenuEntry.key,
 		[location.pathname],
 	);
 

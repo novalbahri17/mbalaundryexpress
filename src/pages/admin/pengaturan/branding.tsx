@@ -22,6 +22,9 @@ export default function BrandingPage() {
 	const [previewVisible, setPreviewVisible] = useState(false);
 	const [logoFile, setLogoFile] = useState<File | null>(null);
 	const [logoPreview, setLogoPreview] = useState<string>("");
+	// Daftar file yang dikontrol sendiri: setelah simpan berhasil, daftar ini
+	// dikosongkan supaya nama file lama tidak tertinggal di kotak upload.
+	const [logoFileList, setLogoFileList] = useState<UploadFile[]>([]);
 	const [isSaving, setIsSaving] = useState(false);
 
 	useEffect(() => {
@@ -48,6 +51,7 @@ export default function BrandingPage() {
 	}, [branding, form]);
 
 	const handleLogoChange = (info: { fileList: UploadFile[] }) => {
+		setLogoFileList(info.fileList);
 		const file = info.fileList[0]?.originFileObj;
 		if (file) {
 			setLogoFile(file);
@@ -56,6 +60,10 @@ export default function BrandingPage() {
 				setLogoPreview(e.target?.result as string);
 			};
 			reader.readAsDataURL(file);
+		} else {
+			// File dibatalkan/dihapus dari kotak upload.
+			setLogoFile(null);
+			setLogoPreview(branding?.logo_url ?? "");
 		}
 	};
 
@@ -63,11 +71,16 @@ export default function BrandingPage() {
 		try {
 			setIsSaving(true);
 			const values = await form.validateFields();
+			// `useUpdateBranding` membaca file dari
+			// `logo_file.fileList[0].originFileObj`. Kalau `File` dikirim
+			// langsung, tidak ada `.fileList` sehingga upload dilewati diam-diam
+			// dan logo tidak pernah berubah.
 			await updateBranding.mutateAsync({
 				...values,
-				logo_file: logoFile || undefined,
+				logo_file: logoFile ? { fileList: [{ originFileObj: logoFile }] } : undefined,
 			});
 			setLogoFile(null);
+			setLogoFileList([]);
 			await refetch();
 			setTimeout(() => {
 				updateFavicon();
@@ -127,6 +140,7 @@ export default function BrandingPage() {
 										accept="image/png,image/jpeg,image/svg+xml,image/webp"
 										beforeUpload={() => false}
 										onChange={handleLogoChange}
+										fileList={logoFileList}
 										maxCount={1}
 										showUploadList={true}
 									>
