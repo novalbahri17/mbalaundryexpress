@@ -888,6 +888,45 @@ const upload = multer({
 	},
 });
 
+// Kebijakan CSP untuk HTML aplikasi. Respons API tetap memakai STRICT_CSP.
+//
+// Catatan tiap directive:
+// - script-src 'unsafe-inline': index.html punya satu <script> inline
+//   (menentukan favicon dari localStorage). Bundle sendiri TIDAK memakai eval,
+//   jadi eval tetap diblokir.
+// - style-src 'unsafe-inline': React/Ant Design menulis style inline.
+// - connect-src: fetch ke API wilayah Indonesia (filter cabang) + Google
+//   Analytics kalau GOOGLE_ANALYTICS_ID diisi.
+// - img-src https:: gambar cabang & blog boleh dari URL mana pun yang diisi
+//   admin lewat /admin/cabang.
+// - frame-src: peta cabang dirender sebagai <iframe> Google Maps.
+const WILAYAH_API_ORIGIN = "https://novalbahri17.github.io";
+const SPA_CSP = [
+	"default-src 'self'",
+	"script-src 'self' 'unsafe-inline'",
+	"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+	"font-src 'self' data: https://fonts.gstatic.com",
+	"img-src 'self' data: blob: https:",
+	[
+		"connect-src 'self'",
+		WILAYAH_API_ORIGIN,
+		"https://www.google-analytics.com",
+		"https://region1.google-analytics.com",
+	].join(" "),
+	"frame-src 'self' https://www.google.com https://maps.google.com",
+	"worker-src 'self'",
+	"manifest-src 'self'",
+	"media-src 'self' https:",
+	"object-src 'none'",
+	"base-uri 'self'",
+	"form-action 'self'",
+	"frame-ancestors 'none'",
+	"upgrade-insecure-requests",
+].join("; ");
+
+// CSP ketat untuk respons non-HTML (API, upload, file).
+const STRICT_CSP = "default-src 'none'; img-src 'self' data:; frame-ancestors 'none'";
+
 // ---------------------------------------------------------------------------
 // App
 // ---------------------------------------------------------------------------
@@ -898,13 +937,15 @@ app.disable("x-powered-by");
 app.set("trust proxy", 1);
 
 app.use((req, res, next) => {
-	// Header keamanan dasar untuk semua respons API.
+	// Header keamanan dasar untuk semua respons.
 	res.setHeader("X-Content-Type-Options", "nosniff");
 	res.setHeader("X-Frame-Options", "DENY");
 	res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
 	res.setHeader("Cross-Origin-Resource-Policy", "same-origin");
 	res.setHeader("Permissions-Policy", "geolocation=(), microphone=(), camera=(), payment=()");
-	res.setHeader("Content-Security-Policy", "default-src 'none'; img-src 'self' data:; frame-ancestors 'none'");
+	// HTML aplikasi butuh CSP lebih longgar daripada API.
+	const isAppAsset = !req.path.startsWith("/api/") && !req.path.startsWith("/uploads/");
+	res.setHeader("Content-Security-Policy", isAppAsset ? SPA_CSP : STRICT_CSP);
 	if (IS_PRODUCTION) {
 		res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
 	}
@@ -1289,17 +1330,24 @@ app.use("/api", (_req, res) => {
 });
 
 if (SERVE_SPA) {
+	// File ber-hash di /assets aman di-cache selamanya.
+	app.use(
+		"/assets",
+		express.static(join(SPA_DIR, "assets"), {
+			index: false,
+			etag: true,
+			immutable: true,
+			maxAge: "365d",
+		}),
+	);
+
 	app.use(
 		express.static(SPA_DIR, {
 			index: false,
 			etag: true,
 			setHeaders: (res, filePath) => {
-				// File ber-hash di /assets boleh di-cache selamanya.
-				if (filePath.includes(`${sep}assets${sep}`)) {
-					res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
-					return;
-				}
-				// index.html & service worker jangan di-cache, biar update langsung kebaca.
+				// index.html, service worker, dan manifest jangan di-cache,
+				// biar update hasil deploy langsung kebaca.
 				if (/[\\/](index\.html|sw\.js|registerSW\.js|manifest\.webmanifest)$/.test(filePath)) {
 					res.setHeader("Cache-Control", "no-cache, must-revalidate");
 					return;
