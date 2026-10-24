@@ -25,7 +25,7 @@
 		"noUnusedParameters": true,
 		"noFallthroughCasesInSwitch": true,
 		"useUnknownInCatchVariables": false,
-		"ignoreDeprecations": "6.0",
+		"ignoreDeprecations": "5.0",
 
 		"baseUrl": ".",
 		"paths": {
@@ -54,7 +54,7 @@
 		"src/components/admin/**/*",
 		"src/components/ui/**/*",
 		"src/api/*.api.ts",
-		"src/api/pocketbase.ts",
+		"src/api/client.ts",
 		"src/hooks/**/*",
 		"src/store/**/*",
 		"src/types/database.types.ts",

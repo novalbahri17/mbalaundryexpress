@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { usePublicText } from "@/hooks/usePublicText";
 
 type CountdownTimerProps = {
 	endDate: string;
@@ -28,22 +29,27 @@ const getTime = (endDate: string): TimeState => {
 };
 
 export function CountdownTimer({ endDate, className }: CountdownTimerProps) {
+	const text = usePublicText();
 	const [state, setState] = useState<TimeState>(() => getTime(endDate));
 
 	useEffect(() => {
 		setState(getTime(endDate));
-		const id = window.setInterval(() => {
+		const timerId = window.setInterval(() => {
 			setState(getTime(endDate));
 		}, 1000);
-		return () => window.clearInterval(id);
+		return () => window.clearInterval(timerId);
 	}, [endDate]);
 
-	const text = useMemo(() => {
-		if (state.isEnded) return "Promo berakhir";
-		return `${state.days} hari ${state.hours} jam ${state.minutes} menit`;
-	}, [state]);
+	const label = useMemo(() => {
+		if (state.isEnded) return text.countdown.ended;
+		return `${state.days} ${text.countdown.days} ${state.hours} ${text.countdown.hours} ${state.minutes} ${text.countdown.minutes}`;
+	}, [state, text.countdown]);
 
 	const urgent = !state.isEnded && state.days < 1;
 
-	return <p className={className ?? (urgent ? "text-red-500" : "text-slate-500")}>Countdown: {text}</p>;
+	return (
+		<p className={className ?? (urgent ? "text-[var(--danger)]" : "text-[var(--text-muted)]")}>
+			{text.countdown.prefix} {label}
+		</p>
+	);
 }

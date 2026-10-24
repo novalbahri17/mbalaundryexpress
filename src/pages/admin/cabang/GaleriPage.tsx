@@ -1,12 +1,13 @@
-import { DeleteOutlined, EditOutlined, PlusOutlined, InboxOutlined } from "@ant-design/icons";
-import { Button, Form, Input, Modal, Popconfirm, Space, Table, message, Upload } from "antd";
+import { DeleteOutlined, EditOutlined, InboxOutlined, PlusOutlined } from "@ant-design/icons";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Button, Form, Input, Modal, message, Popconfirm, Space, Table, Upload } from "antd";
 import type { UploadFile } from "antd/es/upload/interface";
 import { useState } from "react";
 import { useParams } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { getBranchGallery, saveBranchGallery, deleteBranchGallery } from "@/api/branches.api";
+import { deleteBranchGallery, getBranchGallery, saveBranchGallery } from "@/api/branches.api";
 import { BranchContextHeader } from "@/components/admin/BranchContextHeader";
 import { MetronicPage } from "@/components/admin/MetronicPage";
+import { TableEmptyState, TableErrorState } from "@/components/admin/QueryState";
 import type { BranchGallery } from "@/types/database.types";
 import { resolveImageUrl } from "@/utils/format";
 
@@ -22,7 +23,13 @@ export default function CabangGaleriPage() {
 	const [fileList, setFileList] = useState<UploadFile[]>([]);
 	const queryClient = useQueryClient();
 
-	const { data = [], isLoading } = useQuery({
+	const {
+		data = [],
+		isLoading,
+		isError,
+		error,
+		refetch,
+	} = useQuery({
 		queryKey: ["branch-gallery", id],
 		queryFn: () => getBranchGallery(id),
 		enabled: Boolean(id),
@@ -147,7 +154,24 @@ export default function CabangGaleriPage() {
 
 			<div className="card mt-4">
 				<div className="table-container">
-					<Table rowKey="id" loading={isLoading} dataSource={data} columns={columns} />
+					{isError ? (
+						<TableErrorState title="Gagal memuat galeri cabang" error={error} onRetry={() => void refetch()} />
+					) : (
+						<Table
+							rowKey="id"
+							loading={isLoading}
+							dataSource={data}
+							columns={columns}
+							locale={{
+								emptyText: (
+									<TableEmptyState
+										title="Belum ada foto galeri."
+										hint="Unggah foto suasana cabang supaya pelanggan tahu tempatnya."
+									/>
+								),
+							}}
+						/>
+					)}
 				</div>
 			</div>
 

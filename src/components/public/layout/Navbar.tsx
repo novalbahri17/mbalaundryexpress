@@ -8,6 +8,7 @@ import { DynamicLogo } from "@/components/public/layout/DynamicLogo";
 import { useLocaleStore } from "@/store/localeStore";
 import { useThemeStore } from "@/store/themeStore";
 import { usePageContentMap } from "@/hooks/usePageContent";
+import { usePublicText } from "@/hooks/usePublicText";
 import { toWhatsappLink } from "@/utils/format";
 import { cn } from "@/utils/index";
 
@@ -17,42 +18,8 @@ type NavbarProps = {
 
 type NavItem = {
 	to: string;
-	label: { id: string; en: string };
+	label: string;
 	end?: boolean;
-};
-
-type NavbarLocaleText = {
-	chooseMenu: string;
-	chatWa: string;
-	chatWaShort: string;
-	openMenu: string;
-	closeMenu: string;
-	lightMode: string;
-	darkMode: string;
-	moreMenu: string;
-};
-
-const localeText: Record<"id" | "en", NavbarLocaleText> = {
-	id: {
-		chooseMenu: "Pilih menu layanan MBA Laundry Express",
-		chatWa: "Chat WhatsApp",
-		chatWaShort: "Chat WA",
-		openMenu: "Buka menu",
-		closeMenu: "Tutup menu",
-		lightMode: "Mode Terang",
-		darkMode: "Mode Gelap",
-		moreMenu: "Lainnya",
-	},
-	en: {
-		chooseMenu: "Choose MBA Laundry Express service menu",
-		chatWa: "WhatsApp Chat",
-		chatWaShort: "Chat WA",
-		openMenu: "Open menu",
-		closeMenu: "Close menu",
-		lightMode: "Light Mode",
-		darkMode: "Dark Mode",
-		moreMenu: "More",
-	},
 };
 
 export function Navbar({ whatsapp }: NavbarProps) {
@@ -68,46 +35,36 @@ export function Navbar({ whatsapp }: NavbarProps) {
 	const mode = useThemeStore((state) => state.mode);
 	const toggleMode = useThemeStore((state) => state.toggle);
 
-	const text = localeText[locale];
+	const text = usePublicText();
 	const isDark = mode === "dark";
 
 	const moreRef = useRef<HTMLDivElement | null>(null);
 
 	const { data: pageContents = {} } = usePageContentMap();
 
-	const activePrimaryItems = useMemo(() => {
+	const activePrimaryItems = useMemo<NavItem[]>(() => {
 		return [
-			{ to: "/", label: { id: "Beranda", en: "Home" }, end: true },
-			...(pageContents.module_cabang !== "false" ? [{ to: "/cabang", label: { id: "Cabang", en: "Branches" } }] : []),
-			...(pageContents.module_promo !== "false" ? [{ to: "/promo", label: { id: "Promo", en: "Promotions" } }] : []),
-			...(pageContents.module_galeri !== "false" ? [{ to: "/galeri", label: { id: "Galeri", en: "Gallery" } }] : []),
-			...(pageContents.module_harga !== "false" ? [{ to: "/harga", label: { id: "Harga", en: "Pricing" } }] : []),
+			{ to: "/", label: text.nav.home, end: true },
+			...(pageContents.module_cabang !== "false" ? [{ to: "/cabang", label: text.nav.branches }] : []),
+			...(pageContents.module_promo !== "false" ? [{ to: "/promo", label: text.nav.promotions }] : []),
+			...(pageContents.module_galeri !== "false" ? [{ to: "/galeri", label: text.nav.gallery }] : []),
+			...(pageContents.module_harga !== "false" ? [{ to: "/harga", label: text.nav.pricing }] : []),
 		];
-	}, [pageContents]);
+	}, [pageContents, text.nav]);
 
-	const activeSecondaryItems = useMemo(() => {
+	const activeSecondaryItems = useMemo<NavItem[]>(() => {
 		return [
-			...(pageContents.module_carapakai !== "false"
-				? [{ to: "/cara-pakai", label: { id: "Cara Pakai", en: "How It Works" } }]
-				: []),
-			...(pageContents.module_blog !== "false" ? [{ to: "/blog", label: { id: "Blog", en: "Blog" } }] : []),
-			...(pageContents.module_loker !== "false" ? [{ to: "/karir", label: { id: "Loker", en: "Careers" } }] : []),
-			...(pageContents.module_kemitraan !== "false"
-				? [{ to: "/kemitraan", label: { id: "Kemitraan", en: "Partnership" } }]
-				: []),
-			...(pageContents.module_kontak !== "false" ? [{ to: "/kontak", label: { id: "Kontak", en: "Contact" } }] : []),
+			...(pageContents.module_carapakai !== "false" ? [{ to: "/cara-pakai", label: text.nav.howItWorks }] : []),
+			...(pageContents.module_blog !== "false" ? [{ to: "/blog", label: text.nav.blog }] : []),
+			...(pageContents.module_loker !== "false" ? [{ to: "/karir", label: text.nav.careers }] : []),
+			...(pageContents.module_kemitraan !== "false" ? [{ to: "/kemitraan", label: text.nav.partnership }] : []),
+			...(pageContents.module_kontak !== "false" ? [{ to: "/kontak", label: text.nav.contact }] : []),
 		];
-	}, [pageContents]);
+	}, [pageContents, text.nav]);
 
 	const ctaLink = useMemo(
-		() =>
-			toWhatsappLink(
-				whatsapp ?? "6281234567890",
-				locale === "id"
-					? "Halo MBA Laundry, saya ingin order laundry."
-					: "Hi MBA Laundry, I would like to order laundry service.",
-			),
-		[locale, whatsapp],
+		() => toWhatsappLink(whatsapp ?? "6281234567890", text.nav.waMessage),
+		[whatsapp, text.nav.waMessage],
 	);
 
 	const secondaryActive = useMemo(
@@ -151,8 +108,8 @@ export function Navbar({ whatsapp }: NavbarProps) {
 		cn(
 			"relative inline-flex min-h-[42px] items-center rounded-lg px-3 py-2 text-[13px] font-semibold transition",
 			isActive
-				? "bg-gradient-primary text-white shadow-ruby-glow"
-				: "text-neutral-700 hover:bg-white/80 hover:text-ruby-700 dark:text-neutral-200 dark:hover:bg-neutral-900/70 dark:hover:text-ruby-300",
+				? "bg-ruby-700 text-white hover:bg-ruby-800"
+				: "text-neutral-700 hover:bg-neutral-100 hover:text-ruby-700 dark:text-neutral-200 dark:hover:bg-neutral-800 dark:hover:text-ruby-300",
 		);
 
 	const mobileMenu = (
@@ -181,8 +138,8 @@ export function Navbar({ whatsapp }: NavbarProps) {
 							<button
 								type="button"
 								onClick={() => setMobileOpen(false)}
-								className="flex h-10 w-10 items-center justify-center rounded-full text-neutral-500 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
-								aria-label={text.closeMenu}
+								className="flex h-11 w-11 items-center justify-center rounded-full text-neutral-500 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:bg-neutral-800"
+								aria-label={text.nav.closeMenu}
 							>
 								<X className="h-5 w-5" />
 							</button>
@@ -193,18 +150,20 @@ export function Navbar({ whatsapp }: NavbarProps) {
 							<button
 								type="button"
 								onClick={toggleMode}
-								aria-label={isDark ? text.lightMode : text.darkMode}
-								className="flex h-10 w-10 items-center justify-center rounded-xl border border-neutral-200 bg-neutral-50 text-neutral-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200"
+								aria-label={isDark ? text.nav.lightMode : text.nav.darkMode}
+								className="flex h-11 w-11 items-center justify-center rounded-xl border border-neutral-200 bg-neutral-50 text-neutral-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200"
 							>
 								{isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
 							</button>
-							<div className="flex h-10 items-center rounded-xl border border-neutral-200 bg-neutral-50 p-1 dark:border-neutral-700 dark:bg-neutral-900">
+							<div className="flex h-11 items-center rounded-xl border border-neutral-200 bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900">
 								<button
 									type="button"
 									onClick={() => setLocale("id")}
 									className={cn(
-										"h-8 rounded-lg px-3 text-xs font-bold",
-										locale === "id" ? "bg-ruby-500 text-white" : "text-neutral-600 dark:text-neutral-300",
+										"h-full min-w-[42px] rounded-lg px-2 text-xs font-bold",
+										locale === "id"
+											? "bg-[var(--brand)] text-[var(--brand-text)]"
+											: "text-neutral-600 dark:text-neutral-300",
 									)}
 								>
 									ID
@@ -213,8 +172,10 @@ export function Navbar({ whatsapp }: NavbarProps) {
 									type="button"
 									onClick={() => setLocale("en")}
 									className={cn(
-										"h-8 rounded-lg px-3 text-xs font-bold",
-										locale === "en" ? "bg-ruby-500 text-white" : "text-neutral-600 dark:text-neutral-300",
+										"h-full min-w-[42px] rounded-lg px-2 text-xs font-bold",
+										locale === "en"
+											? "bg-[var(--brand)] text-[var(--brand-text)]"
+											: "text-neutral-600 dark:text-neutral-300",
 									)}
 								>
 									EN
@@ -238,7 +199,7 @@ export function Navbar({ whatsapp }: NavbarProps) {
 										)
 									}
 								>
-									<span>{item.label[locale]}</span>
+									<span>{item.label}</span>
 									<ArrowUpRight className="h-4 w-4 opacity-0 transition-opacity group-hover:opacity-100" />
 								</NavLink>
 							))}
@@ -253,7 +214,7 @@ export function Navbar({ whatsapp }: NavbarProps) {
 								className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-ruby-500 px-4 text-sm font-semibold text-white shadow-lg shadow-ruby-500/25 transition hover:bg-ruby-600"
 							>
 								<MessageCircle className="h-4 w-4" />
-								{text.chatWa}
+								{text.nav.chatWa}
 							</a>
 						</div>
 					</motion.aside>
@@ -270,7 +231,7 @@ export function Navbar({ whatsapp }: NavbarProps) {
 						? "border-transparent bg-transparent"
 						: isHome
 							? "border-transparent bg-transparent"
-							: "border-neutral-200/90 bg-white/70 backdrop-blur-glass dark:border-neutral-800/80 dark:bg-neutral-950/70"
+							: "border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-950"
 				}`}
 			>
 				<nav className="section-wrap flex h-[88px] items-center justify-between">
@@ -278,17 +239,17 @@ export function Navbar({ whatsapp }: NavbarProps) {
 						className={cn(
 							"relative flex h-[64px] w-full items-center justify-between rounded-2xl border px-3 lg:px-4",
 							scrolled
-								? "border-white/55 bg-white/78 shadow-xl backdrop-blur-glass dark:border-white/20 dark:bg-neutral-950/78"
-								: "border-white/35 bg-white/60 backdrop-blur-glass dark:border-white/10 dark:bg-neutral-950/55",
+								? "border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-950"
+								: "border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-950",
 						)}
 					>
-						<span className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-ruby-400/60 to-transparent" />
+						<span className="pointer-events-none absolute inset-x-6 top-0 h-px bg-neutral-200 dark:bg-neutral-800" />
 						<DynamicLogo />
 
 						<div className="hidden items-center gap-1 xl:flex">
 							{activePrimaryItems.map((item) => (
 								<NavLink key={item.to} to={item.to} end={item.end} className={navLinkClass}>
-									{item.label[locale]}
+									{item.label}
 								</NavLink>
 							))}
 
@@ -299,11 +260,11 @@ export function Navbar({ whatsapp }: NavbarProps) {
 									className={cn(
 										"inline-flex min-h-[42px] items-center gap-1 rounded-lg px-3 py-2 text-[13px] font-semibold transition",
 										secondaryActive || moreOpen
-											? "bg-gradient-primary text-white shadow-ruby-glow"
-											: "text-neutral-700 hover:bg-white/80 hover:text-ruby-700 dark:text-neutral-200 dark:hover:bg-neutral-900/70 dark:hover:text-ruby-300",
+											? "bg-ruby-700 text-white"
+											: "text-neutral-700 hover:bg-neutral-100 hover:text-ruby-700 dark:text-neutral-200 dark:hover:bg-neutral-800 dark:hover:text-ruby-300",
 									)}
 								>
-									{text.moreMenu}
+									{text.nav.moreMenu}
 									<ChevronDown className={cn("h-4 w-4 transition", moreOpen && "rotate-180")} />
 								</button>
 
@@ -313,7 +274,7 @@ export function Navbar({ whatsapp }: NavbarProps) {
 											initial={{ opacity: 0, y: 8, scale: 0.98 }}
 											animate={{ opacity: 1, y: 0, scale: 1 }}
 											exit={{ opacity: 0, y: 8, scale: 0.98 }}
-											className="absolute right-0 top-[115%] z-[72] min-w-[220px] rounded-2xl border border-white/40 bg-white/95 p-2 shadow-xl backdrop-blur-glass dark:border-white/15 dark:bg-neutral-950/90"
+											className="absolute right-0 top-[115%] z-[72] min-w-[220px] rounded-2xl border border-neutral-200 bg-white p-2 shadow-lg dark:border-neutral-800 dark:bg-neutral-950"
 										>
 											{activeSecondaryItems.map((item) => (
 												<NavLink
@@ -323,12 +284,12 @@ export function Navbar({ whatsapp }: NavbarProps) {
 														cn(
 															"flex min-h-[42px] items-center justify-between rounded-lg px-3 text-sm font-semibold",
 															isActive
-																? "bg-gradient-primary text-white"
+																? "bg-ruby-700 text-white"
 																: "text-neutral-700 hover:bg-neutral-100 dark:text-neutral-200 dark:hover:bg-neutral-800",
 														)
 													}
 												>
-													{item.label[locale]}
+													{item.label}
 													<ArrowUpRight className="h-4 w-4 opacity-80" />
 												</NavLink>
 											))}
@@ -339,13 +300,15 @@ export function Navbar({ whatsapp }: NavbarProps) {
 						</div>
 
 						<div className="hidden items-center gap-2 lg:flex">
-							<div className="inline-flex h-10 min-w-[84px] items-center rounded-xl border border-neutral-300 bg-white/80 p-1 dark:border-neutral-700 dark:bg-neutral-900/80">
+							<div className="inline-flex h-12 min-w-[92px] items-center rounded-xl border border-neutral-300 bg-white p-0.5 dark:border-neutral-700 dark:bg-neutral-900">
 								<button
 									type="button"
 									onClick={() => setLocale("id")}
 									className={cn(
-										"h-7 min-w-[34px] rounded-md px-2 text-[11px] font-bold",
-										locale === "id" ? "bg-gradient-primary text-white" : "text-neutral-700 dark:text-neutral-200",
+										"h-full min-w-[42px] rounded-lg px-2 text-xs font-bold",
+										locale === "id"
+											? "bg-[var(--brand)] text-[var(--brand-text)]"
+											: "text-neutral-700 dark:text-neutral-200",
 									)}
 								>
 									ID
@@ -354,8 +317,10 @@ export function Navbar({ whatsapp }: NavbarProps) {
 									type="button"
 									onClick={() => setLocale("en")}
 									className={cn(
-										"h-7 min-w-[34px] rounded-md px-2 text-[11px] font-bold",
-										locale === "en" ? "bg-gradient-primary text-white" : "text-neutral-700 dark:text-neutral-200",
+										"h-full min-w-[42px] rounded-lg px-2 text-xs font-bold",
+										locale === "en"
+											? "bg-[var(--brand)] text-[var(--brand-text)]"
+											: "text-neutral-700 dark:text-neutral-200",
 									)}
 								>
 									EN
@@ -365,8 +330,8 @@ export function Navbar({ whatsapp }: NavbarProps) {
 							<button
 								type="button"
 								onClick={toggleMode}
-								aria-label={isDark ? text.lightMode : text.darkMode}
-								className="inline-flex h-10 min-w-[44px] items-center justify-center rounded-xl border border-neutral-300 bg-white/80 p-2 text-neutral-700 dark:border-neutral-700 dark:bg-neutral-900/80 dark:text-neutral-200"
+								aria-label={isDark ? text.nav.lightMode : text.nav.darkMode}
+								className="inline-flex h-11 min-w-[44px] items-center justify-center rounded-xl border border-neutral-300 bg-white p-2 text-neutral-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200"
 							>
 								{isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
 							</button>
@@ -375,10 +340,10 @@ export function Navbar({ whatsapp }: NavbarProps) {
 								href={ctaLink}
 								target="_blank"
 								rel="noopener noreferrer"
-								className="inline-flex h-10 min-w-[44px] items-center justify-center gap-2 rounded-xl bg-gradient-primary px-4 text-sm font-semibold text-white shadow-ruby-glow transition hover:scale-[1.02] active:scale-[0.98]"
+								className="inline-flex h-11 min-w-[44px] items-center justify-center gap-2 rounded-xl bg-ruby-700 px-4 text-sm font-semibold text-white transition-colors hover:bg-ruby-800"
 							>
 								<MessageCircle className="h-4 w-4" />
-								{text.chatWaShort}
+								{text.nav.chatWaShort}
 							</a>
 						</div>
 
@@ -386,17 +351,17 @@ export function Navbar({ whatsapp }: NavbarProps) {
 							<button
 								type="button"
 								onClick={toggleMode}
-								aria-label={isDark ? text.lightMode : text.darkMode}
-								className="inline-flex h-10 min-w-[44px] items-center justify-center rounded-xl border border-neutral-300 bg-white/85 p-2 text-neutral-700 dark:border-neutral-700 dark:bg-neutral-900/85 dark:text-neutral-200"
+								aria-label={isDark ? text.nav.lightMode : text.nav.darkMode}
+								className="inline-flex h-11 min-w-[44px] items-center justify-center rounded-xl border border-neutral-300 bg-white p-2 text-neutral-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200"
 							>
 								{isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
 							</button>
 							<button
 								type="button"
-								aria-label={text.openMenu}
+								aria-label={text.nav.openMenu}
 								aria-expanded={mobileOpen}
 								onClick={() => setMobileOpen((state) => !state)}
-								className="inline-flex h-10 min-w-[44px] items-center justify-center rounded-xl border border-neutral-300 bg-white/85 p-2 dark:border-neutral-700 dark:bg-neutral-900/85"
+								className="inline-flex h-11 min-w-[44px] items-center justify-center rounded-xl border border-neutral-300 bg-white p-2 dark:border-neutral-700 dark:bg-neutral-900"
 							>
 								<span className="relative block h-4 w-5">
 									<motion.span

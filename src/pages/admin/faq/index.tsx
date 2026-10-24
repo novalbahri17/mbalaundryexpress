@@ -1,12 +1,13 @@
 import { DeleteOutlined, EditOutlined, PlusOutlined, QuestionCircleOutlined } from "@ant-design/icons";
-import { Button, Form, Input, Modal, Popconfirm, Select, Space, Switch, Table, message } from "antd";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Button, Form, Input, Modal, message, Popconfirm, Select, Space, Switch, Table } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFaq, deleteFaq, getFaqs, updateFaq } from "@/api/faqs.api";
 import { MetronicPage } from "@/components/admin/MetronicPage";
-import type { Faq } from "@/types/database.types";
+import { TableEmptyState, TableErrorState } from "@/components/admin/QueryState";
 import { useThemeStore } from "@/store/themeStore";
+import type { Faq } from "@/types/database.types";
 
 const categories = ["harga", "mesin", "waktu", "pembayaran", "keamanan", "barang-hilang", "umum"];
 
@@ -19,7 +20,13 @@ export default function FaqAdminPage() {
 
 	const isDark = mode === "dark";
 
-	const { data: faqs = [], isLoading } = useQuery({
+	const {
+		data: faqs = [],
+		isLoading,
+		isError,
+		error,
+		refetch,
+	} = useQuery({
 		queryKey: ["admin-faqs"],
 		queryFn: () => getFaqs(),
 	});
@@ -55,7 +62,11 @@ export default function FaqAdminPage() {
 		{
 			title: "Pertanyaan",
 			dataIndex: "question",
-			render: (text: string) => <span className="font-medium" style={{ color: isDark ? "#f8fafc" : "#111827" }}>{text}</span>,
+			render: (text: string) => (
+				<span className="font-medium" style={{ color: isDark ? "#f8fafc" : "#111827" }}>
+					{text}
+				</span>
+			),
 		},
 		{ title: "Kategori", dataIndex: "category" },
 		{ title: "Urutan", dataIndex: "sort_order", width: 80 },
@@ -64,9 +75,7 @@ export default function FaqAdminPage() {
 			dataIndex: "is_active",
 			width: 100,
 			render: (value: boolean) => (
-				<span className={`badge ${value ? "badge-success" : "badge-danger"}`}>
-					{value ? "Aktif" : "Nonaktif"}
-				</span>
+				<span className={`badge ${value ? "badge-success" : "badge-danger"}`}>{value ? "Aktif" : "Nonaktif"}</span>
 			),
 		},
 		{
@@ -110,13 +119,25 @@ export default function FaqAdminPage() {
 		>
 			<div className="card">
 				<div className="table-container">
-					<Table
-						rowKey="id"
-						loading={isLoading}
-						columns={columns}
-						dataSource={faqs}
-						pagination={{ pageSize: 10, showSizeChanger: false }}
-					/>
+					{isError ? (
+						<TableErrorState title="Gagal memuat FAQ" error={error} onRetry={() => void refetch()} />
+					) : (
+						<Table
+							rowKey="id"
+							loading={isLoading}
+							columns={columns}
+							dataSource={faqs}
+							pagination={{ pageSize: 10, showSizeChanger: false }}
+							locale={{
+								emptyText: (
+									<TableEmptyState
+										title="Belum ada FAQ."
+										hint="Tulis pertanyaan yang paling sering ditanyakan pelanggan."
+									/>
+								),
+							}}
+						/>
+					)}
 				</div>
 			</div>
 
@@ -135,32 +156,24 @@ export default function FaqAdminPage() {
 				className="metronic-modal"
 			>
 				<Form form={form} layout="vertical">
-					<Form.Item
-						label="Pertanyaan"
-						name="question"
-						rules={[{ required: true, message: "Pertanyaan wajib diisi" }]}
-					>
+					<Form.Item label="Pertanyaan" name="question" rules={[{ required: true, message: "Pertanyaan wajib diisi" }]}>
 						<Input.TextArea rows={2} />
 					</Form.Item>
 
-					<Form.Item
-						label="Jawaban"
-						name="answer"
-						rules={[{ required: true, message: "Jawaban wajib diisi" }]}
-					>
+					<Form.Item label="Jawaban" name="answer" rules={[{ required: true, message: "Jawaban wajib diisi" }]}>
 						<Input.TextArea rows={4} />
 					</Form.Item>
 
 					<div className="form-grid">
-						<Form.Item
-							label="Kategori"
-							name="category"
-							rules={[{ required: true, message: "Kategori wajib diisi" }]}
-						>
+						<Form.Item label="Kategori" name="category" rules={[{ required: true, message: "Kategori wajib diisi" }]}>
 							<Select options={categories.map((c) => ({ value: c, label: c }))} />
 						</Form.Item>
 
-						<Form.Item label="Urutan" name="sort_order">
+						<Form.Item
+							label="Urutan"
+							name="sort_order"
+							tooltip="Urutan tampil FAQ di halaman publik. Angka kecil tampil lebih dulu."
+						>
 							<Input type="number" className="form-input" />
 						</Form.Item>
 					</div>

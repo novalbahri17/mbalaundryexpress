@@ -83,13 +83,13 @@ export default defineConfig(({ mode }) => {
 			host: true,
 			port: 3000,
 			proxy: {
-				"/pb-api": {
-					target: env.POCKETBASE_URL || "http://43.156.144.127:8091",
+				// API server kita sendiri (Express + MySQL).
+				"/api": {
+					target: env.VITE_API_PROXY_TARGET || "http://127.0.0.1:3002",
 					changeOrigin: true,
 					secure: false,
-					rewrite: (path) => path.replace(/^\/pb-api/, ""),
 				},
-				"/api": {
+				"/uploads": {
 					target: env.VITE_API_PROXY_TARGET || "http://127.0.0.1:3002",
 					changeOrigin: true,
 					secure: false,

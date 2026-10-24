@@ -1,4 +1,5 @@
 import { DeleteOutlined, EyeOutlined, PlusOutlined } from "@ant-design/icons";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	Button,
 	DatePicker,
@@ -6,24 +7,24 @@ import {
 	Input,
 	InputNumber,
 	Modal,
+	message,
 	Radio,
 	Select,
 	Space,
 	Switch,
 	Table,
 	Tag,
-	message,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import dayjs from "dayjs";
 import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createPromo, deletePromo, getPromoBranches, getPromos, setPromoBranches, updatePromo } from "@/api/promos.api";
-import type { Promo } from "@/types/database.types";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { MetronicPage } from "@/components/admin/MetronicPage";
+import { TableEmptyState, TableErrorState } from "@/components/admin/QueryState";
 import { RichTextEditor } from "@/components/admin/RichTextEditor";
 import { useBranches } from "@/hooks/useBranches";
+import type { Promo } from "@/types/database.types";
 import { slugify } from "@/utils/slug";
 
 export default function PromoAdminPage() {
@@ -36,7 +37,13 @@ export default function PromoAdminPage() {
 	const queryClient = useQueryClient();
 	const { data: branches = [] } = useBranches({ activeOnly: false });
 
-	const { data: promos = [], isLoading } = useQuery({
+	const {
+		data: promos = [],
+		isLoading,
+		isError,
+		error,
+		refetch,
+	} = useQuery({
 		queryKey: ["admin-promos"],
 		queryFn: async () => {
 			const res = await getPromos({ perPage: 500 });
@@ -52,7 +59,8 @@ export default function PromoAdminPage() {
 		form.setFieldsValue({
 			...record,
 			start_date: dayjs(record.start_date),
-			end_date: dayjs(record.end_date),
+			end_date: record.end_date ? dayjs(record.end_date) : undefined,
+			no_deadline: !record.end_date,
 			distribution_mode: record.is_global ? "global" : "branch",
 		});
 		setOpen(true);
@@ -66,14 +74,16 @@ export default function PromoAdminPage() {
 
 	const buildPayload = async (): Promise<Partial<Promo> | FormData> => {
 		const values = await form.validateFields();
+		// no_deadline = true artinya promo berjalan terus tanpa tanggal berakhir.
+		const endDate = values.no_deadline === true || !values.end_date ? null : dayjs(values.end_date).toISOString();
 		if (!imageFile) {
 			return {
 				title: values.title,
 				slug: values.slug || slugify(values.title),
 				description: values.description,
 				terms: values.terms,
-				start_date: values.start_date.toISOString(),
-				end_date: values.end_date.toISOString(),
+				start_date: dayjs(values.start_date).toISOString(),
+				end_date: endDate,
 				is_active: values.is_active,
 				show_on_home: values.show_on_home,
 				is_global: values.distribution_mode === "global",
@@ -85,10 +95,10 @@ export default function PromoAdminPage() {
 		const formData = new FormData();
 		formData.append("title", values.title);
 		formData.append("slug", values.slug || slugify(values.title));
-		formData.append("description", values.description);
+		formData.append("description", values.description ?? "");
 		formData.append("terms", values.terms || "");
-		formData.append("start_date", values.start_date.toISOString());
-		formData.append("end_date", values.end_date.toISOString());
+		formData.append("start_date", dayjs(values.start_date).toISOString());
+		formData.append("end_date", endDate ?? "");
 		formData.append("is_active", values.is_active ? "true" : "false");
 		formData.append("show_on_home", values.show_on_home ? "true" : "false");
 		formData.append("is_global", values.distribution_mode === "global" ? "true" : "false");
@@ -136,8 +146,11 @@ export default function PromoAdminPage() {
 		{ title: "Prioritas", dataIndex: "priority" },
 		{
 			title: "Periode",
-			render: (_, record) =>
-				`${dayjs(record.start_date).format("DD/MM/YYYY HH:mm")} - ${dayjs(record.end_date).format("DD/MM/YYYY HH:mm")}`,
+			render: (_, record) => {
+				const start = dayjs(record.start_date).format("DD/MM/YYYY HH:mm");
+				if (!record.end_date) return <Tag color="cyan">{start} - Tanpa tenggat</Tag>;
+				return `${start} - ${dayjs(record.end_date).format("DD/MM/YYYY HH:mm")}`;
+			},
 		},
 		{
 			title: "Aksi",
@@ -183,19 +196,32 @@ export default function PromoAdminPage() {
 					is_active: true,
 					distribution_mode: "global",
 					status: "draft",
+					no_deadline: false,
 				});
 				setOpen(true);
 			}}
 		>
 			<div className="card">
 				<div className="table-container">
-					<Table
-						rowKey="id"
-						columns={columns}
-						dataSource={promos}
-						loading={isLoading}
-						pagination={{ pageSize: 10, showSizeChanger: false }}
-					/>
+					{isError ? (
+						<TableErrorState title="Gagal memuat promo" error={error} onRetry={() => void refetch()} />
+					) : (
+						<Table
+							rowKey="id"
+							columns={columns}
+							dataSource={promos}
+							loading={isLoading}
+							pagination={{ pageSize: 10, showSizeChanger: false }}
+							locale={{
+								emptyText: (
+									<TableEmptyState
+										title="Belum ada promo."
+										hint="Buat promo pertama supaya bisa tampil di beranda dan halaman promo."
+									/>
+								),
+							}}
+						/>
+					)}
 				</div>
 			</div>
 
@@ -216,6 +242,7 @@ export default function PromoAdminPage() {
 						is_active: true,
 						distribution_mode: "global",
 						status: "draft",
+						no_deadline: false,
 					}}
 				>
 					<div className="form-grid">
@@ -245,10 +272,33 @@ export default function PromoAdminPage() {
 						<Form.Item label="Tanggal Mulai" name="start_date" rules={[{ required: true }]}>
 							<DatePicker showTime className="form-input w-full" />
 						</Form.Item>
-						<Form.Item label="Tanggal Berakhir" name="end_date" rules={[{ required: true }]}>
-							<DatePicker showTime className="form-input w-full" />
+						<Form.Item
+							label="Tanggal Berakhir"
+							name="end_date"
+							rules={[
+								{
+									required: Form.useWatch("no_deadline", form) !== true,
+									message: "Isi tanggal berakhir atau aktifkan 'Tanpa Tenggat'",
+								},
+							]}
+							tooltip="Aktifkan 'Tanpa Tenggat' kalau promo berlaku terus."
+						>
+							<DatePicker
+								showTime
+								className="form-input w-full"
+								disabled={Form.useWatch("no_deadline", form) === true}
+							/>
 						</Form.Item>
 					</div>
+
+					<Form.Item
+						label="Tanpa Tenggat Waktu"
+						name="no_deadline"
+						valuePropName="checked"
+						tooltip="Promo berlaku terus tanpa tanggal berakhir (evergreen)."
+					>
+						<Switch checkedChildren="Tanpa tenggat" unCheckedChildren="Ada tenggat" />
+					</Form.Item>
 
 					<Form.Item label="Priority" name="priority">
 						<InputNumber className="form-input w-full" min={0} />

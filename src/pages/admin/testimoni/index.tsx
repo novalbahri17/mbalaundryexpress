@@ -1,8 +1,15 @@
-import { CheckOutlined, CloseOutlined, DeleteOutlined, EditOutlined, PlusOutlined, StarOutlined } from "@ant-design/icons";
-import { Button, Form, Input, Modal, Rate, Select, Space, Table, Tabs, message } from "antd";
+import {
+	CheckOutlined,
+	CloseOutlined,
+	DeleteOutlined,
+	EditOutlined,
+	PlusOutlined,
+	StarOutlined,
+} from "@ant-design/icons";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Button, Form, Input, Modal, message, Rate, Select, Space, Table, Tabs } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useMemo, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	approveTestimonial,
 	createTestimonial,
@@ -12,8 +19,9 @@ import {
 	updateTestimonial,
 } from "@/api/testimonials.api";
 import { MetronicPage } from "@/components/admin/MetronicPage";
-import type { Testimonial } from "@/types/database.types";
+import { TableEmptyState, TableErrorState } from "@/components/admin/QueryState";
 import { useThemeStore } from "@/store/themeStore";
+import type { Testimonial } from "@/types/database.types";
 
 export default function TestimoniAdminPage() {
 	const { mode } = useThemeStore();
@@ -25,7 +33,13 @@ export default function TestimoniAdminPage() {
 	const [tab, setTab] = useState("pending");
 	const queryClient = useQueryClient();
 
-	const { data: testimonials = [], isLoading } = useQuery({
+	const {
+		data: testimonials = [],
+		isLoading,
+		isError,
+		error,
+		refetch,
+	} = useQuery({
 		queryKey: ["admin-testimonials"],
 		queryFn: () => getTestimonials({ limit: 500 }),
 	});
@@ -86,7 +100,11 @@ export default function TestimoniAdminPage() {
 	};
 
 	const columns: ColumnsType<Testimonial> = [
-		{ title: "Nama", dataIndex: "customer_name", render: (text: string) => <span className="font-medium">{text}</span> },
+		{
+			title: "Nama",
+			dataIndex: "customer_name",
+			render: (text: string) => <span className="font-medium">{text}</span>,
+		},
 		{
 			title: "Rating",
 			dataIndex: "rating",
@@ -96,7 +114,9 @@ export default function TestimoniAdminPage() {
 			title: "Komentar",
 			dataIndex: "comment",
 			render: (value: string) => (
-				<span className="max-w-xs truncate block" style={{ color: "var(--text-secondary)" }}>{value.replace("[REJECTED]", "").trim()}</span>
+				<span className="max-w-xs truncate block" style={{ color: "var(--text-secondary)" }}>
+					{value.replace("[REJECTED]", "").trim()}
+				</span>
 			),
 		},
 		{ title: "Sumber", dataIndex: "source" },
@@ -172,13 +192,25 @@ export default function TestimoniAdminPage() {
 					/>
 				</div>
 				<div className="table-container">
-					<Table
-						rowKey="id"
-						loading={isLoading}
-						columns={columns}
-						dataSource={filtered}
-						pagination={{ pageSize: 10, showSizeChanger: false }}
-					/>
+					{isError ? (
+						<TableErrorState title="Gagal memuat testimoni" error={error} onRetry={() => void refetch()} />
+					) : (
+						<Table
+							rowKey="id"
+							loading={isLoading}
+							columns={columns}
+							dataSource={filtered}
+							pagination={{ pageSize: 10, showSizeChanger: false }}
+							locale={{
+								emptyText: (
+									<TableEmptyState
+										title="Belum ada testimoni."
+										hint="Testimoni yang diisi pelanggan akan muncul di sini untuk disetujui."
+									/>
+								),
+							}}
+						/>
+					)}
 				</div>
 			</div>
 

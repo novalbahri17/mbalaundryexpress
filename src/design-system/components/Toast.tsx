@@ -3,11 +3,11 @@
  * Premium toast notifications with stack management
  */
 
-import { motion, AnimatePresence } from "framer-motion";
-import { useState, useCallback, useEffect } from "react";
-import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from "lucide-react";
-import { cn } from "@/utils";
+import { AnimatePresence, motion } from "framer-motion";
+import { AlertCircle, AlertTriangle, CheckCircle, Info, X } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 import { transitions } from "@/design-system/tokens/animations";
+import { cn } from "@/utils";
 
 // ============================================
 // TYPES

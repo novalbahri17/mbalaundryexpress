@@ -4,7 +4,7 @@ Aplikasi ini adalah hasil modifikasi `MBA Admin` menjadi:
 
 - Landing page publik `MBA Laundry Express`
 - Admin panel `MBA Admin`
-- Data source berbasis PocketBase + MySQL
+- Data source berbasis Express + MySQL (backend sendiri di `server/index.mjs`)
 
 ## 1. Stack
 
@@ -13,7 +13,7 @@ Aplikasi ini adalah hasil modifikasi `MBA Admin` menjadi:
 - Tailwind CSS (publik)
 - Zustand + TanStack Query
 - Framer Motion + Lottie
-- PocketBase JS SDK (via proxy `/pb-api`)
+- Backend sendiri: Express 5 + MySQL (`server/index.mjs`, port 3002)
 
 ## 2. Struktur Penting
 
@@ -24,7 +24,10 @@ Aplikasi ini adalah hasil modifikasi `MBA Admin` menjadi:
 - `src/api/*` data access layer
 - `src/types/database.types.ts` tipe 19 tabel
 - `database/seed.sql` schema + seed default
-- `deploy/etc/systemd/system/pocketbase.service`
+- `server/index.mjs` API server (Express + MySQL)
+- `scripts/create-mysql-tables.mjs` bikin tabel dari schema
+- `scripts/mysql-schema.sql` definisi 19 tabel
+- `uploads/` file gambar hasil upload (WAJIB di-backup)
 - `deploy/etc/nginx/sites-available/mba-laundry`
 - `ecosystem.config.js`
 - `backup-mba.sh`
@@ -52,17 +55,16 @@ pnpm preview --host 127.0.0.1 --port 3000
 
 ## 5. Inisialisasi Database
 
-Import SQL:
+Set konfigurasi MySQL di `.env` (`MYSQL_HOST`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_DATABASE`).
+
+Buat 19 tabel yang dibutuhkan:
 
 ```bash
-mysql -u root lauundry < database/seed.sql
+pnpm mysql:create
 ```
 
-Buat akun admin PocketBase (sekali saja):
-
-```bash
-./pocketbase superuser create admin@mba-laundry.com Admin12345!
-```
+Akun admin dibuat otomatis saat API server pertama kali dijalankan, diambil dari
+`API_ADMIN_EMAIL` dan `API_ADMIN_PASSWORD` di `.env`. Tidak perlu langkah manual.
 
 ## 6. Deploy Ubuntu 22.04 (Proxmox VPS)
 
@@ -93,15 +95,22 @@ pm2 save
 pm2 startup
 ```
 
-### 6.4 PocketBase service
+### 6.4 API server (Express + MySQL)
+
+API server dijalankan sebagai app `mba-api` di `ecosystem.config.js` (port 3002).
 
 ```bash
-sudo cp deploy/etc/systemd/system/pocketbase.service /etc/systemd/system/pocketbase.service
-sudo systemctl daemon-reload
-sudo systemctl enable pocketbase
-sudo systemctl start pocketbase
-sudo systemctl status pocketbase
+pm2 start ecosystem.config.js
+pm2 logs mba-api
 ```
+
+Kalau mau dijalankan manual tanpa PM2:
+
+```bash
+node --env-file=.env server/index.mjs
+```
+
+Cek sehat: `curl http://127.0.0.1:3002/api/health`
 
 ### 6.5 Nginx + SSL
 
@@ -152,8 +161,8 @@ Cron backup jam 2 pagi:
 ## 9. Catatan Keamanan
 
 - Jangan commit `.env`
-- Gunakan password kuat untuk MySQL dan PocketBase admin
-- Pastikan port 3000 dan 8090 tertutup dari publik
+- Gunakan password kuat untuk MySQL dan akun admin
+- Pastikan port 3000, 3002, dan 3306 tertutup dari publik
 - Route `/admin/*` tidak ditautkan dari publik
 
 

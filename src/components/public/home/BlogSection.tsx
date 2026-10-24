@@ -2,8 +2,12 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowRightIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { getArticles } from "@/api/articles.api";
+import { usePublicText } from "@/hooks/usePublicText";
+import { formatDate } from "@/utils/format";
 
 export function BlogSection() {
+	const text = usePublicText();
+	const t = text.home.blog;
 	const { data: articles = [], isLoading } = useQuery({
 		queryKey: ["home-article-preview"],
 		queryFn: () => getArticles({ publishedOnly: true, limit: 3 }),
@@ -11,30 +15,16 @@ export function BlogSection() {
 
 	if (isLoading || articles.length === 0) return null;
 
-	const formatDate = (dateString?: string) => {
-		return new Date(dateString || new Date().toISOString()).toLocaleDateString("id-ID", {
-			day: "numeric",
-			month: "long",
-			year: "numeric",
-		});
-	};
-
 	return (
-		<section className="bg-neutral-50 px-6 py-24 md:px-12 md:py-32 dark:bg-neutral-900">
-			<div className="mx-auto flex max-w-[1200px] flex-col items-center">
+		<section className="section-block bg-neutral-50 dark:bg-neutral-900">
+			<div className="section-inner flex flex-col items-center">
 				{/* HEADER */}
-				<span className="rounded-full bg-sapphire-500 px-4 py-2 text-[12px] font-bold uppercase tracking-wide text-white">
-					Blog & Tips
-				</span>
-				<h2 className="mt-3 text-center text-[32px] font-bold leading-[1.2] text-neutral-900 md:text-[40px] dark:text-white">
-					Tips Merawat Pakaian
-				</h2>
-				<p className="mt-4 max-w-[600px] text-center text-[18px] leading-[1.5] text-neutral-600 dark:text-neutral-300">
-					Dapatkan informasi terbaru seputar cara mencuci yang benar dan tips merawat mesin.
-				</p>
+				<p className="section-kicker">{t.kicker}</p>
+				<h2 className="section-title text-center">{t.title}</h2>
+				<p className="section-subtitle text-center">{t.subtitle}</p>
 
 				{/* CONTENT GRID */}
-				<div className="mt-16 grid w-full grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+				<div className="mt-14 grid w-full grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 lg:gap-8">
 					{articles.map((article) => (
 						<Link
 							key={article.id}
@@ -50,8 +40,8 @@ export function BlogSection() {
 									alt={article.title}
 									className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
 								/>
-								<div className="absolute left-4 top-4 rounded-full bg-white/90 backdrop-blur-sm px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-sapphire-600 shadow-sm dark:bg-neutral-900/90 dark:text-sapphire-400">
-									{article.category || "Tips"}
+								<div className="absolute left-4 top-4 rounded-full bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-sapphire-700 shadow-sm dark:bg-neutral-900 dark:text-sapphire-300">
+									{article.category || t.categoryFallback}
 								</div>
 							</div>
 
@@ -59,14 +49,16 @@ export function BlogSection() {
 								<h3 className="line-clamp-2 text-[20px] font-bold leading-[1.4] text-neutral-900 group-hover:text-sapphire-600 transition-colors dark:text-white dark:group-hover:text-sapphire-400">
 									{article.title}
 								</h3>
-								<p className="mt-3 line-clamp-3 text-[14px] leading-[1.6] text-neutral-600 dark:text-neutral-300">{article.excerpt}</p>
+								<p className="mt-3 line-clamp-3 text-[14px] leading-[1.6] text-neutral-600 dark:text-neutral-300">
+									{article.excerpt}
+								</p>
 
 								<div className="mt-auto pt-6 flex items-center justify-between border-t border-neutral-100 dark:border-neutral-700">
 									<span className="text-[12px] font-medium text-neutral-500 dark:text-neutral-400">
 										{formatDate(article.published_at || article.created || new Date().toISOString())}
 									</span>
 									<span className="flex items-center text-[12px] font-bold text-sapphire-600">
-										Baca <ArrowRightIcon className="ml-1 h-3 w-3" />
+										{t.read} <ArrowRightIcon className="ml-1 h-3 w-3" />
 									</span>
 								</div>
 							</div>
@@ -79,7 +71,7 @@ export function BlogSection() {
 					to="/blog"
 					className="mt-12 inline-flex items-center justify-center rounded-xl border-2 border-sapphire-500 bg-transparent px-8 py-3 text-[16px] font-semibold text-sapphire-600 transition-colors hover:bg-sapphire-50 dark:border-sapphire-400 dark:text-sapphire-400 dark:hover:bg-sapphire-900/20"
 				>
-					Lihat Semua Artikel
+					{t.viewAll}
 				</Link>
 			</div>
 		</section>

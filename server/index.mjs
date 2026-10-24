@@ -1,0 +1,1304 @@
+// ============================================================================
+// MBA Laundry Express — API server (Node + Express + MySQL)
+// ----------------------------------------------------------------------------
+// Backend tunggal aplikasi ini. Bicara ke MySQL dan menyajikan REST API.
+//
+//   GET    /api/collections/:collection/records   -> list (page, perPage, filter, sort, expand)
+//   GET    /api/collections/:collection/records/:id
+//   POST   /api/collections/:collection/records
+//   PATCH  /api/collections/:collection/records/:id
+//   DELETE /api/collections/:collection/records/:id
+//   POST   /api/collections/_superusers/auth-with-password
+//   POST   /api/files/:collection/:recordId/:filename
+//
+// Jalankan:  node server/index.mjs        (default port 3002)
+// ============================================================================
+
+import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
+import { existsSync, readFileSync } from "node:fs";
+import { mkdir, unlink } from "node:fs/promises";
+import { extname, join, resolve, sep } from "node:path";
+import express from "express";
+import multer from "multer";
+import mysql from "mysql2/promise";
+
+// ---------------------------------------------------------------------------
+// Env loader (tanpa dependency, sama seperti script sync)
+// ---------------------------------------------------------------------------
+function loadEnv() {
+	const file = resolve(process.cwd(), ".env");
+	if (!existsSync(file)) return;
+	const text = readFileSync(file, "utf8");
+	for (const line of text.split(/\r?\n/)) {
+		const trimmed = line.trim();
+		if (!trimmed || trimmed.startsWith("#")) continue;
+		const i = trimmed.indexOf("=");
+		if (i === -1) continue;
+		const key = trimmed.slice(0, i).trim();
+		let value = trimmed.slice(i + 1).trim();
+		if (
+			(value.startsWith('"') && value.endsWith('"')) ||
+			(value.startsWith("'") && value.endsWith("'"))
+		) {
+			value = value.slice(1, -1);
+		}
+		if (process.env[key] === undefined) process.env[key] = value;
+	}
+}
+loadEnv();
+
+const PORT = Number(process.env.API_PORT || process.env.PORT || 3002);
+const UPLOAD_DIR = resolve(process.cwd(), process.env.UPLOAD_DIR || "uploads");
+const IS_PRODUCTION = process.env.NODE_ENV === "production";
+
+// Nilai contoh yang ada di .env.example — jangan pernah dipakai di produksi.
+const PLACEHOLDER_SECRETS = new Set([
+	"",
+	"ganti-ini-dengan-string-acak-panjang",
+	"replace-with-random-64-char-secret",
+	"dev-only-insecure-secret",
+	"changeme",
+	"secret",
+]);
+
+function resolveJwtSecret() {
+	const configured = process.env.API_JWT_SECRET || process.env.CRON_SECRET || "";
+	if (IS_PRODUCTION) {
+		if (PLACEHOLDER_SECRETS.has(configured) || configured.length < 32) {
+			console.error(
+				"[api] FATAL: API_JWT_SECRET belum diisi dengan string acak minimal 32 karakter.\n" +
+					"      Buat dengan:  node -e \"console.log(require('crypto').randomBytes(48).toString('base64url'))\"",
+			);
+			process.exit(1);
+		}
+		return configured;
+	}
+	if (PLACEHOLDER_SECRETS.has(configured)) {
+		console.warn("[api] PERINGATAN: API_JWT_SECRET masih nilai contoh. Ganti sebelum dipakai di produksi.");
+		return configured || "dev-only-insecure-secret";
+	}
+	return configured;
+}
+
+const JWT_SECRET = resolveJwtSecret();
+const TOKEN_TTL_SECONDS = 60 * 60 * 24 * 7;
+
+// Origin yang boleh memanggil API dari browser. Frontend dan API disajikan
+// dari domain yang sama, jadi default-nya cukup origin publik aplikasi.
+const ALLOWED_ORIGINS = new Set(
+	[
+		process.env.VITE_SITE_URL,
+		"http://localhost:3000",
+		"http://localhost:5173",
+		"http://127.0.0.1:3000",
+		"http://127.0.0.1:5173",
+		`http://localhost:${PORT}`,
+		`http://127.0.0.1:${PORT}`,
+	]
+		.filter(Boolean)
+		.map((value) => String(value).trim().replace(/\/+$/, ""))
+		.filter(Boolean),
+);
+
+// ---------------------------------------------------------------------------
+// Koneksi MySQL
+// ---------------------------------------------------------------------------
+const pool = mysql.createPool({
+	host: process.env.MYSQL_HOST || "127.0.0.1",
+	port: Number(process.env.MYSQL_PORT || 3306),
+	database: process.env.MYSQL_DATABASE,
+	user: process.env.MYSQL_USER,
+	password: process.env.MYSQL_PASSWORD ?? "",
+	connectionLimit: 10,
+	charset: "utf8mb4",
+	timezone: "Z",
+	enableKeepAlive: true,
+	keepAliveInitialDelay: 30000,
+	connectTimeout: 20000,
+	maxIdle: 10,
+	idleTimeout: 60000,
+});
+
+
+// ---------------------------------------------------------------------------
+// Skema tabel: kolom yang boleh ditulis, kolom tanggal, kolom JSON,
+// kolom boolean, kolom yang menyimpan nama file upload, dan hak akses (auth).
+//
+// auth.read / auth.create / auth.update / auth.delete:
+//   "public" -> boleh tanpa login
+//   "admin"  -> wajib token admin
+// Kalau tidak ditulis, default-nya "admin" (fail closed). Jadi koleksi baru
+// otomatis tertutup, tidak terbuka gara-gara lupa mengisi.
+// ---------------------------------------------------------------------------
+const SCHEMA = {
+	branches: {
+		datetime: ["created", "updated"],
+		file: ["cover_image"],
+		order: "+sort_order,+name",
+		auth: { read: "public" },
+	},
+	branch_hours: { datetime: ["created", "updated"], order: "+day", auth: { read: "public" } },
+	branch_facilities: {
+		datetime: ["created", "updated"],
+		order: "+sort_order,+name",
+		auth: { read: "public" },
+	},
+	branch_gallery: { datetime: ["created", "updated"], file: ["image"], order: "-created", auth: { read: "public" } },
+	branch_machines: {
+		datetime: ["created", "updated"],
+		order: "+branch_id,+sort_order",
+		auth: { read: "public" },
+	},
+	promos: {
+		datetime: ["start_date", "end_date", "created", "updated"],
+		file: ["image"],
+		order: "+priority,+end_date",
+		auth: { read: "public" },
+	},
+	promo_branches: { datetime: ["created", "updated"], order: "+created", auth: { read: "public" } },
+	jobs: {
+		datetime: ["posted_at", "closed_at", "created", "updated"],
+		file: ["image"],
+		order: "-posted_at,-created",
+		auth: { read: "public" },
+	},
+	articles: {
+		datetime: ["published_at", "created", "updated"],
+		json: ["tags"],
+		file: ["thumbnail"],
+		order: "-published_at,-created",
+		auth: { read: "public" },
+	},
+	testimonials: {
+		datetime: ["created", "updated"],
+		order: "-created",
+		// Dibaca publik (halaman testimoni & statistik) tapi hanya yang sudah
+		// di-approve yang ditampilkan. Kiriman pengunjung selalu dipaksa
+		// is_approved = false oleh sanitizePublicPayload().
+		auth: { read: "public", create: "public" },
+	},
+	faqs: { datetime: ["created", "updated"], order: "+sort_order,-created", auth: { read: "public" } },
+	page_contents: { datetime: ["created", "updated"], order: "+group,+key", auth: { read: "public" } },
+	spin_rewards: { datetime: ["created", "updated"], order: "+created", auth: { read: "public" } },
+	spin_plays: { datetime: ["played_at", "created", "updated"], order: "-played_at", auth: { create: "public" } },
+	loyalty_members: { datetime: ["created", "updated"], order: "-created" },
+	loyalty_transactions: { datetime: ["created", "updated"], order: "-created" },
+	partnerships: { datetime: ["created", "updated"], order: "-created", auth: { create: "public" } },
+	contact_messages: {
+		datetime: ["created", "updated"],
+		// Kolom topic/branch_id/incident_date/machine_code ditambahkan lewat
+		// ensureContactColumns() supaya database lama tetap kompatibel.
+		order: "-created",
+		// Laporan bantuan berisi nama, nomor WA, email, dan isi keluhan
+		// pelanggan. Hanya boleh dibuat publik, dibaca hanya admin.
+		auth: { read: "admin", create: "public" },
+	},
+	site_settings: { datetime: ["created", "updated"], order: "+key", auth: { read: "public" } },
+	branding_files: { datetime: ["created", "updated"], file: ["file"], order: "-created", auth: { read: "public" } },
+};
+
+const AUTH_DEFAULT = { read: "admin", create: "admin", update: "admin", delete: "admin" };
+
+// Kolom yang boleh dilihat pengunjung tanpa login, untuk koleksi yang
+// read-nya "public" tapi punya data internal. Koleksi lain: semua kolom.
+// testimonials dibaca publik, tapi source (asal testimoni) hanya untuk admin.
+const PUBLIC_READ_COLUMNS = {
+	testimonials: ["id", "customer_name", "branch_id", "rating", "comment", "photo", "is_approved", "created", "updated"],
+};
+
+/** Ekspresi SELECT yang aman untuk pembaca publik. */
+const selectColumnsFor = (collection, isPublicReader) => {
+	const allow = isPublicReader ? PUBLIC_READ_COLUMNS[collection] : null;
+	if (!allow) return "*";
+	return allow.map(identifier).join(", ");
+};
+
+/** Hak akses satu aksi pada satu koleksi. Default "admin" (fail closed). */
+const accessRule = (collection, action) => SCHEMA[collection]?.auth?.[action] ?? AUTH_DEFAULT[action];
+
+/** True kalau aksi ini boleh dilakukan tanpa login. */
+const isPublicAction = (collection, action) => accessRule(collection, action) === "public";
+
+
+// Kolom DATE murni (tanpa jam). Dikirim sebagai "YYYY-MM-DD" supaya tidak
+// bergeser gara-gara konversi zona waktu.
+const DATE_FIELDS_BY_COLLECTION = {
+	contact_messages: ["incident_date"],
+};
+
+// Boolean disimpan TINYINT(1) di MySQL, tapi frontend mengharapkan true/false.
+const BOOLEAN_FIELDS = {
+	is_active: true,
+	is_global: true,
+	show_on_home: true,
+	is_closed: true,
+	is_approved: true,
+	is_featured: true,
+	is_read: true,
+	is_resolved: true,
+	spin_enabled: true,
+	loyalty_enabled: true,
+	allow_indexing: true,
+	is_used: true,
+	is_redeemed: true,
+	qris_enabled: true,
+	cash_enabled: true,
+};
+
+// ---------------------------------------------------------------------------
+// Helper umum
+// ---------------------------------------------------------------------------
+const identifier = (name) => `\`${String(name).replace(/`/g, "")}\``;
+
+const jsonError = (res, status, message) => res.status(status).json({ code: status, message, data: {} });
+
+const toBoolValue = (v) => {
+	if (v === null || v === undefined) return null;
+	if (typeof v === "boolean") return v ? 1 : 0;
+	const s = String(v).toLowerCase();
+	if (s === "true" || s === "1") return 1;
+	if (s === "false" || s === "0" || s === "") return 0;
+	return Number(v) ? 1 : 0;
+};
+
+const fromDb = (collection, row) => {
+	const spec = SCHEMA[collection] ?? {};
+	const out = {};
+	for (const [key, value] of Object.entries(row)) {
+		if (spec.json?.includes(key) && typeof value === "string") {
+			try {
+				out[key] = JSON.parse(value);
+			} catch {
+				out[key] = value;
+			}
+			continue;
+		}
+		if (BOOLEAN_FIELDS[key]) {
+			out[key] = value === 1 || value === true || value === "1";
+			continue;
+		}
+		if (spec.datetime?.includes(key) && value instanceof Date) {
+			out[key] = value.toISOString().replace("T", " ");
+			continue;
+		}
+		// Kolom DATE dikirim sebagai "YYYY-MM-DD" agar aman dari geser zona waktu.
+		if (DATE_FIELDS_BY_COLLECTION[collection]?.includes(key) && value instanceof Date) {
+			const pad = (n) => String(n).padStart(2, "0");
+			out[key] = `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}`;
+			continue;
+		}
+		out[key] = value;
+	}
+	out.collectionId = collection;
+	out.collectionName = collection;
+	return out;
+};
+
+const toDb = (collection, payload) => {
+	const spec = SCHEMA[collection] ?? {};
+	const out = {};
+	for (const [key, value] of Object.entries(payload)) {
+		if (key === "id" || key === "collectionId" || key === "collectionName" || key === "expand") continue;
+		if (spec.json?.includes(key)) {
+			out[key] = typeof value === "string" ? value : JSON.stringify(value ?? []);
+			continue;
+		}
+		if (BOOLEAN_FIELDS[key]) {
+			out[key] = toBoolValue(value);
+			continue;
+		}
+		if (spec.datetime?.includes(key)) {
+			if (!value) {
+				out[key] = null;
+			} else {
+				const parsed = new Date(String(value).replace(" ", "T"));
+				out[key] = Number.isNaN(parsed.getTime()) ? null : parsed;
+			}
+			continue;
+		}
+		// Kolom DATE murni: terima "YYYY-MM-DD" (atau ISO) apa adanya, jangan
+		// diubah jadi Date supaya tidak bergeser zona waktu. String kosong -> NULL.
+		if (DATE_FIELDS_BY_COLLECTION[collection]?.includes(key)) {
+			const raw = value === null || value === undefined ? "" : String(value).trim();
+			out[key] = raw ? raw.slice(0, 10) : null;
+			continue;
+		}
+		if (typeof value === "object" && value !== null) {
+			out[key] = JSON.stringify(value);
+			continue;
+		}
+		out[key] = value === undefined ? null : value;
+	}
+	return out;
+};
+
+// Cache kolom nyata tiap tabel, supaya field yang tidak ada di tabel
+// (mis. kiriman form yang tidak relevan) tidak merusak INSERT/UPDATE.
+const columnCache = new Map();
+async function tableColumns(table) {
+	if (columnCache.has(table)) return columnCache.get(table);
+	const [rows] = await pool.query(
+		"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?",
+		[process.env.MYSQL_DATABASE, table],
+	);
+	const set = new Set(rows.map((r) => r.COLUMN_NAME));
+	columnCache.set(table, set);
+	return set;
+}
+
+async function filterToColumns(collection, fields) {
+	const cols = await tableColumns(collection);
+	const out = {};
+	for (const [key, value] of Object.entries(fields)) {
+		if (cols.has(key)) out[key] = value;
+	}
+	return out;
+}
+
+const newRecordId = () => randomBytes(8).toString("hex").slice(0, 15);
+
+// ---------------------------------------------------------------------------
+// Rate limiter sederhana (in-memory, tanpa dependency).
+// Cukup untuk satu proses API; kalau nanti di-cluster, pindahkan ke Redis.
+// ---------------------------------------------------------------------------
+const rateBuckets = new Map();
+
+function rateLimit({ name, limit, windowMs, key }) {
+	const bucketKey = `${name}:${key}`;
+	const now = Date.now();
+	let bucket = rateBuckets.get(bucketKey);
+	if (!bucket || bucket.resetAt <= now) {
+		bucket = { count: 0, resetAt: now + windowMs };
+		rateBuckets.set(bucketKey, bucket);
+	}
+	bucket.count += 1;
+	const allowed = bucket.count <= limit;
+	return { allowed, remaining: Math.max(0, limit - bucket.count), retryAfter: Math.ceil((bucket.resetAt - now) / 1000) };
+}
+
+// Bersihkan bucket lama supaya memory tidak menumpuk.
+setInterval(
+	() => {
+		const now = Date.now();
+		for (const [key, bucket] of rateBuckets) {
+			if (bucket.resetAt <= now) rateBuckets.delete(key);
+		}
+	},
+	60_000,
+).unref?.();
+
+const clientIp = (req) => {
+	const forwarded = req.headers["x-forwarded-for"];
+	const first = Array.isArray(forwarded) ? forwarded[0] : String(forwarded ?? "").split(",")[0];
+	return (first || req.socket?.remoteAddress || "unknown").trim().slice(0, 64);
+};
+
+/**
+ * Middleware pembatas request.
+ *   rateLimitMiddleware({ name, limit, windowMs })       -> per IP
+ *   rateLimitMiddleware({ name, limit, windowMs, by })   -> per IP + by(req)
+ */
+function rateLimitMiddleware({ name, limit, windowMs, by, message }) {
+	return (req, res, next) => {
+		const extra = by ? String(by(req) ?? "").toLowerCase().slice(0, 191) : "";
+		const result = rateLimit({ name, limit, windowMs, key: `${clientIp(req)}|${extra}` });
+		if (!result.allowed) {
+			res.setHeader("Retry-After", String(result.retryAfter));
+			return jsonError(res, 429, message || "Terlalu banyak permintaan. Coba lagi nanti.");
+		}
+		next();
+	};
+}
+
+/**
+ * Kunci + hitung percobaan. Dipakai untuk login: yang dihitung hanya
+ * percobaan GAGAL, jadi admin yang berhasil login tidak pernah terkunci.
+ */
+function loginAttemptKey(req) {
+	const ip = clientIp(req);
+	const identity = String(req.body?.identity ?? req.body?.email ?? "").toLowerCase().slice(0, 191);
+	return `login:${ip}|${identity}`;
+}
+
+function loginBlocked(req) {
+	const bucket = rateBuckets.get(loginAttemptKey(req));
+	if (!bucket || bucket.resetAt <= Date.now()) return 0;
+	if (bucket.count < 8) return 0;
+	return Math.ceil((bucket.resetAt - Date.now()) / 1000);
+}
+
+function registerLoginFailure(req) {
+	const key = loginAttemptKey(req);
+	const now = Date.now();
+	let bucket = rateBuckets.get(key);
+	if (!bucket || bucket.resetAt <= now) {
+		bucket = { count: 0, resetAt: now + 15 * 60 * 1000 };
+		rateBuckets.set(key, bucket);
+	}
+	bucket.count += 1;
+}
+
+// ---------------------------------------------------------------------------
+// Sanitasi & validasi input sisi server.
+// Frontend sudah memvalidasi, tapi itu bisa dilewati. Semua payload dari
+// pengunjung tanpa login WAJIB lewat sini.
+// ---------------------------------------------------------------------------
+const stripHtml = (value) =>
+	String(value ?? "")
+		// Buang tag beserta isinya untuk elemen berbahaya.
+		.replace(/<\s*(script|style|iframe|object|embed|svg|math)[\s\S]*?<\s*\/\s*\1\s*>/gi, " ")
+		.replace(/<\s*[^>]*>/g, " ")
+		// Buang karakter kontrol (termasuk NUL) yang bisa menyusup ke log/DB.
+		.replace(/\p{Cc}/gu, " ")
+		.replace(/\s+/g, " ")
+		.trim();
+
+const cleanText = (value, maxLength) => {
+	if (value === null || value === undefined) return null;
+	const cleaned = stripHtml(value);
+	if (!cleaned) return null;
+	return cleaned.slice(0, maxLength);
+};
+
+const PHONE_RE = /^[+]?[0-9][0-9\s().-]{6,19}$/;
+const EMAIL_RE = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const ID_RE = /^[A-Za-z0-9]{1,32}$/;
+const CONTACT_TOPICS = new Set(["kehilangan", "saran", "kritik"]);
+
+/** Ubah "YYYY-MM-DD" jadi Date lokal; null kalau tidak valid. */
+const parseIsoDate = (value) => {
+	if (typeof value !== "string" || !DATE_RE.test(value)) return null;
+	const [y, m, d] = value.split("-").map(Number);
+	const date = new Date(y, m - 1, d);
+	if (date.getFullYear() !== y || date.getMonth() !== m - 1 || date.getDate() !== d) return null;
+	return date;
+};
+
+/**
+ * Validasi + bersihkan payload form publik.
+ * @returns {{ ok: true, data: object } | { ok: false, error: string }}
+ */
+async function sanitizePublicPayload(collection, body) {
+	const payload = {};
+
+	if (collection === "contact_messages") {
+		const name = cleanText(body?.name, 120);
+		if (!name || name.length < 2) return { ok: false, error: "Nama wajib diisi (minimal 2 karakter)." };
+
+		const phoneRaw = String(body?.phone ?? "").trim();
+		if (!PHONE_RE.test(phoneRaw)) return { ok: false, error: "Nomor WA tidak valid." };
+
+		const emailRaw = String(body?.email ?? "").trim();
+		if (emailRaw && (emailRaw.length > 191 || !EMAIL_RE.test(emailRaw))) {
+			return { ok: false, error: "Email tidak valid." };
+		}
+
+		const message = cleanText(body?.message, 5000);
+		if (!message || message.length < 10) {
+			return { ok: false, error: "Ceritakan detailnya (minimal 10 karakter)." };
+		}
+
+		const topicRaw = String(body?.topic ?? "").trim();
+		const topic = CONTACT_TOPICS.has(topicRaw) ? topicRaw : null;
+
+		const branchRaw = String(body?.branch_id ?? "").trim();
+		if (branchRaw && !ID_RE.test(branchRaw)) return { ok: false, error: "Cabang tidak valid." };
+		if (branchRaw) {
+			const [rows] = await pool.query(`SELECT \`id\` FROM \`branches\` WHERE \`id\` = ? LIMIT 1`, [branchRaw]);
+			if (!rows[0]) return { ok: false, error: "Cabang tidak ditemukan." };
+		}
+
+		let incidentDate = null;
+		const dateRaw = String(body?.incident_date ?? "").trim();
+		if (dateRaw) {
+			const parsed = parseIsoDate(dateRaw);
+			if (!parsed) return { ok: false, error: "Tanggal kejadian tidak valid." };
+			const tomorrow = new Date();
+			tomorrow.setHours(23, 59, 59, 999);
+			if (parsed.getTime() > tomorrow.getTime()) {
+				return { ok: false, error: "Tanggal kejadian tidak boleh di masa depan." };
+			}
+			incidentDate = dateRaw;
+		}
+
+		payload.name = name;
+		payload.phone = phoneRaw.replace(/\s+/g, "");
+		payload.email = emailRaw || null;
+		payload.subject = cleanText(body?.subject, 191);
+		payload.message = message;
+		payload.topic = topic;
+		payload.branch_id = branchRaw || null;
+		payload.incident_date = incidentDate;
+		// Apa pun yang dikirim klien, status selalu "new".
+		payload.status = "new";
+		return { ok: true, data: payload };
+	}
+
+	if (collection === "partnerships") {
+		const name = cleanText(body?.name, 120);
+		if (!name || name.length < 2) return { ok: false, error: "Nama wajib diisi (minimal 2 karakter)." };
+
+		const phoneRaw = String(body?.phone ?? "").trim();
+		if (!PHONE_RE.test(phoneRaw)) return { ok: false, error: "Nomor WA tidak valid." };
+
+		const emailRaw = String(body?.email ?? "").trim();
+		if (emailRaw && (emailRaw.length > 191 || !EMAIL_RE.test(emailRaw))) {
+			return { ok: false, error: "Email tidak valid." };
+		}
+
+		payload.name = name;
+		payload.company = cleanText(body?.company, 120);
+		payload.phone = phoneRaw.replace(/\s+/g, "");
+		payload.email = emailRaw || null;
+		payload.city = cleanText(body?.city, 120);
+		payload.notes = cleanText(body?.notes, 2000);
+		payload.status = "new";
+		return { ok: true, data: payload };
+	}
+
+	if (collection === "testimonials") {
+		const name = cleanText(body?.customer_name ?? body?.name, 120);
+		if (!name) return { ok: false, error: "Nama wajib diisi." };
+
+		const comment = cleanText(body?.comment ?? body?.message, 2000);
+		if (!comment || comment.length < 5) return { ok: false, error: "Isi testimoni terlalu pendek." };
+
+		payload.customer_name = name;
+		payload.comment = comment;
+		payload.rating = Math.min(5, Math.max(1, Number(body?.rating) || 5));
+		payload.branch_id = ID_RE.test(String(body?.branch_id ?? "")) ? String(body.branch_id) : null;
+		payload.source = "website";
+		// Pengunjung tidak boleh meloloskan testimoni sendiri.
+		payload.is_approved = false;
+		return { ok: true, data: payload };
+	}
+
+	if (collection === "spin_plays") {
+		const phoneRaw = String(body?.phone ?? "").trim();
+		if (!PHONE_RE.test(phoneRaw)) return { ok: false, error: "Nomor WA tidak valid." };
+		payload.phone = phoneRaw.replace(/\s+/g, "");
+		payload.branch_id = ID_RE.test(String(body?.branch_id ?? "")) ? String(body.branch_id) : null;
+		payload.reward_id = ID_RE.test(String(body?.reward_id ?? "")) ? String(body.reward_id) : null;
+		payload.is_winner = false;
+		payload.is_redeemed = false;
+		return { ok: true, data: payload };
+	}
+
+	// Koleksi lain tidak boleh ditulis publik; ini pengaman terakhir.
+	return { ok: false, error: "Forbidden" };
+}
+
+// ---------------------------------------------------------------------------
+// Penerjemah filter teks -> SQL
+//   "name ~ \"bohar\""            -> `name` LIKE '%bohar%'
+//   "is_active = true"            -> `is_active` = 1
+//   "a = \"x\" && b >= \"y\""     -> `a` = ? AND `b` >= ?
+// ---------------------------------------------------------------------------
+const FILTER_TOKEN = /([A-Za-z_][A-Za-z0-9_]*)\s*(~|!~|>=|<=|!=|=|>|<)\s*(?:"((?:[^"\\]|\\.)*)"|'((?:[^'\\]|\\.)*)'|(-?\d+(?:\.\d+)?)|(true|false|null))/g;
+
+function parseFilter(filter, params) {
+	if (!filter || !String(filter).trim()) return { sql: "", values: [] };
+
+	// Pecah berdasarkan && dan || di level teratas saja, supaya tanda kurung
+	// seperti `(a = null || b >= "x")` tidak ikut terpecah.
+	const tokenize = (input) => {
+		const tokens = [];
+		let depth = 0;
+		let current = "";
+		for (let i = 0; i < input.length; i += 1) {
+			const ch = input[i];
+			if (ch === '"' || ch === "'") {
+				const quote = ch;
+				current += ch;
+				i += 1;
+				while (i < input.length) {
+					current += input[i];
+					if (input[i] === "\\") {
+						i += 1;
+						current += input[i] ?? "";
+					} else if (input[i] === quote) break;
+					i += 1;
+				}
+				continue;
+			}
+			if (ch === "(") depth += 1;
+			if (ch === ")") depth = Math.max(0, depth - 1);
+			if (depth === 0 && (ch === "&" || ch === "|") && input[i + 1] === ch) {
+				tokens.push({ type: "op", value: ch + ch });
+				current = "";
+				i += 1;
+				continue;
+			}
+			current += ch;
+		}
+		if (current.trim()) tokens.push({ type: "part", value: current });
+		return tokens;
+	};
+
+	const toSql = (fragment) => {
+		const trimmed = String(fragment).trim();
+		if (!trimmed) return null;
+		// Buang kurung pembungkus, lalu proses isinya secara rekursif.
+		if (trimmed.startsWith("(") && trimmed.endsWith(")")) {
+			const inner = trimmed.slice(1, -1).trim();
+			const nested = toSql(inner);
+			return nested ? `(${nested})` : null;
+		}
+		FILTER_TOKEN.lastIndex = 0;
+		const match = FILTER_TOKEN.exec(trimmed);
+		if (!match) return null;
+		const [, field, op, dq, sq, num, bool] = match;
+		const col = identifier(field);
+		let raw = dq ?? sq;
+		if (raw !== undefined) raw = raw.replace(/\\(.)/g, "$1");
+
+		if (op === "~" || op === "!~") {
+			params.push(`%${raw}%`);
+			return `${col} ${op === "~" ? "LIKE" : "NOT LIKE"} ?`;
+		}
+		if (field === "id" && (op === "=" || op === "!=")) {
+			// id disimpan sebagai string di kolom VARCHAR(15), jangan di-parse angka.
+			params.push(String(raw ?? ""));
+			return `${col} ${op === "=" ? "=" : "<>"} ?`;
+		}
+		const SQL_OP = { "=": "=", "!=": "<>", ">": ">", "<": "<", ">=": ">=", "<=": "<=" }[op];
+		// FILTER_TOKEN menangkap literal `null` di grup 6, sama seperti `true`/`false`.
+		const nullLiteral = bool === "null" ? true : undefined;
+		if (bool !== undefined && bool !== "null") {
+			params.push(bool === "true" ? 1 : 0);
+			return `${col} ${SQL_OP} ?`;
+		}
+		if (num !== undefined) {
+			params.push(Number(num));
+			return `${col} ${SQL_OP} ?`;
+		}
+		// Membandingkan dengan null di SQL butuh IS NULL / IS NOT NULL.
+		if (nullLiteral) {
+			return `${col} IS ${op === "!=" ? "NOT " : ""}NULL`;
+		}
+		params.push(raw ?? null);
+		return `${col} ${SQL_OP} ?`;
+	};
+
+	const tokens = tokenize(String(filter));
+	let sql = "";
+	let pendingOp = "&&";
+	for (const token of tokens) {
+		if (token.type === "op") {
+			pendingOp = token.value;
+			continue;
+		}
+		const clause = toSql(token.value);
+		if (!clause) continue;
+		if (!sql) {
+			sql = clause;
+			continue;
+		}
+		sql += ` ${pendingOp === "&&" ? "AND" : "OR"} ${clause}`;
+		pendingOp = "&&";
+	}
+	if (!sql) return { sql: "", values: [] };
+	return { sql, values: params };
+}
+
+function parseSort(sort, collection) {
+	const fallback = SCHEMA[collection]?.order ?? "-created";
+	const source = sort && String(sort).trim() ? String(sort) : fallback;
+	return source
+		.split(",")
+		.map((token) => token.trim())
+		.filter(Boolean)
+		.map((token) => {
+			const desc = token.startsWith("-");
+			const field = token.replace(/^[+-]/, "");
+			if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(field)) return null;
+			return `${identifier(field)} ${desc ? "DESC" : "ASC"}`;
+		})
+		.filter(Boolean)
+		.join(", ");
+}
+
+// ---------------------------------------------------------------------------
+// Autentikasi: password hash + token sederhana (HMAC-SHA256)
+// ---------------------------------------------------------------------------
+const hashPassword = (password, salt) => {
+	const useSalt = salt ?? randomBytes(8).toString("hex");
+	const digest = createHash("sha256").update(`${useSalt}:${password}`).digest("hex");
+	return `${useSalt}$${digest}`;
+};
+
+const verifyPassword = (password, stored) => {
+	if (!stored || !stored.includes("$")) return false;
+	const [salt] = stored.split("$");
+	const candidate = hashPassword(password, salt);
+	try {
+		return timingSafeEqual(Buffer.from(candidate), Buffer.from(String(stored)));
+	} catch {
+		return false;
+	}
+};
+
+const signToken = (payload) => {
+	const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
+	const signature = createHash("sha256").update(`${body}.${JWT_SECRET}`).digest("base64url");
+	return `${body}.${signature}`;
+};
+
+const verifyToken = (token) => {
+	if (!token || !token.includes(".")) return null;
+	const [body, signature] = token.split(".");
+	const expected = createHash("sha256").update(`${body}.${JWT_SECRET}`).digest("base64url");
+	// Perbandingan timing-safe supaya signature tidak bisa ditebak
+	// lewat perbedaan waktu respons.
+	if (!constantTimeEqual(expected, signature)) return null;
+	try {
+		const payload = JSON.parse(Buffer.from(body, "base64url").toString("utf8"));
+		if (payload.exp && Date.now() / 1000 > payload.exp) return null;
+		return payload;
+	} catch {
+		return null;
+	}
+};
+
+/** Bandingkan dua string tanpa membocorkan panjang/waktu lewat timing. */
+function constantTimeEqual(a, b) {
+	const bufA = Buffer.from(String(a ?? ""), "utf8");
+	const bufB = Buffer.from(String(b ?? ""), "utf8");
+	// Panjang hash HMAC selalu sama; kalau beda, sudah pasti tidak cocok.
+	if (bufA.length !== bufB.length) return false;
+	return timingSafeEqual(bufA, bufB);
+}
+
+// ---------------------------------------------------------------------------
+// Bootstrap tabel admin
+// ---------------------------------------------------------------------------
+async function ensureAdminTable() {
+	await pool.query(`
+		CREATE TABLE IF NOT EXISTS \`_admins\` (
+			\`id\`       VARCHAR(15)  NOT NULL,
+			\`email\`    VARCHAR(191) NOT NULL,
+			\`password\` VARCHAR(191) NOT NULL,
+			\`created\`  DATETIME     NULL,
+			\`updated\`  DATETIME     NULL,
+			PRIMARY KEY (\`id\`),
+			UNIQUE KEY \`uq_admins_email\` (\`email\`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+	`);
+
+	// File branding (logo, favicon, gambar artikel).
+	// Yang disimpan di MySQL hanya nama filenya; file aslinya di folder uploads/.
+	await pool.query(`
+		CREATE TABLE IF NOT EXISTS \`branding_files\` (
+			\`id\`      VARCHAR(15)  NOT NULL,
+			\`type\`    VARCHAR(64)  NOT NULL DEFAULT 'logo',
+			\`file\`    VARCHAR(255) NULL,
+			\`created\` DATETIME     NULL,
+			\`updated\` DATETIME     NULL,
+			PRIMARY KEY (\`id\`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+	`);
+
+	const [[{ c }]] = await pool.query("SELECT COUNT(*) AS c FROM `_admins`");
+	if (Number(c) === 0) {
+		const email = process.env.API_ADMIN_EMAIL || "admin@mba-laundry.com";
+		const raw = process.env.API_ADMIN_PASSWORD || "Admin12345!";
+		await pool.query("INSERT INTO `_admins` (`id`,`email`,`password`,`created`) VALUES (?,?,?,NOW())", [
+			newRecordId(),
+			email,
+			hashPassword(raw),
+		]);
+		console.log(`[api] akun admin dibuat: ${email}`);
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Migrasi ringan: tambah kolom yang belum ada tanpa menyentuh data lama.
+// ---------------------------------------------------------------------------
+async function ensureColumn(table, column, definition) {
+	const cols = await tableColumns(table);
+	if (cols.has(column)) return;
+	await pool.query(`ALTER TABLE ${identifier(table)} ADD COLUMN ${identifier(column)} ${definition}`);
+	// Cache kolom dibuat sebelum ALTER, jadi harus dibuang supaya kolom baru
+	// langsung ikut terpakai oleh INSERT/UPDATE berikutnya.
+	columnCache.delete(table);
+	console.log(`[api] kolom ${table}.${column} ditambahkan`);
+}
+
+async function ensureContactColumns() {
+	// Tabel ini sudah ada di database produksi, jadi cukup pastikan bentuknya
+	// lengkap untuk halaman Bantuan (topik + detail laporan kehilangan).
+	await pool.query(`
+		CREATE TABLE IF NOT EXISTS \`contact_messages\` (
+			\`id\`            VARCHAR(15)  NOT NULL,
+			\`name\`          VARCHAR(191) NOT NULL,
+			\`phone\`         VARCHAR(32)  NULL,
+			\`email\`         VARCHAR(191) NULL,
+			\`subject\`       VARCHAR(191) NULL,
+			\`message\`       TEXT         NULL,
+			\`topic\`         VARCHAR(24)  NULL,
+			\`branch_id\`     VARCHAR(15)  NULL,
+			\`incident_date\` DATE         NULL,
+			\`machine_code\`  VARCHAR(32)  NULL,
+			\`status\`        VARCHAR(16)  NOT NULL DEFAULT 'new',
+			\`created\`       DATETIME     NULL,
+			\`updated\`       DATETIME     NULL,
+			PRIMARY KEY (\`id\`),
+			KEY \`idx_contact_topic\` (\`topic\`),
+			KEY \`idx_contact_status\` (\`status\`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+	`);
+
+	await ensureColumn("contact_messages", "topic", "VARCHAR(24) NULL");
+	await ensureColumn("contact_messages", "branch_id", "VARCHAR(15) NULL");
+	await ensureColumn("contact_messages", "incident_date", "DATE NULL");
+	await ensureColumn("contact_messages", "machine_code", "VARCHAR(32) NULL");
+}
+
+// ---------------------------------------------------------------------------
+// Upload file
+// ---------------------------------------------------------------------------
+// Hanya ekstensi gambar & dokumen aman. File .html/.js tidak diizinkan karena
+// bisa dipakai untuk stored XSS kalau dibuka langsung dari /api/files.
+// .svg diizinkan (dipakai logo/favicon) tapi selalu disajikan dengan CSP ketat
+// yang mematikan script di dalamnya.
+const ALLOWED_UPLOAD_EXT = new Set([".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif", ".ico", ".svg", ".pdf"]);
+
+const storage = multer.diskStorage({
+	destination: (_req, _file, cb) => cb(null, UPLOAD_DIR),
+	filename: (_req, file, cb) => {
+		const ext = extname(file.originalname).toLowerCase().replace(/[^a-z0-9.]/g, "");
+		cb(null, `${randomBytes(10).toString("hex")}${ext}`);
+	},
+});
+const upload = multer({
+	storage,
+	limits: { fileSize: 5 * 1024 * 1024, files: 10, fields: 60 },
+	fileFilter: (_req, file, cb) => {
+		const ext = extname(file.originalname).toLowerCase();
+		const mimeOk =
+			/^image\/(jpeg|png|webp|gif|avif|svg\+xml|x-icon|vnd\.microsoft\.icon)$/.test(file.mimetype) ||
+			file.mimetype === "application/pdf";
+		if (!ALLOWED_UPLOAD_EXT.has(ext) || !mimeOk) {
+			return cb(new Error("Tipe file tidak diizinkan. Hanya gambar atau PDF."));
+		}
+		cb(null, true);
+	},
+});
+
+// ---------------------------------------------------------------------------
+// App
+// ---------------------------------------------------------------------------
+const app = express();
+// Jangan pernah membocorkan teknologi yang dipakai.
+app.disable("x-powered-by");
+// Di belakang reverse proxy (nginx), supaya req.ip / x-forwarded-for benar.
+app.set("trust proxy", 1);
+
+app.use((req, res, next) => {
+	// Header keamanan dasar untuk semua respons API.
+	res.setHeader("X-Content-Type-Options", "nosniff");
+	res.setHeader("X-Frame-Options", "DENY");
+	res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+	res.setHeader("Cross-Origin-Resource-Policy", "same-origin");
+	res.setHeader("Permissions-Policy", "geolocation=(), microphone=(), camera=(), payment=()");
+	res.setHeader("Content-Security-Policy", "default-src 'none'; img-src 'self' data:; frame-ancestors 'none'");
+	if (IS_PRODUCTION) {
+		res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+	}
+	if (req.path.startsWith("/api/")) res.setHeader("Cache-Control", "no-store");
+
+	// CORS: hanya origin yang dikenal. Request tanpa Origin (curl, server-side)
+	// tetap dilayani karena tidak mengirim kredensial browser.
+	const origin = (req.headers.origin || "").replace(/\/+$/, "");
+	if (origin && ALLOWED_ORIGINS.has(origin)) {
+		res.setHeader("Access-Control-Allow-Origin", origin);
+		res.setHeader("Vary", "Origin");
+		res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+		res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, OPTIONS");
+		res.setHeader("Access-Control-Max-Age", "600");
+	}
+	next();
+});
+app.options(/.*/, (req, res) => {
+	const origin = (req.headers.origin || "").replace(/\/+$/, "");
+	if (!origin || ALLOWED_ORIGINS.has(origin)) return res.sendStatus(204);
+	res.sendStatus(403);
+});
+
+app.use(express.json({ limit: "1mb" }));
+app.use(express.urlencoded({ extended: false, limit: "256kb" }));
+
+// Log setiap error ke terminal supaya penyebab 500 langsung kelihatan.
+const logError = (where, error) => {
+	console.error(`[api] ERROR ${where}: ${error.code ?? ""} ${error.message}`);
+};
+
+app.get("/api/health", (_req, res) => {
+	res.json({ code: 200, message: "API is healthy.", data: {} });
+});
+
+// --- auth -----------------------------------------------------------------
+app.post(
+	"/api/collections/_superusers/auth-with-password",
+	async (req, res) => {
+		const retryAfter = loginBlocked(req);
+		if (retryAfter > 0) {
+			res.setHeader("Retry-After", String(retryAfter));
+			return jsonError(res, 429, "Terlalu banyak percobaan login. Coba lagi 15 menit lagi.");
+		}
+
+		const identity = req.body?.identity ?? req.body?.email;
+		const password = req.body?.password;
+		if (!identity || !password) return jsonError(res, 400, "Email dan password wajib diisi.");
+		if (String(identity).length > 191 || String(password).length > 200) {
+			return jsonError(res, 400, "Failed to authenticate.");
+		}
+
+		try {
+			const [rows] = await pool.query("SELECT * FROM `_admins` WHERE `email` = ? LIMIT 1", [String(identity)]);
+			const admin = rows[0];
+			if (!admin || !verifyPassword(String(password), admin.password)) {
+				// Yang dihitung hanya percobaan gagal, jadi login yang berhasil
+				// tidak pernah ikut mengunci akun sendiri.
+				registerLoginFailure(req);
+				// Pesan sengaja sama supaya tidak bisa dipakai menebak email mana
+				// yang terdaftar.
+				return jsonError(res, 400, "Failed to authenticate.");
+			}
+
+			const token = signToken({
+				id: admin.id,
+				email: admin.email,
+				type: "superuser",
+				exp: Math.floor(Date.now() / 1000) + TOKEN_TTL_SECONDS,
+			});
+			res.json({
+				token,
+				record: { id: admin.id, email: admin.email, collectionName: "_superusers" },
+				admin: { id: admin.id, email: admin.email },
+			});
+		} catch (error) {
+			logError("login", error);
+			jsonError(res, 500, "Database error.");
+		}
+	},
+);
+
+app.post(
+	"/api/collections/_superusers/update",
+	rateLimitMiddleware({ name: "admin-update", limit: 10, windowMs: 15 * 60 * 1000 }),
+	async (req, res) => {
+		const auth = verifyToken(bearerToken(req));
+		if (!auth) return jsonError(res, 401, "Unauthorized");
+		const { email, password, currentPassword } = req.body ?? {};
+		if (String(password ?? "").length > 200 || String(email ?? "").length > 191) {
+			return jsonError(res, 400, "Data tidak valid.");
+		}
+		if (email && !EMAIL_RE.test(String(email))) return jsonError(res, 400, "Format email tidak valid.");
+		if (password && String(password).length < 8) return jsonError(res, 400, "Password minimal 8 karakter.");
+		const [rows] = await pool.query("SELECT * FROM `_admins` WHERE `id` = ? LIMIT 1", [auth.id]);
+		if (!rows[0] || !verifyPassword(String(currentPassword ?? ""), rows[0].password)) {
+			return jsonError(res, 400, "Password lama tidak cocok.");
+		}
+		const nextEmail = email ? String(email) : rows[0].email;
+		const nextPassword = password ? hashPassword(String(password)) : rows[0].password;
+		await pool.query("UPDATE `_admins` SET `email` = ?, `password` = ?, `updated` = NOW() WHERE `id` = ?", [
+			nextEmail,
+			nextPassword,
+			auth.id,
+		]);
+		res.json({ id: auth.id, email: nextEmail, collectionName: "_superusers" });
+	},
+);
+
+function bearerToken(req) {
+	const header = req.get("authorization") || "";
+	return header.startsWith("Bearer ") ? header.slice(7).trim() : "";
+}
+
+/**
+ * Cek hak akses. Mengembalikan true kalau boleh lanjut.
+ * Kalau tidak boleh, respons 401/403 sudah dikirim dan hasilnya false.
+ */
+function enforceAccess(req, res, collection, action) {
+	if (isPublicAction(collection, action)) return true;
+	if (verifyToken(bearerToken(req))) return true;
+	jsonError(res, 401, "Unauthorized");
+	return false;
+}
+
+// --- files ----------------------------------------------------------------
+// Semua file sekarang tersimpan di folder UPLOAD_DIR. Tidak ada sumber lain.
+app.get("/api/files/:collection/:recordId/:filename", async (req, res) => {
+	const { filename } = req.params;
+	if (!/^[A-Za-z0-9._-]+$/.test(filename)) return res.sendStatus(400);
+
+	// Cari file hanya di dalam UPLOAD_DIR, jangan biarkan keluar lewat ../
+	const root = resolve(UPLOAD_DIR);
+	const local = resolve(root, filename);
+	if (!local.startsWith(root + sep)) {
+		return res.sendStatus(400);
+	}
+
+	if (existsSync(local)) {
+		res.setHeader("Cache-Control", "public, max-age=86400, immutable");
+		// SVG bisa berisi script. Saat dibuka langsung, script itu tidak boleh
+		// jalan. (Di <img> script SVG memang tidak pernah dieksekusi.)
+		if (extname(local).toLowerCase() === ".svg") {
+			res.setHeader("Content-Type", "image/svg+xml");
+			res.setHeader("Content-Disposition", "inline");
+			res.setHeader("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; sandbox");
+		}
+		return res.sendFile(local);
+	}
+
+	res.sendStatus(404);
+});
+
+// --- generic collection CRUD ---------------------------------------------
+app.get("/api/collections/:collection/records", async (req, res) => {
+	const { collection } = req.params;
+	const table = SCHEMA[collection];
+	if (!table) return jsonError(res, 404, `Collection "${collection}" tidak dikenal.`);
+	if (!enforceAccess(req, res, collection, "read")) return;
+	const isPublicReader = isPublicAction(collection, "read");
+	const selectCols = selectColumnsFor(collection, isPublicReader);
+
+	try {
+		const page = Math.max(1, Number(req.query.page || 1));
+		const perPage = Math.min(500, Math.max(1, Number(req.query.perPage || 20)));
+		const params = [];
+		const { sql: whereSql, values } = parseFilter(req.query.filter, params);
+		const orderBy = parseSort(req.query.sort, collection);
+
+		const where = whereSql ? ` WHERE ${whereSql}` : "";
+		// Pengunjung tanpa login hanya boleh melihat testimoni yang sudah
+		// disetujui. Filter ini dipaksa di server, tidak bisa dilewati klien.
+		const forced = isPublicReader && collection === "testimonials" ? "`is_approved` = 1" : "";
+		const finalWhere = forced ? (where ? `${where} AND ${forced}` : ` WHERE ${forced}`) : where;
+		const [[{ total }]] = await pool.query(
+			`SELECT COUNT(*) AS total FROM ${identifier(collection)}${finalWhere}`,
+			values,
+		);
+		const [rows] = await pool.query(
+			`SELECT ${selectCols} FROM ${identifier(collection)}${finalWhere} ORDER BY ${orderBy} LIMIT ? OFFSET ?`,
+			[...values, perPage, (page - 1) * perPage],
+		);
+
+		res.json({
+			page,
+			perPage,
+			totalItems: Number(total),
+			totalPages: Math.max(1, Math.ceil(Number(total) / perPage)),
+			items: rows.map((row) => fromDb(collection, row)),
+		});
+	} catch (error) {
+		logError(`list ${collection}`, error);
+		jsonError(res, 500, error.message);
+	}
+});
+
+app.get("/api/collections/:collection/records/:id", async (req, res) => {
+	const { collection, id } = req.params;
+	if (!SCHEMA[collection]) return jsonError(res, 404, `Collection "${collection}" tidak dikenal.`);
+	if (!enforceAccess(req, res, collection, "read")) return;
+	const isPublicReader = isPublicAction(collection, "read");
+	const selectCols = selectColumnsFor(collection, isPublicReader);
+	// Testimoni yang belum di-approve tidak boleh terlihat tanpa login.
+	const forced = isPublicReader && collection === "testimonials" ? " AND `is_approved` = 1" : "";
+	try {
+		const [rows] = await pool.query(
+			`SELECT ${selectCols} FROM ${identifier(collection)} WHERE \`id\` = ?${forced} LIMIT 1`,
+			[id],
+		);
+		if (!rows[0]) return jsonError(res, 404, "Record tidak ditemukan.");
+		res.json(fromDb(collection, rows[0]));
+	} catch (error) {
+		logError(`get ${collection}`, error);
+		jsonError(res, 500, error.message);
+	}
+});
+
+async function writeRecord(req, res, mode) {
+	const { collection } = req.params;
+	const id = req.params.id;
+	if (!SCHEMA[collection]) return jsonError(res, 404, `Collection "${collection}" tidak dikenal.`);
+
+	// Hak tulis diambil dari SCHEMA[collection].auth. Default "admin".
+	// Pengunjung tanpa login hanya boleh create pada koleksi form publik
+	// (contact_messages, partnerships, testimonials, spin_plays).
+	const action = mode === "create" ? "create" : "update";
+	if (!enforceAccess(req, res, collection, action)) return;
+
+	try {
+		const isPublicWrite = isPublicAction(collection, action);
+		let payload;
+
+		if (isPublicWrite) {
+			// Payload dari pengunjung tanpa login dibersihkan & divalidasi ulang
+			// di server. Frontend tidak bisa dipercaya.
+			const result = await sanitizePublicPayload(collection, req.body);
+			if (!result.ok) return jsonError(res, 400, result.error);
+			payload = result.data;
+		} else {
+			payload = { ...req.body };
+			// multipart/form-data mengirim nilai sebagai string
+			for (const key of Object.keys(payload)) {
+				if (typeof payload[key] === "string" && (payload[key] === "true" || payload[key] === "false")) {
+					if (BOOLEAN_FIELDS[key]) payload[key] = payload[key] === "true";
+				}
+			}
+			if (req.files?.length) {
+				for (const file of req.files) {
+					payload[file.fieldname] = file.filename;
+				}
+			}
+		}
+
+		let recordId = id;
+
+		if (mode === "create") {
+			recordId = payload.id && /^[A-Za-z0-9]{15}$/.test(payload.id) ? payload.id : newRecordId();
+			const fields = await filterToColumns(collection, toDb(collection, payload));
+			const cols = ["id", ...Object.keys(fields)];
+			const vals = [recordId, ...Object.values(fields)];
+			if (cols.includes("created") === false && (await tableColumns(collection)).has("created")) {
+				cols.push("created");
+				vals.push(new Date());
+			}
+			if (cols.includes("updated") === false && (await tableColumns(collection)).has("updated")) {
+				cols.push("updated");
+				vals.push(new Date());
+			}
+			await pool.query(
+				`INSERT INTO ${identifier(collection)} (${cols.map(identifier).join(",")}) VALUES (${cols.map(() => "?").join(",")})`,
+				vals,
+			);
+		} else {
+			const fields = await filterToColumns(collection, toDb(collection, payload));
+			const keys = Object.keys(fields);
+			const sets = keys.map((k) => `${identifier(k)} = ?`);
+			const vals = [...Object.values(fields)];
+			if ((await tableColumns(collection)).has("updated") && !keys.includes("updated")) {
+				sets.push(`${identifier("updated")} = ?`);
+				vals.push(new Date());
+			}
+			if (sets.length) {
+				await pool.query(
+					`UPDATE ${identifier(collection)} SET ${sets.join(", ")} WHERE \`id\` = ?`,
+					[...vals, recordId],
+				);
+			}
+		}
+
+		const [found] = await pool.query(`SELECT * FROM ${identifier(collection)} WHERE \`id\` = ? LIMIT 1`, [
+			recordId,
+		]);
+		const row = found[0];
+		if (!row) return jsonError(res, 404, "Record tidak ditemukan.");
+		res.json(fromDb(collection, row));
+	} catch (error) {
+		logError(`write ${collection}`, error);
+		jsonError(res, 400, error.message);
+	}
+}
+
+const uploadMiddleware = upload.any();
+
+/**
+ * Dipasang SEBELUM multer. Kalau request tanpa login (form publik), file upload
+ * tidak diizinkan sama sekali supaya orang tidak bisa menumpuk file di server.
+ */
+function guardPublicUpload(req, res, next) {
+	const { collection } = req.params;
+	const action = req.method === "POST" ? "create" : "update";
+	if (!SCHEMA[collection]) return jsonError(res, 404, `Collection "${collection}" tidak dikenal.`);
+	if (isPublicAction(collection, action)) {
+		const contentType = String(req.headers["content-type"] ?? "");
+		if (contentType.startsWith("multipart/form-data")) {
+			return jsonError(res, 400, "Form publik tidak menerima upload file.");
+		}
+		return next();
+	}
+	// Admin: token dicek dulu supaya file tidak ditulis untuk request anonim.
+	if (!enforceAccess(req, res, collection, action)) return;
+	next();
+}
+
+// Pembatas khusus form publik: 5 kiriman / 10 menit / IP.
+const publicFormLimiter = rateLimitMiddleware({
+	name: "public-form",
+	limit: 5,
+	windowMs: 10 * 60 * 1000,
+	message: "Terlalu banyak kiriman. Coba lagi beberapa menit lagi.",
+});
+
+app.post(
+	"/api/collections/:collection/records",
+	(req, res, next) => guardPublicUpload(req, res, next),
+	(req, res, next) => {
+		const { collection } = req.params;
+		if (!SCHEMA[collection] || isPublicAction(collection, "create")) return publicFormLimiter(req, res, next);
+		next();
+	},
+	uploadMiddleware,
+	(req, res) => writeRecord(req, res, "create"),
+);
+app.patch(
+	"/api/collections/:collection/records/:id",
+	(req, res, next) => guardPublicUpload(req, res, next),
+	uploadMiddleware,
+	(req, res) => writeRecord(req, res, "update"),
+);
+
+app.delete("/api/collections/:collection/records/:id", async (req, res) => {
+	const { collection, id } = req.params;
+	if (!SCHEMA[collection]) return jsonError(res, 404, `Collection "${collection}" tidak dikenal.`);
+	if (!enforceAccess(req, res, collection, "delete")) return;
+	try {
+		const [rows] = await pool.query(`SELECT * FROM ${identifier(collection)} WHERE \`id\` = ? LIMIT 1`, [id]);
+		const spec = SCHEMA[collection] ?? {};
+		for (const field of spec.file ?? []) {
+			const name = rows[0]?.[field];
+			if (typeof name === "string" && /^[A-Za-z0-9._-]+$/.test(name)) {
+				await unlink(join(UPLOAD_DIR, name)).catch(() => {});
+			}
+		}
+		await pool.query(`DELETE FROM ${identifier(collection)} WHERE \`id\` = ?`, [id]);
+		res.sendStatus(204);
+	} catch (error) {
+		logError(`delete ${collection}`, error);
+		jsonError(res, 500, error.message);
+	}
+});
+
+// Penangan error terakhir: jangan pernah kirim stack trace ke klien.
+app.use((error, _req, res, _next) => {
+	logError("unhandled", error);
+	if (res.headersSent) return;
+	const status = error?.status || (error?.code === "LIMIT_FILE_SIZE" ? 413 : 500);
+	const message =
+		status === 413
+			? "File terlalu besar (maksimal 5 MB)."
+			: status === 400
+				? error.message || "Permintaan tidak valid."
+				: "Terjadi kesalahan pada server.";
+	jsonError(res, status, message);
+});
+
+// ---------------------------------------------------------------------------
+// Start
+// ---------------------------------------------------------------------------
+await mkdir(UPLOAD_DIR, { recursive: true });
+
+// Pastikan tabel _admins ada lalu isi akun admin dari API_ADMIN_EMAIL /
+// API_ADMIN_PASSWORD kalau tabelnya masih kosong.
+await ensureAdminTable();
+await ensureContactColumns();
+
+app.listen(PORT, () => {
+	console.log(`[api] MBA Laundry API jalan di http://localhost:${PORT}`);
+	console.log(`[api] MySQL: ${process.env.MYSQL_DATABASE}@${process.env.MYSQL_HOST}`);
+	console.log(`[api] upload: ${UPLOAD_DIR}`);
+});

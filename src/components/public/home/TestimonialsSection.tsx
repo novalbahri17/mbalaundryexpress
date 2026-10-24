@@ -4,9 +4,12 @@ import { useRef } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { getTestimonials } from "@/api/testimonials.api";
+import { usePublicText } from "@/hooks/usePublicText";
 import { Button, Card } from "@/design-system";
 
 export function TestimonialsSection() {
+	const text = usePublicText();
+	const t = text.home.testimonials;
 	const scrollRef = useRef<HTMLDivElement>(null);
 
 	const { data: testimonials = [], isLoading } = useQuery({
@@ -29,8 +32,8 @@ export function TestimonialsSection() {
 	if (isLoading || testimonials.length === 0) return null;
 
 	return (
-		<section className="overflow-hidden bg-white px-4 py-16 dark:bg-neutral-950 sm:px-6 sm:py-20 md:px-12 md:py-32">
-			<div className="mx-auto max-w-[1400px]">
+		<section className="section-block overflow-hidden bg-white dark:bg-neutral-950">
+			<div className="section-inner !max-w-[1400px]">
 				{/* Header */}
 				<motion.div
 					initial={{ opacity: 0, y: 20 }}
@@ -38,16 +41,9 @@ export function TestimonialsSection() {
 					viewport={{ once: true }}
 					className="text-center"
 				>
-					<span className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-amber-400 to-orange-500 px-4 py-2 text-sm font-bold uppercase tracking-wide text-white shadow-lg">
-						<MessageCircle className="h-4 w-4" />
-						Testimoni
-					</span>
-					<h2 className="mt-4 text-2xl font-bold tracking-tight text-neutral-900 dark:text-white sm:text-3xl md:text-4xl">
-						Apa Kata Pelanggan Kami
-					</h2>
-					<p className="mx-auto mt-3 max-w-lg px-4 text-sm text-neutral-600 dark:text-neutral-300 sm:text-base">
-						Testimoni nyata dari pelanggan yang telah menggunakan layanan kami
-					</p>
+					<p className="section-kicker">{t.kicker}</p>
+					<h2 className="section-title text-center">{t.title}</h2>
+					<p className="section-subtitle mx-auto !max-w-lg text-center">{t.subtitle}</p>
 				</motion.div>
 
 				{/* Carousel */}
@@ -92,7 +88,7 @@ export function TestimonialsSection() {
 												className="h-10 w-10 rounded-full object-cover sm:h-12 sm:w-12"
 											/>
 										) : (
-											<div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-ruby-500 to-rose-500 text-base font-bold text-white sm:h-12 sm:w-12 sm:text-lg">
+											<div className="flex h-10 w-10 items-center justify-center rounded-full bg-ruby-700 text-base font-bold text-white sm:h-12 sm:w-12 sm:text-lg">
 												{item.customer_name.charAt(0).toUpperCase()}
 											</div>
 										)}
@@ -101,7 +97,7 @@ export function TestimonialsSection() {
 												{item.customer_name}
 											</p>
 											<p className="text-xs text-neutral-500 dark:text-neutral-400 capitalize sm:text-sm">
-												{item.source || "Pelanggan"}
+												{item.source || t.fallbackSource}
 											</p>
 										</div>
 									</div>
@@ -142,7 +138,7 @@ export function TestimonialsSection() {
 				>
 					<Link to="/testimoni">
 						<Button variant="ghost" rightIcon={<ArrowRight className="h-4 w-4" />}>
-							Lihat Semua Review
+							{t.viewAll}
 						</Button>
 					</Link>
 				</motion.div>

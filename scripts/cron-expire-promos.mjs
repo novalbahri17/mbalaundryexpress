@@ -2,28 +2,29 @@
 
 const port = Number(process.env.CRON_PORT || 3010);
 const secret = process.env.CRON_SECRET;
-const baseUrl = process.env.POCKETBASE_URL || "http://127.0.0.1:8090";
-const adminEmail = process.env.POCKETBASE_ADMIN_EMAIL;
-const adminPassword = process.env.POCKETBASE_ADMIN_PASSWORD;
+const baseUrl = process.env.API_BASE_URL || `http://127.0.0.1:${process.env.API_PORT || 3002}`;
+const adminEmail = process.env.API_ADMIN_EMAIL;
+const adminPassword = process.env.API_ADMIN_PASSWORD;
 
 if (!secret || !adminEmail || !adminPassword) {
-	throw new Error("CRON_SECRET, POCKETBASE_ADMIN_EMAIL, dan POCKETBASE_ADMIN_PASSWORD wajib diisi");
+	throw new Error("CRON_SECRET, API_ADMIN_EMAIL, dan API_ADMIN_PASSWORD wajib diisi");
 }
 
 const login = async () => {
-	const response = await fetch(`${baseUrl}/api/admins/auth-with-password`, {
+	const response = await fetch(`${baseUrl}/api/collections/_superusers/auth-with-password`, {
 		method: "POST",
 		headers: { "content-type": "application/json" },
 		body: JSON.stringify({ identity: adminEmail, password: adminPassword }),
 	});
-	if (!response.ok) throw new Error("Gagal login admin PocketBase");
+	if (!response.ok) throw new Error("Gagal login admin");
 	return response.json();
 };
 
 const expirePromos = async (token) => {
-	const listRes = await fetch(`${baseUrl}/api/collections/promos/records?perPage=200&filter=${encodeURIComponent('status!="expired" && end_date<@now')}`, {
-		headers: { Authorization: `Bearer ${token}` },
-	});
+	const listRes = await fetch(
+		`${baseUrl}/api/collections/promos/records?perPage=200&filter=${encodeURIComponent('status!="expired" && end_date<@now')}`,
+		{ headers: { Authorization: `Bearer ${token}` } },
+	);
 	if (!listRes.ok) throw new Error("Gagal ambil data promo");
 	const data = await listRes.json();
 	for (const item of data.items) {

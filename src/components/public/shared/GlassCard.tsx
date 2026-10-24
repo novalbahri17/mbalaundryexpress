@@ -10,11 +10,11 @@ type GlassCardProps = PropsWithChildren<{
 export function GlassCard({ children, className, hoverable = true }: GlassCardProps) {
 	return (
 		<motion.div
-			whileHover={hoverable ? { y: -6, boxShadow: "0 0 60px rgba(21,101,192,0.1)" } : undefined}
-			transition={{ type: "spring", stiffness: 250, damping: 20 }}
+			whileHover={hoverable ? { y: -4 } : undefined}
+			transition={{ duration: 0.18, ease: "easeOut" }}
 			className={cn(
-				"glass-card rounded-2xl border border-white/20 p-5 transition-all duration-300",
-				hoverable && "hover:border-ruby-400/30",
+				"glass-card rounded-2xl p-5",
+				hoverable && "transition-shadow duration-200 hover:shadow-[var(--shadow-card-hover)]",
 				className,
 			)}
 		>
@@ -22,4 +22,3 @@ export function GlassCard({ children, className, hoverable = true }: GlassCardPr
 		</motion.div>
 	);
 }
-

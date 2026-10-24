@@ -3,8 +3,8 @@
  * Premium gamified spin wheel with physics
  */
 
-import { motion, useAnimation, AnimatePresence } from "framer-motion";
-import { useState, useRef, useCallback } from "react";
+import { AnimatePresence, motion, useAnimation } from "framer-motion";
+import { useCallback, useRef, useState } from "react";
 import { cn } from "@/utils";
 
 // ============================================
@@ -138,7 +138,7 @@ export function SpinWheel({
 				/>
 
 				{/* Light effects */}
-				<div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/20 to-transparent pointer-events-none" />
+				<div className="pointer-events-none absolute inset-0 rounded-full" />
 
 				{/* Wheel SVG */}
 				<motion.svg
@@ -190,9 +190,9 @@ export function SpinWheel({
 					className={cn(
 						"absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2",
 						"w-16 h-16 rounded-full",
-						"bg-gradient-to-br from-ruby-500 to-ruby-700",
+						"bg-ruby-700 hover:bg-ruby-800",
 						"text-white font-bold text-sm",
-						"shadow-lg shadow-ruby-500/30",
+						"shadow-card",
 						"border-4 border-white dark:border-neutral-800",
 						"disabled:opacity-50 disabled:cursor-not-allowed",
 						"z-20",
@@ -251,13 +251,12 @@ export function SpinWheel({
 							transition={{ type: "spring", stiffness: 300, damping: 20 }}
 						>
 							<motion.div
-								className="text-6xl mb-4"
-								animate={{ rotate: [0, -10, 10, 0], scale: [1, 1.2, 1] }}
+								className="mb-4 h-12 w-12 rounded-full"
+								style={{ backgroundColor: winner.color }}
+								animate={{ scale: [1, 1.15, 1] }}
 								transition={{ duration: 0.5, repeat: 2 }}
-							>
-								🎉
-							</motion.div>
-							<h3 className="text-2xl font-bold text-neutral-900 dark:text-white mb-2">Selamat!</h3>
+							/>
+							<h3 className="mb-2 text-2xl font-bold text-neutral-900 dark:text-white">Selamat!</h3>
 							<p className="text-neutral-600 dark:text-neutral-300 mb-4">Kamu mendapatkan</p>
 							<div
 								className="inline-block px-6 py-3 rounded-2xl text-white font-bold text-xl"
@@ -265,7 +264,9 @@ export function SpinWheel({
 							>
 								{winner.label}
 							</div>
-							{winner.rare && <span className="block mt-3 text-sm text-amber-500 font-semibold">⭐ Rare Item!</span>}
+							{winner.rare && (
+								<span className="mt-3 block text-sm font-semibold text-amber-600 dark:text-amber-400">Item langka</span>
+							)}
 						</motion.div>
 					</motion.div>
 				)}

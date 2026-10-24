@@ -43,7 +43,7 @@ export function Heading({
 			className={cn(
 				"font-extrabold tracking-[-0.02em] text-[var(--text-main)]",
 				variantClass[variant],
-				gradient && "bg-gradient-primary bg-clip-text text-transparent",
+				gradient && "text-[var(--brand)]",
 				className,
 			)}
 			{...props}
@@ -66,4 +66,3 @@ export function Heading({
 		</motion.div>
 	);
 }
-

@@ -6,8 +6,15 @@ import {
 	getRecordById,
 	listRecords,
 	updateRecord,
-} from "@/api/pocketbase";
-import type { Branch, BranchFacility, BranchGallery, BranchHour, PaginatedResponse } from "@/types/database.types";
+} from "@/api/client";
+import type {
+	Branch,
+	BranchFacility,
+	BranchGallery,
+	BranchHour,
+	BranchMachine,
+	PaginatedResponse,
+} from "@/types/database.types";
 
 const isDirectUrl = (value?: string): boolean =>
 	Boolean(
@@ -62,8 +69,7 @@ export const getBranchById = async (id: string): Promise<Branch> => {
 	return mapBranchImage(row);
 };
 
-export const createBranch = (payload: Partial<Branch> | FormData): Promise<Branch> =>
-	createRecord("branches", payload);
+export const createBranch = (payload: Partial<Branch> | FormData): Promise<Branch> => createRecord("branches", payload);
 export const updateBranch = (id: string, payload: Partial<Branch> | FormData): Promise<Branch> =>
 	updateRecord("branches", id, payload);
 export const deleteBranch = (id: string): Promise<void> => deleteRecord("branches", id);
@@ -116,6 +122,43 @@ export const saveBranchFacility = (payload: Partial<BranchFacility>): Promise<Br
 
 export const deleteBranchFacility = (id: string): Promise<void> => deleteRecord("branch_facilities", id);
 
+/* ---------------------------------------------------------------------------
+ * Mesin per cabang.
+ * Tarif Rupiah tidak disimpan per mesin: dihitung dari `coins` × `coin_value`
+ * cabang, jadi kalau harga coin naik cukup ubah satu angka di tabel branches.
+ * ------------------------------------------------------------------------- */
+
+export const getBranchMachines = async (branchId?: string): Promise<BranchMachine[]> => {
+	const filters: string[] = ["is_active = true"];
+	if (branchId) filters.push(`branch_id = \"${escapeFilterValue(branchId)}\"`);
+	const res = await listRecords("branch_machines", {
+		page: 1,
+		perPage: 300,
+		filter: filters.join(" && "),
+		sort: "+branch_id,+sort_order",
+	});
+	return res.items;
+};
+
+export const getAllBranchMachines = async (): Promise<BranchMachine[]> => {
+	const res = await listRecords("branch_machines", {
+		page: 1,
+		perPage: 300,
+		filter: "is_active = true",
+		sort: "+branch_id,+sort_order",
+	});
+	return res.items;
+};
+
+export const saveBranchMachine = (payload: Partial<BranchMachine>): Promise<BranchMachine> => {
+	if (payload.id) {
+		return updateRecord("branch_machines", payload.id, payload);
+	}
+	return createRecord("branch_machines", payload);
+};
+
+export const deleteBranchMachine = (id: string): Promise<void> => deleteRecord("branch_machines", id);
+
 export const getBranchGallery = async (branchId?: string): Promise<BranchGallery[]> => {
 	const filters: string[] = [];
 	if (branchId) filters.push(`branch_id = \"${escapeFilterValue(branchId)}\"`);
@@ -123,7 +166,7 @@ export const getBranchGallery = async (branchId?: string): Promise<BranchGallery
 		page: 1,
 		perPage: 200,
 		filter: filters.join(" && "),
-		sort: "+sort_order,-created",
+		sort: "-created",
 	});
 	return res.items.map(mapGalleryImage);
 };

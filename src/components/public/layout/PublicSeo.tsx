@@ -1,101 +1,123 @@
-import { Helmet } from "react-helmet-async";
+import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { useBranding } from "@/hooks/useBranding";
+import { usePublicText } from "@/hooks/usePublicText";
+
+// ---------------------------------------------------------------------------
+// SEO per halaman.
+//
+// Kenapa tidak pakai react-helmet-async?
+// Helmet menandai tag yang ia kelola dengan `data-rh` dan hanya menyentuh tag
+// yang punya penanda itu. Tag SEO statis di index.html (yang sengaja ditulis
+// untuk crawler non-JS) tidak punya penanda tersebut, sehingga Helmet:
+//   - menambah <title> kedua, atau
+//   - tidak memperbarui canonical/description sama sekali.
+// Sudah dicoba dua-duanya dan hasilnya tidak konsisten.
+//
+// Jadi di sini DOM diurus langsung: cari tag yang ada, ubah isinya, dan
+// hanya buat elemen baru kalau memang belum ada. Hasilnya selalu tepat satu
+// <title>, satu canonical, satu meta description.
+// ---------------------------------------------------------------------------
 
 type SeoEntry = {
 	title: string;
 	description: string;
 };
 
-const seoMap: Record<string, SeoEntry> = {
-	"/": {
-		title: "MBA Laundry Express - Self Service Laundry Modern",
-		description:
-			"Laundry self-service modern dengan harga transparan, proses cepat, dan cabang strategis untuk mahasiswa, keluarga, dan pekerja.",
-	},
-	"/cabang": {
-		title: "Cabang MBA Laundry Express",
-		description: "Temukan cabang MBA Laundry Express terdekat lengkap dengan jam operasional, fasilitas, dan harga per layanan.",
-	},
-	"/promo": {
-		title: "Promo MBA Laundry Express",
-		description: "Dapatkan promo laundry terbaru dengan diskon menarik, countdown real-time, dan kode promo khusus.",
-	},
-	"/harga": {
-		title: "Harga Laundry MBA Laundry Express",
-		description: "Cek daftar harga laundry transparan tanpa biaya tersembunyi untuk cuci, kering, dan paket bundling.",
-	},
-	"/blog": {
-		title: "Blog Tips Laundry - MBA Laundry Express",
-		description: "Artikel dan tips merawat pakaian, mengatasi noda, serta panduan laundry praktis setiap hari.",
-	},
-	"/faq": {
-		title: "FAQ MBA Laundry Express",
-		description: "Jawaban lengkap pertanyaan umum seputar layanan laundry, pembayaran, promo, dan operasional cabang.",
-	},
-	"/kontak": {
-		title: "Kontak MBA Laundry Express",
-		description: "Hubungi tim MBA Laundry Express untuk pertanyaan layanan, kemitraan, atau dukungan pelanggan.",
-	},
+// Cadangan kalau entri locale tidak ditemukan (mis. rute baru belum didaftarkan).
+const FALLBACK_ENTRY: SeoEntry = {
+	title: "MBA Laundry Express",
+	description: "MBA Laundry Express",
 };
+
+const SITE_URL = import.meta.env.VITE_SITE_URL || "https://mbalaundryexpress.com";
+const DEFAULT_TITLE = "MBA Laundry Express";
+
+/** Ambil satu elemen, buat kalau belum ada. Tidak pernah menduplikasi. */
+function upsertMeta(selector: string, attrs: Record<string, string>) {
+	let el = document.head.querySelector<HTMLMetaElement>(selector);
+	if (!el) {
+		el = document.createElement("meta");
+		document.head.appendChild(el);
+	}
+	for (const [key, value] of Object.entries(attrs)) el.setAttribute(key, value);
+}
+
+function upsertCanonical(href: string) {
+	let el = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]');
+	if (!el) {
+		el = document.createElement("link");
+		el.rel = "canonical";
+		document.head.appendChild(el);
+	}
+	el.setAttribute("href", href);
+}
+
+function applySeo(opts: {
+	title: string;
+	description: string;
+	canonical: string;
+	logoUrl: string;
+	siteName: string;
+	ogLocale: string;
+}) {
+	const { title, description, canonical, logoUrl, siteName, ogLocale } = opts;
+
+	if (document.title !== title) document.title = title;
+
+	upsertMeta('meta[name="description"]', { name: "description", content: description });
+	upsertCanonical(canonical);
+
+	upsertMeta('meta[property="og:type"]', { property: "og:type", content: "website" });
+	upsertMeta('meta[property="og:locale"]', { property: "og:locale", content: ogLocale });
+	upsertMeta('meta[property="og:site_name"]', { property: "og:site_name", content: siteName });
+	upsertMeta('meta[property="og:title"]', { property: "og:title", content: title });
+	upsertMeta('meta[property="og:description"]', { property: "og:description", content: description });
+	upsertMeta('meta[property="og:url"]', { property: "og:url", content: canonical });
+	upsertMeta('meta[property="og:image"]', { property: "og:image", content: logoUrl });
+
+	upsertMeta('meta[name="twitter:card"]', { name: "twitter:card", content: "summary_large_image" });
+	upsertMeta('meta[name="twitter:title"]', { name: "twitter:title", content: title });
+	upsertMeta('meta[name="twitter:description"]', { name: "twitter:description", content: description });
+	upsertMeta('meta[name="twitter:image"]', { name: "twitter:image", content: logoUrl });
+}
 
 export function PublicSeo() {
 	const location = useLocation();
 	const { data: branding } = useBranding();
-	
-	const siteUrl = import.meta.env.VITE_SITE_URL || "https://mbalaundryexpress.com";
-	const normalizedPath = location.pathname.endsWith("/") && location.pathname !== "/"
-		? location.pathname.slice(0, -1)
-		: location.pathname;
+	const text = usePublicText();
+	const seoMap = text.seo as Record<string, SeoEntry>;
+
+	const normalizedPath =
+		location.pathname.endsWith("/") && location.pathname !== "/" ? location.pathname.slice(0, -1) : location.pathname;
 
 	const matchedKey = Object.keys(seoMap)
 		.sort((a, b) => b.length - a.length)
 		.find((key) => normalizedPath === key || normalizedPath.startsWith(`${key}/`));
 
-	const defaultEntry = seoMap[matchedKey ?? "/"];
-	
-	// Use branding settings if available
-	const siteTitle = branding?.site_title || "MBA Laundry Express";
-	const siteDescription = branding?.site_description || defaultEntry.description;
-	const pageTitle = normalizedPath === "/" 
-		? `${siteTitle} - Self Service Laundry Modern`
-		: `${defaultEntry.title.replace("MBA Laundry Express", siteTitle)}`;
-	
-	const canonical = `${siteUrl}${normalizedPath}`;
-	const imageUrl = branding?.logo_url || `${siteUrl}/pwa-512x512.png`;
+	// Slug dinamis (mis. /blog/:slug) mewarisi entri induknya.
+	const entry = seoMap[matchedKey ?? "/"] ?? FALLBACK_ENTRY;
 
-	const orgSchema = {
-		"@context": "https://schema.org",
-		"@type": "Laundry",
-		name: siteTitle,
-		url: siteUrl,
-		telephone: "+62 812-3456-7890",
-		address: {
-			"@type": "PostalAddress",
-			addressCountry: "ID",
-			addressRegion: "Jawa Timur",
-		},
-	};
+	const siteTitle = branding?.site_title || DEFAULT_TITLE;
+	const description = entry.description || branding?.site_description || FALLBACK_ENTRY.description;
 
-	return (
-		<Helmet>
-			<title>{pageTitle}</title>
-			<meta name="description" content={siteDescription} />
-			<link rel="canonical" href={canonical} />
+	// Jangan ulangi nama brand dua kali di judul.
+	const pageTitle =
+		normalizedPath === "/" || entry.title.includes(siteTitle) ? entry.title : `${entry.title} | ${siteTitle}`;
 
-			<meta property="og:type" content="website" />
-			<meta property="og:site_name" content={siteTitle} />
-			<meta property="og:title" content={pageTitle} />
-			<meta property="og:description" content={siteDescription} />
-			<meta property="og:url" content={canonical} />
-			<meta property="og:image" content={imageUrl} />
+	const canonical = `${SITE_URL}${normalizedPath === "/" ? "/" : normalizedPath}`;
 
-			<meta name="twitter:card" content="summary_large_image" />
-			<meta name="twitter:title" content={pageTitle} />
-			<meta name="twitter:description" content={siteDescription} />
-			<meta name="twitter:image" content={imageUrl} />
+	const ogLocale = text.numberLocale === "en-US" ? "en_US" : "id_ID";
 
-			<script type="application/ld+json">{JSON.stringify(orgSchema)}</script>
-		</Helmet>
-	);
+	const logoUrl = branding?.logo_url
+		? branding.logo_url.startsWith("http")
+			? branding.logo_url
+			: `${SITE_URL}${branding.logo_url}`
+		: `${SITE_URL}/pwa-512x512.png`;
+
+	useEffect(() => {
+		applySeo({ title: pageTitle, description, canonical, logoUrl, siteName: siteTitle, ogLocale });
+	}, [pageTitle, description, canonical, logoUrl, siteTitle, ogLocale]);
+
+	return null;
 }

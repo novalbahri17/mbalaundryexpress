@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { SafeImage } from "@/components/public/shared/SafeImage";
 import { useBranches } from "@/hooks/useBranches";
+import { usePublicText } from "@/hooks/usePublicText";
 import { Button, Card } from "@/design-system";
 
 const FALLBACK_BRANCH_IMAGE =
@@ -12,6 +13,8 @@ const FALLBACK_BRANCH_IMAGE =
 const scrollStepPx = 320;
 
 export function LocationsSection() {
+	const text = usePublicText();
+	const t = text.home.locations;
 	const { data: branches = [], isLoading } = useBranches({ activeOnly: true });
 	const railRef = useRef<HTMLDivElement | null>(null);
 
@@ -26,8 +29,8 @@ export function LocationsSection() {
 	};
 
 	return (
-		<section className="bg-white px-4 py-16 dark:bg-neutral-950 sm:px-6 sm:py-20 md:px-12 md:py-32">
-			<div className="mx-auto max-w-[1200px]">
+		<section className="section-block bg-white dark:bg-neutral-950">
+			<div className="section-inner">
 				{/* Header */}
 				<motion.div
 					initial={{ opacity: 0, y: 20 }}
@@ -35,37 +38,30 @@ export function LocationsSection() {
 					viewport={{ once: true }}
 					className="text-center"
 				>
-					<span className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-teal-500 to-emerald-500 px-4 py-2 text-sm font-bold uppercase tracking-wide text-white shadow-lg">
-						<MapPin className="h-4 w-4" />
-						Lokasi
-					</span>
-					<h2 className="mt-4 text-2xl font-bold tracking-tight text-neutral-900 dark:text-white sm:text-3xl md:text-4xl">
-						Lokasi Kami, Satu Standar Kualitas
-					</h2>
-					<p className="mx-auto mt-3 max-w-lg px-4 text-sm text-neutral-600 dark:text-neutral-300 sm:text-base">
-						Setiap cabang MBA Laundry dilengkapi mesin modern dan standar kebersihan tinggi.
-					</p>
+					<p className="section-kicker">{t.kicker}</p>
+					<h2 className="section-title text-center">{t.title}</h2>
+					<p className="section-subtitle mx-auto !max-w-lg text-center">{t.subtitle}</p>
 				</motion.div>
 
 				{/* Branch Cards */}
 				<div className="mt-8 sm:mt-12">
 					{isLoading ? (
-						<p className="text-center text-neutral-500 dark:text-neutral-400">Memuat cabang...</p>
+						<p className="text-center text-neutral-500 dark:text-neutral-400">{t.loading}</p>
 					) : branches.length === 0 ? (
-						<p className="text-center text-neutral-500 dark:text-neutral-400">Belum ada cabang aktif saat ini.</p>
+						<p className="text-center text-neutral-500 dark:text-neutral-400">{t.empty}</p>
 					) : (
 						<>
 							{/* Navigation - Hidden on mobile */}
 							<div className="mb-4 hidden items-center justify-between sm:flex">
 								<p className="text-sm font-medium text-neutral-600 dark:text-neutral-300">
-									{branches.length} cabang aktif
+									{branches.length} {t.activeCount}
 								</p>
 								<div className="flex items-center gap-2">
 									<Button
 										variant="outline"
 										size="sm"
 										onClick={() => handleScroll("left")}
-										className="h-10 w-10 rounded-full p-0"
+										className="h-11 w-11 rounded-full p-0"
 									>
 										<ChevronLeft className="h-5 w-5" />
 									</Button>
@@ -73,7 +69,7 @@ export function LocationsSection() {
 										variant="outline"
 										size="sm"
 										onClick={() => handleScroll("right")}
-										className="h-10 w-10 rounded-full p-0"
+										className="h-11 w-11 rounded-full p-0"
 									>
 										<ChevronRight className="h-5 w-5" />
 									</Button>
@@ -133,10 +129,10 @@ export function LocationsSection() {
 														<Button
 															variant="outline"
 															fullWidth
-															size="sm"
+															size="md"
 															rightIcon={<ArrowRight className="h-3.5 w-3.5" />}
 														>
-															Lihat Detail
+															{t.viewDetail}
 														</Button>
 													</Link>
 												</div>
@@ -158,7 +154,7 @@ export function LocationsSection() {
 				>
 					<Link to="/cabang" className="inline-block w-full sm:w-auto">
 						<Button size="sm" className="w-full sm:w-auto sm:px-6" rightIcon={<MapPin className="h-4 w-4" />}>
-							Lihat Semua Cabang
+							{t.viewAll}
 						</Button>
 					</Link>
 				</motion.div>

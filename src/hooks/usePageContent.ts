@@ -1,5 +1,5 @@
 ﻿import { useQuery } from "@tanstack/react-query";
-import { getPageContentValueMap, getPageContents } from "@/api/pageContents.api";
+import { getPageContents, getPageContentValueMap } from "@/api/pageContents.api";
 
 export const PAGE_CONTENT_QUERY_KEY = "page-contents";
 
@@ -16,4 +16,3 @@ export const usePageContentMap = () =>
 		queryFn: getPageContentValueMap,
 		staleTime: 60_000,
 	});
-

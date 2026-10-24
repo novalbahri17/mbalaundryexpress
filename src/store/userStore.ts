@@ -1,7 +1,7 @@
 ﻿import { useMutation } from "@tanstack/react-query";
-import { create } from "zustand";
 import { toast } from "react-hot-toast";
-import { adminLogin, adminLogout, isAdminSession, pb } from "@/api/pocketbase";
+import { create } from "zustand";
+import { adminLogin, adminLogout, isAdminSession, pb } from "@/api/client";
 
 export interface UserInfo {
 	id?: string;

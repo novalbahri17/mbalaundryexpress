@@ -1,11 +1,11 @@
 import {
 	GiftOutlined,
 	MailOutlined,
+	MoonOutlined,
 	PhoneOutlined,
 	PlusOutlined,
 	ShopOutlined,
 	SunOutlined,
-	MoonOutlined,
 	TeamOutlined,
 	WarningOutlined,
 } from "@ant-design/icons";
@@ -13,14 +13,14 @@ import { useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, BarChart3, MessageSquare, TrendingUp } from "lucide-react";
 import { useMemo } from "react";
-import { Link } from "react-router-dom";
 import ReactApexChart from "react-apexcharts";
+import { Link } from "react-router-dom";
 import { getBranches } from "@/api/branches.api";
 import { getJobs } from "@/api/jobs.api";
 import { getPromos } from "@/api/promos.api";
 import { getContactMessages, getPartnerships } from "@/api/settings.api";
-import { formatCompact, formatDateTime } from "@/utils/format";
 import { useThemeStore } from "@/store/themeStore";
+import { formatCompact, formatDateTime } from "@/utils/format";
 
 type ActivityTone = "brand" | "blue" | "teal" | "amber";
 
@@ -196,25 +196,17 @@ export default function DashboardPage() {
 		year: "numeric",
 	});
 
-	const {
-		data: branchRes,
-		isLoading: branchLoading,
-		error: branchError,
-	} = useQuery({
+	const { data: branchRes, error: branchError } = useQuery({
 		queryKey: ["dash-branches"],
 		queryFn: () => getBranches({ activeOnly: true, perPage: 200 }),
 	});
 
-	const {
-		data: promoRes,
-		isLoading: promoLoading,
-		error: promoError,
-	} = useQuery({
+	const { data: promoRes, error: promoError } = useQuery({
 		queryKey: ["dash-promos"],
 		queryFn: () => getPromos({ activeOnly: true, status: "published", perPage: 200 }),
 	});
 
-	const { data: jobs = [], isLoading: jobsLoading } = useQuery({
+	const { data: jobs = [] } = useQuery({
 		queryKey: ["dash-jobs"],
 		queryFn: () => getJobs({ openOnly: true }),
 	});
@@ -237,10 +229,12 @@ export default function DashboardPage() {
 
 	const expiringPromo = useMemo(
 		() =>
-			promoItems.filter((promo) => {
-				const diff = new Date(promo.end_date).getTime() - now.getTime();
-				return diff > 0 && diff <= 3 * 24 * 60 * 60 * 1000;
-			}),
+			promoItems
+				.filter((promo): promo is typeof promo & { end_date: string } => Boolean(promo.end_date))
+				.filter((promo) => {
+					const diff = new Date(promo.end_date).getTime() - now.getTime();
+					return diff > 0 && diff <= 3 * 24 * 60 * 60 * 1000;
+				}),
 		[now, promoItems],
 	);
 
@@ -589,7 +583,7 @@ const dashboardStyles = `
 		gap: 8px;
 	}
 
-	/* Theme Toggle — icon only */
+	/* Theme Toggle: icon only */
 	.btn-theme-toggle {
 		display: flex;
 		align-items: center;
@@ -609,7 +603,7 @@ const dashboardStyles = `
 		color: var(--text-primary);
 	}
 
-	/* Action Button — Tambah Promo (solid brand blue) */
+	/* Action Button: Tambah Promo (solid brand) */
 	.btn-action-add {
 		display: inline-flex;
 		align-items: center;
@@ -726,7 +720,7 @@ const dashboardStyles = `
 		margin-top: 1px;
 	}
 
-	/* ===== STATS GRID — 4 columns, compact ===== */
+	/* ===== STATS GRID: 4 columns, compact ===== */
 	.stats-grid {
 		display: grid;
 		grid-template-columns: repeat(4, 1fr);
@@ -742,7 +736,7 @@ const dashboardStyles = `
 		.stats-grid { grid-template-columns: 1fr; }
 	}
 
-	/* Stat Card — compact, number dominant */
+	/* Stat Card: compact, number dominant */
 	.stat-card {
 		background: var(--bg-card);
 		border-radius: var(--radius-card);
@@ -834,6 +828,9 @@ const dashboardStyles = `
 		display: inline-flex;
 		align-items: center;
 		gap: 3px;
+		min-height: 44px;
+		padding: 0 4px;
+		margin: -12px -4px;
 		font-size: 12px;
 		font-weight: 600;
 		color: var(--brand);
@@ -845,7 +842,7 @@ const dashboardStyles = `
 		color: var(--brand-hover);
 	}
 
-	/* ===== CONTENT GRID — chart 8col + summary 4col ===== */
+	/* ===== CONTENT GRID: chart 8col + summary 4col ===== */
 	.content-grid {
 		display: grid;
 		grid-template-columns: 8fr 4fr;
@@ -931,7 +928,7 @@ const dashboardStyles = `
 		padding: 16px 18px;
 	}
 
-	/* ===== KPI GRID — 2x2 compact ===== */
+	/* ===== KPI GRID: 2x2 compact ===== */
 	.kpi-grid {
 		display: grid;
 		grid-template-columns: repeat(2, 1fr);
@@ -1096,7 +1093,7 @@ const dashboardStyles = `
 
 	/* ===== DARK MODE ===== */
 	/* CSS variables are set globally via :root.dark in tokens.css */
-	/* Dashboard uses var() references — dark mode applies automatically */
+	/* Dashboard uses var() references: dark mode applies automatically */
 
 	.notification-card.warning { background: var(--warning-bg); }
 	.notification-card.info { background: var(--info-bg); }

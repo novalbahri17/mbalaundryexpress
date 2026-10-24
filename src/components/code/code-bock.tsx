@@ -1,10 +1,10 @@
+import { useState } from "react";
 import { Button } from "@/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/ui/collapsible";
 import { cn } from "@/utils/index";
-import { useState } from "react";
-import { type CodeBlockProps, HighlightCode } from ".";
 import { Icon } from "../icon";
+import { type CodeBlockProps, HighlightCode } from ".";
 
 export function CodeBlock({ title, description, children, code, options, className, ...props }: CodeBlockProps) {
 	const [isOpen, setIsOpen] = useState(false);
@@ -31,4 +31,3 @@ export function CodeBlock({ title, description, children, code, options, classNa
 		</Card>
 	);
 }
-

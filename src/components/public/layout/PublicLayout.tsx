@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Outlet, useLocation } from "react-router-dom";
 import { BottomNav } from "@/components/public/layout/BottomNav";
@@ -9,6 +9,7 @@ import { Navbar } from "@/components/public/layout/Navbar";
 import { PublicSeo } from "@/components/public/layout/PublicSeo";
 import { DynamicFavicon } from "@/components/public/layout/DynamicFavicon";
 import { usePageContentMap } from "@/hooks/usePageContent";
+import { usePublicText } from "@/hooks/usePublicText";
 import { useSiteSettingsMap } from "@/hooks/useSiteSettings";
 import { normalizeHexColor } from "@/utils/validation";
 import { ToastContainer } from "@/design-system";
@@ -33,55 +34,11 @@ function ScrollProgress() {
 	return <div ref={progressRef} className="scroll-progress" />;
 }
 
-function CursorFollower() {
-	const nodeRef = useRef<HTMLSpanElement | null>(null);
-	const [isVisible, setIsVisible] = useState(false);
-
-	useEffect(() => {
-		// Disable on touch devices
-		if ("ontouchstart" in window) return;
-
-		const node = nodeRef.current;
-		if (!node) return;
-
-		const onMove = (event: MouseEvent) => {
-			node.style.transform = `translate(${event.clientX}px, ${event.clientY}px)`;
-			if (!isVisible) setIsVisible(true);
-		};
-
-		const onLeave = () => setIsVisible(false);
-
-		document.addEventListener("mousemove", onMove, { passive: true });
-		document.addEventListener("mouseleave", onLeave);
-		
-		return () => {
-			document.removeEventListener("mousemove", onMove);
-			document.removeEventListener("mouseleave", onLeave);
-		};
-	}, [isVisible]);
-
-	if ("ontouchstart" in window) return null;
-
-	return (
-		<span 
-			ref={nodeRef} 
-			className="custom-cursor"
-			style={{ 
-				opacity: isVisible ? 1 : 0,
-				pointerEvents: "none",
-				position: "fixed",
-				left: 0,
-				top: 0,
-				willChange: "transform"
-			}} 
-		/>
-	);
-}
-
 export function PublicLayout() {
 	const { data: content = {} } = usePageContentMap();
 	const { data: siteSettings = {} } = useSiteSettingsMap();
 	const location = useLocation();
+	const text = usePublicText();
 
 	const landingBgLight = normalizeHexColor(
 		content.landing_bg_color_light ?? siteSettings.landing_bg_color_light,
@@ -116,10 +73,9 @@ export function PublicLayout() {
 				href="#main-content"
 				className="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[90] focus:rounded-lg focus:bg-sapphire-700 focus:px-3 focus:py-2 focus:text-xs focus:font-semibold focus:text-white"
 			>
-				Skip to content
+				{text.common.skipToContent}
 			</a>
 			<ScrollProgress />
-			<CursorFollower />
 			<Navbar whatsapp={content.whatsapp_cs} />
 			<main id="main-content" className="flex-1">
 				<AnimatePresence mode="wait">

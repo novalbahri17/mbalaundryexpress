@@ -5,8 +5,8 @@
 
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { cn } from "@/utils";
 import { transitions } from "@/design-system/tokens/animations";
+import { cn } from "@/utils";
 
 // ============================================
 // TYPES
@@ -40,8 +40,7 @@ export function BottomNav({ items, activeId, onChange, className }: BottomNavPro
 		<motion.nav
 			className={cn(
 				"fixed bottom-0 left-0 right-0 z-50",
-				"bg-white/90 dark:bg-neutral-900/90",
-				"backdrop-blur-xl",
+				"bg-white dark:bg-neutral-900",
 				"border-t border-neutral-200 dark:border-neutral-800",
 				"safe-area-pb",
 				className,
@@ -156,7 +155,7 @@ export function FAB({ icon, label, onClick, variant = "primary", position = "cen
 	const variantClasses = {
 		primary: "bg-ruby-600 text-white shadow-lg shadow-ruby-500/30",
 		secondary: "bg-sapphire-600 text-white shadow-lg shadow-sapphire-500/30",
-		gradient: "bg-gradient-to-r from-ruby-600 to-sapphire-600 text-white shadow-lg",
+		gradient: "bg-ruby-700 text-white shadow-lg",
 	};
 
 	const positionClasses = {

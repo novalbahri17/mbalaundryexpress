@@ -5,12 +5,12 @@ import {
 	ExclamationCircleOutlined,
 	MessageOutlined,
 } from "@ant-design/icons";
-import { Badge, Button, Dropdown, List, Popover, Tag, theme } from "antd";
-import type { MenuProps } from "antd";
-import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getContactMessages, getPartnerships } from "@/api/settings.api";
+import type { MenuProps } from "antd";
+import { Badge, Button, Dropdown, List, Popover, Tag, theme } from "antd";
+import { useState } from "react";
 import { getPromos } from "@/api/promos.api";
+import { getContactMessages, getPartnerships } from "@/api/settings.api";
 import { formatDateTime } from "@/utils/format";
 
 export interface NotificationItem {
@@ -33,7 +33,7 @@ function NotificationCenter() {
 		queryFn: getContactMessages,
 	});
 
-	const { data: partnerships = [], isLoading: partnershipsLoading } = useQuery({
+	const { data: partnerships = [] } = useQuery({
 		queryKey: ["notification-partnerships"],
 		queryFn: getPartnerships,
 	});
@@ -45,17 +45,20 @@ function NotificationCenter() {
 
 	const promos = promoRes?.items || [];
 
+	const newLeads = partnerships.filter((lead) => lead.status === "new");
+
 	const unreadMessages = messages.filter((msg) => msg.status === "new");
-	const expiringPromos =
-		promos.filter((promo) => {
+	const expiringPromos = promos
+		.filter((promo): promo is typeof promo & { end_date: string } => Boolean(promo.end_date))
+		.filter((promo) => {
 			const endDate = new Date(promo.end_date);
 			const now = new Date();
 			const diffDays = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 			return diffDays <= 3 && diffDays > 0;
-		}) || [];
+		});
 
 	const notifications: NotificationItem[] = [
-		...unreadMessages.slice(0, 3).map((msg, idx) => ({
+		...unreadMessages.slice(0, 3).map((msg) => ({
 			id: `msg-${msg.id}`,
 			type: "message" as const,
 			title: `Pesan baru dari ${msg.name}`,
@@ -64,6 +67,16 @@ function NotificationCenter() {
 			read: false,
 			actionUrl: "/admin/pesan",
 			priority: "high" as const,
+		})),
+		...newLeads.slice(0, 2).map((lead) => ({
+			id: `lead-${lead.id}`,
+			type: "alert" as const,
+			title: `Lead kemitraan baru: ${lead.name}`,
+			description: lead.company || "Individu",
+			time: formatDateTime(lead.created || new Date()),
+			read: false,
+			actionUrl: "/admin/kemitraan",
+			priority: "medium" as const,
 		})),
 		...expiringPromos.slice(0, 3).map((promo) => ({
 			id: `promo-${promo.id}`,

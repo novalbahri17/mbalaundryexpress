@@ -13,4 +13,3 @@ export const NavMini = ({ data, className, ...props }: NavProps) => {
 		</nav>
 	);
 };
-

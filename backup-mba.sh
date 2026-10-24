@@ -38,7 +38,7 @@ backup_mysql() {
 
 backup_uploads() {
   log "Archive uploads"
-  tar -czf "${BACKUP_DIR}/uploads_${DATE_TAG}.tar.gz" -C "$APP_DIR" uploads pocketbase/pb_data/storage
+  tar -czf "${BACKUP_DIR}/uploads_${DATE_TAG}.tar.gz" -C "$APP_DIR" uploads
 }
 
 cleanup_old() {

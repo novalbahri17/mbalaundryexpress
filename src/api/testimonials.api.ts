@@ -1,4 +1,12 @@
-import { createRecord, deleteRecord, escapeFilterValue, fileUrl, getRecordById, listRecords, updateRecord } from "@/api/pocketbase";
+import {
+	createRecord,
+	deleteRecord,
+	escapeFilterValue,
+	fileUrl,
+	getRecordById,
+	listRecords,
+	updateRecord,
+} from "@/api/client";
 import type { Testimonial } from "@/types/database.types";
 
 const isDirectUrl = (value?: string): boolean =>
@@ -46,7 +54,7 @@ export const updateTestimonial = (id: string, payload: Partial<Testimonial> | Fo
 	updateRecord("testimonials", id, payload);
 export const deleteTestimonial = (id: string): Promise<void> => deleteRecord("testimonials", id);
 
-export const approveTestimonial = (id: string): Promise<Testimonial> => updateRecord("testimonials", id, { is_approved: true });
-export const rejectTestimonial = (id: string): Promise<Testimonial> => updateRecord("testimonials", id, { is_approved: false });
-
-
+export const approveTestimonial = (id: string): Promise<Testimonial> =>
+	updateRecord("testimonials", id, { is_approved: true });
+export const rejectTestimonial = (id: string): Promise<Testimonial> =>
+	updateRecord("testimonials", id, { is_approved: false });

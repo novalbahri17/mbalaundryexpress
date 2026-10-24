@@ -12,7 +12,7 @@ ufw allow 80/tcp
 ufw allow 443/tcp
 
 ufw deny 3000/tcp
-ufw deny 8090/tcp
+ufw deny 3002/tcp
 
 ufw --force enable
 ufw status verbose

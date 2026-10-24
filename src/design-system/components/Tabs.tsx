@@ -4,9 +4,9 @@
  */
 
 import { motion } from "framer-motion";
-import { useState, useRef, useEffect } from "react";
-import { cn } from "@/utils";
+import { useEffect, useRef, useState } from "react";
 import { transitions } from "@/design-system/tokens/animations";
+import { cn } from "@/utils";
 
 // ============================================
 // TYPES
@@ -115,10 +115,9 @@ export function Tabs({
 		<div
 			ref={containerRef}
 			className={cn(
-				"relative flex",
+				"relative flex min-w-0 max-w-full overflow-x-auto scrollbar-hide",
 				currentVariant.container,
 				fullWidth && "w-full",
-				variant !== "underline" && "overflow-x-auto scrollbar-hide",
 				className,
 			)}
 		>

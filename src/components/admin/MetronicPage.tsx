@@ -120,12 +120,10 @@ const metronicPageStyles = `
 	.btn-primary {
 		background: var(--brand);
 		color: var(--brand-text);
-		box-shadow: 0 4px 12px rgba(198, 40, 40, 0.3);
 	}
 
 	.btn-primary:hover {
-		transform: translateY(-1px);
-		box-shadow: 0 6px 16px rgba(198, 40, 40, 0.4);
+		background: var(--brand-hover);
 	}
 
 	.btn-secondary {
@@ -362,5 +360,5 @@ const metronicPageStyles = `
 		margin: 0;
 	}
 
-	/* Dark Mode — :root.dark in tokens.css sets CSS vars globally */
+	/* Dark Mode: :root.dark in tokens.css sets CSS vars globally */
 `;

@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
+import { WashingMachine } from "lucide-react";
 import { getGallery } from "@/api/gallery.api";
+import { usePublicText } from "@/hooks/usePublicText";
 import { useState, useEffect, useRef } from "react";
 
 // Simple image dengan lazy loading
@@ -34,17 +36,13 @@ function GridImage({ src, alt, className = "" }: { src?: string; alt: string; cl
 	);
 }
 
-// Default images jika galeri kosong
-const defaultImages = [
-	"https://images.unsplash.com/photo-1517677208171-0bc6725a3e60?w=400&h=300&fit=crop",
-	"https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop",
-	"https://images.unsplash.com/photo-1582735689369-4fe89db7114c?w=400&h=300&fit=crop",
-	"https://images.unsplash.com/photo-1604335399105-a0c585fd81a1?w=400&h=300&fit=crop",
-	"https://images.unsplash.com/photo-1545173168-9f1947eebb7c?w=400&h=300&fit=crop",
-	"https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=300&fit=crop",
-];
+// Tidak ada foto stok. Kalau galeri kosong, tampil panel brand, bukan foto
+// mesin laundry milik orang lain yang bisa membuat pelanggan salah sangka.
+const defaultImages: string[] = [];
 
 export function HeroImageGrid() {
+	const text = usePublicText();
+	const t = text.home.heroGrid;
 	const { data, isLoading } = useQuery({
 		queryKey: ["hero-gallery"],
 		queryFn: () => getGallery(),
@@ -75,7 +73,8 @@ export function HeroImageGrid() {
 
 	const images = galleryItems.length > 0 ? galleryItems.map((item) => item.image) : defaultImages;
 
-	// Split untuk 2 kolom (3 gambar per kolom)
+	// Split untuk 2 kolom (3 gambar per kolom).
+	// Galeri < 3 foto tidak cukup untuk animasi marquee yang mulus, jadi cukup ditampilkan statis.
 	const leftColumn = [images[0], images[2], images[4]].filter(Boolean);
 	const rightColumn = [images[1], images[3], images[5]].filter(Boolean);
 
@@ -85,8 +84,29 @@ export function HeroImageGrid() {
 
 	if (isLoading) {
 		return (
-			<div className="flex h-[400px] sm:h-[500px] w-full max-w-[500px] items-center justify-center rounded-2xl bg-neutral-100 dark:bg-neutral-800 mx-auto lg:mx-0">
-				<span className="text-neutral-400">Memuat...</span>
+			<div className="mx-auto flex h-[400px] w-full max-w-[500px] items-center justify-center rounded-2xl bg-neutral-100 sm:h-[500px] lg:mx-0 dark:bg-neutral-800">
+				<span className="text-neutral-400">{text.common.loading}</span>
+			</div>
+		);
+	}
+
+	// Galeri belum ada isinya: jangan pakai foto stok. Tampilkan panel brand.
+	if (images.length === 0) {
+		return (
+			<div className="relative mx-auto flex h-[400px] w-full max-w-[500px] flex-col items-center justify-center overflow-hidden rounded-[24px] border border-neutral-200 bg-white p-8 text-center shadow-sm sm:h-[500px] lg:mx-0 dark:border-neutral-800 dark:bg-neutral-900">
+				<div
+					className="pointer-events-none absolute inset-0 opacity-[0.04]"
+					style={{
+						backgroundImage: "radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)",
+						backgroundSize: "22px 22px",
+					}}
+					aria-hidden
+				/>
+				<div className="relative flex h-20 w-20 items-center justify-center rounded-2xl bg-[var(--brand-bg)]">
+					<WashingMachine className="h-10 w-10 text-[var(--brand)]" aria-hidden />
+				</div>
+				<p className="relative mt-6 text-lg font-bold text-[var(--text-primary)]">{t.emptyTitle}</p>
+				<p className="relative mt-2 max-w-[280px] text-sm leading-relaxed text-[var(--text-muted)]">{t.emptyBody}</p>
 			</div>
 		);
 	}
@@ -116,7 +136,7 @@ export function HeroImageGrid() {
 					>
 						{leftItems.map((src, index) => (
 							<div key={`left-${src.slice(-10)}-${index}`} className="h-[130px] sm:h-[160px] shrink-0">
-								<GridImage src={src} alt="Galeri MBA Laundry" />
+								<GridImage src={src} alt={t.alt} />
 							</div>
 						))}
 					</motion.div>
@@ -138,7 +158,7 @@ export function HeroImageGrid() {
 					>
 						{rightItems.map((src, index) => (
 							<div key={`right-${src.slice(-10)}-${index}`} className="h-[130px] sm:h-[160px] shrink-0">
-								<GridImage src={src} alt="Galeri MBA Laundry" />
+								<GridImage src={src} alt={t.alt} />
 							</div>
 						))}
 					</motion.div>

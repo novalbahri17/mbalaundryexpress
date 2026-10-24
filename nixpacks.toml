@@ -1,11 +1,10 @@
 # Nixpacks configuration untuk deploy Dokploy
 # - [variables]: env build-time (VITE_*) di-bake ke bundle Vite saat `pnpm build`
 # - [staticAssets].Caddyfile: override Caddyfile bawaan Nixpacks SPA,
-#   menambah reverse proxy /pb-api/* -> PocketBase (prefix di-strip oleh handle_path,
-#   sama seperti rewrite proxy dev di vite.config.ts)
+#   meneruskan /api/* dan /uploads/* ke API server Express + MySQL (port 3002).
 
 [variables]
-VITE_POCKETBASE_BASE_PATH = '/pb-api'
+VITE_API_BASE_PATH = '/api'
 VITE_PUBLIC_PATH = '/'
 VITE_SITE_URL = 'https://mba-laundry.com'
 VITE_SITE_NAME = 'MBA Laundry Express'
@@ -31,8 +30,12 @@ Caddyfile = '''
 
 	rewrite /health /*
 
-	handle_path /pb-api/* {
-		reverse_proxy http://43.156.144.127:8091
+	handle /api/* {
+		reverse_proxy http://127.0.0.1:3002
+	}
+
+	handle /uploads/* {
+		reverse_proxy http://127.0.0.1:3002
 	}
 
 	root * ../app/{$NIXPACKS_SPA_OUTPUT_DIR}

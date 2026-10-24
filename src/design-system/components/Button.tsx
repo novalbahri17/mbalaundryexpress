@@ -3,10 +3,10 @@
  * Premium button with motion design
  */
 
-import { motion, type HTMLMotionProps } from "framer-motion";
+import { type HTMLMotionProps, motion } from "framer-motion";
 import { forwardRef, useState } from "react";
-import { cn } from "@/utils";
 import { transitions } from "@/design-system/tokens/animations";
+import { cn } from "@/utils";
 
 // ============================================
 // TYPES
@@ -94,7 +94,7 @@ const sizes = {
 	md: "h-10 px-4 text-sm rounded-xl gap-2",
 	lg: "h-12 px-6 text-base rounded-xl gap-2",
 	xl: "h-14 px-8 text-lg rounded-2xl gap-3",
-	icon: "h-10 w-10 p-0 rounded-xl",
+	icon: "h-11 w-11 p-0 rounded-xl",
 };
 
 const iconSizes = {

@@ -21,4 +21,3 @@ export function Container({ size = "xl", className, children, ...props }: Contai
 		</div>
 	);
 }
-

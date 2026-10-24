@@ -8,29 +8,32 @@ import { PageHeader } from "@/components/public/shared/PageHeader";
 import { SafeImage } from "@/components/public/shared/SafeImage";
 import { formatDate } from "@/utils/format";
 import type { Article, ArticleCategory } from "@/types/database.types";
+import { usePublicText } from "@/hooks/usePublicText";
 
-const CATEGORY_META: Record<ArticleCategory, { label: string; className: string }> = {
-	"tips-mencuci": { label: "Tips Mencuci", className: "bg-sapphire-500/10 text-sapphire-600 dark:text-sapphire-400" },
-	"tips-kering": { label: "Tips Kering", className: "bg-teal-500/10 text-teal-600 dark:text-teal-400" },
-	"perawatan-bahan": { label: "Perawatan Bahan", className: "bg-violet-500/10 text-violet-600 dark:text-violet-400" },
-	noda: { label: "Noda", className: "bg-amber-500/10 text-amber-600 dark:text-amber-400" },
-	umum: { label: "Umum", className: "bg-neutral-500/10 text-neutral-600 dark:text-neutral-400" },
-	berita: { label: "Berita", className: "bg-ruby-500/10 text-ruby-600 dark:text-ruby-400" },
-	"promo-info": { label: "Promo", className: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" },
+const CATEGORY_CLASS: Record<ArticleCategory, string> = {
+	"tips-mencuci": "bg-sapphire-500/10 text-sapphire-600 dark:text-sapphire-400",
+	"tips-kering": "bg-teal-500/10 text-teal-600 dark:text-teal-400",
+	"perawatan-bahan": "bg-violet-500/10 text-violet-600 dark:text-violet-400",
+	noda: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+	umum: "bg-neutral-500/10 text-neutral-600 dark:text-neutral-400",
+	berita: "bg-ruby-500/10 text-ruby-600 dark:text-ruby-400",
+	"promo-info": "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
 };
 
-const FILTERS: Array<{ value: ArticleCategory | "all"; label: string }> = [
-	{ value: "all", label: "Semua" },
-	{ value: "tips-mencuci", label: "Tips Mencuci" },
-	{ value: "tips-kering", label: "Tips Kering" },
-	{ value: "perawatan-bahan", label: "Perawatan Bahan" },
-	{ value: "noda", label: "Noda" },
-	{ value: "berita", label: "Berita" },
-	{ value: "promo-info", label: "Promo" },
+const FILTERS: Array<ArticleCategory | "all"> = [
+	"all",
+	"tips-mencuci",
+	"tips-kering",
+	"perawatan-bahan",
+	"noda",
+	"berita",
+	"promo-info",
 ];
 
 function ArticleCard({ article, index }: { article: Article; index: number }) {
-	const meta = CATEGORY_META[article.category] ?? CATEGORY_META.umum;
+	const t = usePublicText().pages.blog;
+	const className = CATEGORY_CLASS[article.category] ?? CATEGORY_CLASS.umum;
+	const label = t.categories[article.category] ?? t.categories.umum;
 	return (
 		<motion.div
 			initial={{ opacity: 0, y: 16 }}
@@ -46,8 +49,8 @@ function ArticleCard({ article, index }: { article: Article; index: number }) {
 						className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
 						loading="lazy"
 					/>
-					<span className={`absolute left-4 top-4 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wide backdrop-blur-sm ${meta.className}`}>
-						{meta.label}
+					<span className={`absolute left-4 top-4 rounded-full px-3 py-1 text-[11px] font-bold uppercase tracking-wide ${className}`}>
+						{label}
 					</span>
 				</div>
 				<div className="flex flex-1 flex-col p-5">
@@ -62,7 +65,7 @@ function ArticleCard({ article, index }: { article: Article; index: number }) {
 						</span>
 						<span className="inline-flex items-center gap-1.5">
 							<Clock3 className="h-3.5 w-3.5" />
-							{article.read_time ?? 5} mnt
+							{t.readTime.replace("{n}", String(article.read_time ?? 5))}
 						</span>
 					</div>
 				</div>
@@ -72,7 +75,9 @@ function ArticleCard({ article, index }: { article: Article; index: number }) {
 }
 
 function FeaturedCard({ article }: { article: Article }) {
-	const meta = CATEGORY_META[article.category] ?? CATEGORY_META.umum;
+	const t = usePublicText().pages.blog;
+	const className = CATEGORY_CLASS[article.category] ?? CATEGORY_CLASS.umum;
+	const label = t.categories[article.category] ?? t.categories.umum;
 	return (
 		<motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
 			<Link to={`/blog/${article.slug}`} className="group grid overflow-hidden rounded-3xl border border-neutral-200/70 bg-white shadow-sm transition-all duration-300 hover:shadow-2xl dark:border-neutral-700/70 dark:bg-neutral-800 md:grid-cols-2">
@@ -84,12 +89,12 @@ function FeaturedCard({ article }: { article: Article }) {
 						className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
 						loading="lazy"
 					/>
-					<span className={`absolute left-5 top-5 rounded-full px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-wide backdrop-blur-sm ${meta.className}`}>
-						{meta.label}
+					<span className={`absolute left-5 top-5 rounded-full px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-wide ${className}`}>
+						{label}
 					</span>
 				</div>
 				<div className="flex flex-col justify-center p-7 md:p-10">
-					<p className="text-xs font-semibold uppercase tracking-[0.14em] text-ruby-500">Artikel Pilihan</p>
+					<p className="text-xs font-semibold uppercase tracking-[0.14em] text-ruby-500">{t.featured}</p>
 					<h2 className="mt-3 text-2xl font-bold leading-tight text-neutral-900 transition-colors group-hover:text-ruby-600 dark:text-white dark:group-hover:text-ruby-400 md:text-3xl">
 						{article.title}
 					</h2>
@@ -101,7 +106,7 @@ function FeaturedCard({ article }: { article: Article }) {
 						</span>
 						<span className="inline-flex items-center gap-1.5">
 							<Clock3 className="h-4 w-4" />
-							{article.read_time ?? 5} menit baca
+							{t.readTime.replace("{n}", String(article.read_time ?? 5))}
 						</span>
 						<span className="inline-flex items-center gap-1.5">
 							<Eye className="h-4 w-4" />
@@ -109,7 +114,7 @@ function FeaturedCard({ article }: { article: Article }) {
 						</span>
 					</div>
 					<span className="mt-7 inline-flex items-center gap-2 text-sm font-bold text-ruby-600 dark:text-ruby-400">
-						Baca Selengkapnya
+						{t.readMore}
 						<ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
 					</span>
 				</div>
@@ -132,6 +137,7 @@ function SkeletonCard() {
 }
 
 export default function BlogListPage() {
+	const t = usePublicText().pages.blog;
 	const [search, setSearch] = useState("");
 	const [category, setCategory] = useState<ArticleCategory | "all">("all");
 
@@ -150,12 +156,7 @@ export default function BlogListPage() {
 
 	return (
 		<section className="pb-24">
-			<PageHeader
-				kicker="Blog & Tips"
-				title="Tips dan"
-				highlight="Artikel"
-				description="Panduan merawat pakaian, tips hemat waktu, dan update promo terbaru dari MBA Laundry Express."
-			/>
+			<PageHeader kicker={t.kicker} title={t.title} highlight={t.highlight} description={t.description} />
 
 			<div className="mx-auto max-w-7xl px-4 md:px-8">
 				{/* Search + Filter */}
@@ -165,23 +166,23 @@ export default function BlogListPage() {
 						<input
 							value={search}
 							onChange={(event) => setSearch(event.target.value)}
-							placeholder="Cari artikel..."
+							placeholder={t.searchPlaceholder}
 							className="h-11 w-full rounded-xl border border-neutral-200 bg-white pl-10 pr-4 text-sm text-neutral-900 shadow-sm outline-none transition-colors placeholder:text-neutral-400 focus:border-ruby-400 focus:ring-2 focus:ring-ruby-500/20 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
 						/>
 					</div>
 					<div className="flex flex-wrap gap-2">
 						{FILTERS.map((filter) => (
 							<button
-								key={filter.value}
+								key={filter}
 								type="button"
-								onClick={() => setCategory(filter.value)}
+								onClick={() => setCategory(filter)}
 								className={`rounded-full px-4 py-2 text-xs font-semibold transition-all ${
-									category === filter.value
+									category === filter
 										? "bg-ruby-600 text-white shadow-md shadow-ruby-500/25"
 										: "border border-neutral-200 bg-white text-neutral-600 hover:border-ruby-300 hover:text-ruby-600 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:text-ruby-400"
 								}`}
 							>
-								{filter.label}
+								{t.categories[filter]}
 							</button>
 						))}
 					</div>
@@ -198,9 +199,9 @@ export default function BlogListPage() {
 				) : filtered.length === 0 ? (
 					<div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-neutral-300 bg-white/50 py-20 text-center dark:border-neutral-700 dark:bg-neutral-800/40">
 						<SearchX className="h-12 w-12 text-neutral-300 dark:text-neutral-600" />
-						<p className="mt-4 text-lg font-bold text-neutral-900 dark:text-white">Tidak ada artikel ditemukan</p>
+						<p className="mt-4 text-lg font-bold text-neutral-900 dark:text-white">{t.emptyTitle}</p>
 						<p className="mt-1 max-w-sm text-sm text-neutral-500 dark:text-neutral-400">
-							Coba ubah kata kunci pencarian atau pilih kategori lain.
+							{t.emptyBody}
 						</p>
 					</div>
 				) : (

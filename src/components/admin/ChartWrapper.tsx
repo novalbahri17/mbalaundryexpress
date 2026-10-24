@@ -1,7 +1,7 @@
-import { useThemeStore } from "@/store/themeStore";
+import type { ApexOptions } from "apexcharts";
 import { useMemo } from "react";
 import ReactApexChart from "react-apexcharts";
-import type { ApexOptions } from "apexcharts";
+import { useThemeStore } from "@/store/themeStore";
 
 interface ChartWrapperProps {
 	type: "line" | "area" | "bar" | "pie" | "donut" | "radialBar" | "scatter" | "bubble" | "heatmap" | "candlestick";

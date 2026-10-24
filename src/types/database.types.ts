@@ -34,8 +34,30 @@ export interface Branch extends BaseTable {
 	cover_image?: string;
 	is_active: boolean;
 	status: BranchStatus;
-	price_wash: number;
-	price_dry: number;
+	/** Harga 1 coin. Semua tarif mesin dihitung dari nilai ini. */
+	coin_value?: number;
+	/** Kalau true, tarif QRIS tiap mesin ditampilkan di halaman publik. */
+	qris_enabled?: boolean;
+	/** Kalau false, cabang dianggap tidak menerima tunai/coin. */
+	cash_enabled?: boolean;
+	sort_order: number;
+}
+
+export type MachineKind = "wash" | "dry";
+
+/** Satu tipe mesin di satu cabang (mis. Cuci 17kg = 2 coin). */
+export interface BranchMachine extends BaseTable {
+	branch_id: string;
+	kind: MachineKind;
+	capacity_min: number;
+	capacity_max: number;
+	coins: number;
+	duration_min: number;
+	duration_max: number;
+	/** Harga khusus bayar QRIS. Kosong = pakai harga coin. */
+	qris_price?: number | null;
+	note?: string;
+	is_active: boolean;
 	sort_order: number;
 }
 
@@ -67,12 +89,15 @@ export interface Promo extends BaseTable {
 	image?: string;
 	terms?: string;
 	start_date: string;
-	end_date: string;
+	/** null = promo berjalan tanpa tenggat waktu (evergreen). */
+	end_date: string | null;
 	is_active: boolean;
 	show_on_home: boolean;
 	is_global: boolean;
 	priority: number;
 	status: PromoStatus;
+	/** Nama cabang tempat promo berlaku. Kosong untuk promo global. */
+	branch_names?: string[];
 }
 
 export interface PromoBranch extends BaseTable {
@@ -189,12 +214,24 @@ export interface Partnership extends BaseTable {
 	status: "new" | "contacted" | "qualified" | "closed" | "rejected";
 }
 
+/** Tiga topik halaman "Bantuan" di publik. */
+export type ContactTopic = "kehilangan" | "saran" | "kritik";
+
+/** Laporan dari halaman Bantuan: barang hilang, saran, atau kritik. */
 export interface ContactMessage extends BaseTable {
 	name: string;
 	phone?: string;
 	email?: string;
 	subject?: string;
 	message: string;
+	/** Topik laporan; null untuk data lama sebelum kolom ini ada. */
+	topic?: ContactTopic | null;
+	/** Diisi kalau topiknya "kehilangan": cabang tempat barang tertinggal. */
+	branch_id?: string | null;
+	/** Tanggal kejadian (khusus laporan kehilangan). */
+	incident_date?: string | null;
+	/** Nomor mesin (khusus laporan kehilangan). */
+	machine_code?: string | null;
 	status: "new" | "read" | "replied" | "closed";
 }
 
@@ -202,6 +239,12 @@ export interface SiteSetting extends BaseTable {
 	key: string;
 	value: string;
 	description?: string;
+}
+
+// File branding: logo, favicon, gambar & thumbnail artikel.
+export interface BrandingFile extends BaseTable {
+	type: string;
+	file: string;
 }
 
 export type CollectionRecordMap = {
@@ -223,6 +266,7 @@ export type CollectionRecordMap = {
 	partnerships: Partnership;
 	contact_messages: ContactMessage;
 	site_settings: SiteSetting;
+	branding_files: BrandingFile;
 };
 
 export type CollectionName = keyof CollectionRecordMap;

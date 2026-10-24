@@ -1,15 +1,4 @@
-import {
-	Heading2,
-	Heading3,
-	Heading4,
-	List,
-	ListOrdered,
-	Quote,
-	ImageIcon,
-	Link2,
-	Minus,
-	Text,
-} from "lucide-react";
+import { Heading2, Heading3, Heading4, ImageIcon, Link2, List, ListOrdered, Minus, Quote, Text } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 interface SlashCommandProps {

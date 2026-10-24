@@ -1,12 +1,4 @@
-import {
-	createRecord,
-	deleteRecord,
-	escapeFilterValue,
-	getRecordById,
-	listRecords,
-	updateRecord,
-} from "@/api/pocketbase";
-import type { Promo, ContactMessage, PaginatedResponse } from "@/types/database.types";
+import { listRecords } from "@/api/client";
 
 export interface MarketingMetric {
 	date: string;
@@ -29,7 +21,7 @@ export interface PromoEffectiveness {
 	roi_percentage: number;
 	cost: number;
 	start_date: string;
-	end_date: string;
+	end_date: string | null;
 }
 
 export interface CampaignTracking {
@@ -76,7 +68,7 @@ export interface ABTestResult {
 }
 
 // Mock data untuk development
-export const getMarketingMetrics = async (startDate: string, endDate: string): Promise<MarketingMetric[]> => {
+export const getMarketingMetrics = async (_startDate: string, _endDate: string): Promise<MarketingMetric[]> => {
 	// In production, this would query analytics database
 	return [
 		{

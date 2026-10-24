@@ -1,152 +1,153 @@
 /* =========================================================
-   MBA Laundry Express — Semantic Design Tokens
+   MBA Laundry Express: Semantic Design Tokens
    Single source of truth for all colors and design decisions.
    Use CSS vars, NOT hardcoded hex, NOT Tailwind color classes.
    ========================================================= */
 
 /* ===== LIGHT MODE (default) ===== */
 :root {
-  color-scheme: light;
+	color-scheme: light;
 
-  /* App background — soft gray, not white */
-  --bg-app: #f6f7fb;
-  --bg-card: #ffffff;
-  --bg-surface: #f1f5f9;
-  --bg-elevated: #ffffff;
+	/* App background: soft gray, not white */
+	--bg-app: #f6f7fb;
+	--bg-card: #ffffff;
+	--bg-surface: #f1f5f9;
+	--bg-elevated: #ffffff;
 
-  /* Borders */
-  --border: #e5e7eb;
-  --border-strong: #d1d5db;
+	/* Borders */
+	--border: #e5e7eb;
+	--border-strong: #d1d5db;
 
-  /* Text */
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #64748b;
+	/* Text */
+	--text-primary: #0f172a;
+	--text-secondary: #475569;
+	--text-muted: #64748b;
 
-  /* Brand — Ruby red (#c62828) as single brand color */
-  --brand: #c62828;
-  --brand-hover: #b91c1c;
-  --brand-bg: #fee2e2;
-  --brand-text: #ffffff;
+	/* Brand: Ruby red (#c62828) as single brand color */
+	--brand: #c62828;
+	--brand-hover: #b91c1c;
+	--brand-bg: #fee2e2;
+	--brand-text: #ffffff;
 
-  /* Semantic — system colors only */
-  --success: #16a34a;
-  --success-bg: #f0fdf4;
-  --success-text: #ffffff;
-  --danger: #dc2626;
-  --danger-bg: #fef2f2;
-  --danger-text: #ffffff;
-  --warning: #ca8a04;
-  --warning-bg: #fef9c3;
-  --warning-text: #ffffff;
-  --info: #2563eb;
-  --info-bg: #eff6ff;
-  --info-text: #ffffff;
+	/* Semantic: system colors only */
+	--success: #16a34a;
+	--success-bg: #f0fdf4;
+	--success-text: #ffffff;
+	--danger: #dc2626;
+	--danger-bg: #fef2f2;
+	--danger-text: #ffffff;
+	--warning: #ca8a04;
+	--warning-bg: #fef9c3;
+	--warning-text: #ffffff;
+	--info: #2563eb;
+	--info-bg: #eff6ff;
+	--info-text: #ffffff;
 
-  /* Accent colors — use sparingly */
-  --accent-teal: #0f766e;
-  --accent-violet: #7c3aed;
+	/* Accent colors: use sparingly */
+	--accent-teal: #0f766e;
+	--accent-violet: #7c3aed;
 
-  /* Shadows */
-  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.1);
-  --shadow-dropdown: 0 4px 16px rgba(0, 0, 0, 0.12);
-  --shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.15);
+	/* Shadows */
+	--shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+	--shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.1);
+	--shadow-dropdown: 0 4px 16px rgba(0, 0, 0, 0.12);
+	--shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.15);
 
-  /* Border radius */
-  --radius-xs: 6px;
-  --radius-sm: 10px;
-  --radius-md: 14px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
-  --radius-full: 9999px;
+	/* Border radius */
+	--radius-xs: 6px;
+	--radius-sm: 10px;
+	--radius-md: 14px;
+	--radius-lg: 16px;
+	--radius-xl: 20px;
+	--radius-full: 9999px;
 
-  /* Spacing */
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 20px;
-  --space-6: 24px;
+	/* Spacing */
+	--space-1: 4px;
+	--space-2: 8px;
+	--space-3: 12px;
+	--space-4: 16px;
+	--space-5: 20px;
+	--space-6: 24px;
 
-  /* Typography */
-  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+	/* Typography */
+	--font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+	--font-mono: "JetBrains Mono", ui-monospace, monospace;
 
-  /* Transitions — ONLY for interactive state changes, not global */
-  --transition-fast: 150ms ease;
-  --transition-base: 220ms ease;
-  --transition-slow: 320ms ease;
+	/* Transitions: ONLY for interactive state changes, not global */
+	--transition-fast: 150ms ease;
+	--transition-base: 220ms ease;
+	--transition-slow: 320ms ease;
 }
 
-/* ===== DARK MODE — applied via themeStore's .dark class on <html> ===== */
+/* ===== DARK MODE: applied via themeStore's .dark class on <html> ===== */
 :root.dark {
-  color-scheme: dark;
+	color-scheme: dark;
 
-  /* App background — deep charcoal, not black */
-  --bg-app: #0f1117;
-  --bg-card: #1a1d27;
-  --bg-surface: #232736;
-  --bg-elevated: #1f2337;
+	/* App background: deep charcoal, not black */
+	--bg-app: #0f1117;
+	--bg-card: #1a1d27;
+	--bg-surface: #232736;
+	--bg-elevated: #1f2337;
 
-  /* Borders */
-  --border: #2a2e3f;
-  --border-strong: #3a3f52;
+	/* Borders */
+	--border: #2a2e3f;
+	--border-strong: #3a3f52;
 
-  /* Text */
-  --text-primary: #f8fafc;
-  --text-secondary: #cbd5e1;
-  --text-muted: #94a3b8;
+	/* Text */
+	--text-primary: #f8fafc;
+	--text-secondary: #cbd5e1;
+	--text-muted: #94a3b8;
 
-  /* Brand — lighter red in dark mode */
-  --brand: #ef5350;
-  --brand-hover: #f87171;
-  --brand-bg: rgba(239, 68, 68, 0.15);
-  --brand-text: #ffffff;
+	/* Brand: lighter red in dark mode */
+	--brand: #ef5350;
+	--brand-hover: #f87171;
+	--brand-bg: rgba(239, 68, 68, 0.15);
+	--brand-text: #ffffff;
 
-  /* Semantic */
-  --success: #4ade80;
-  --success-bg: rgba(74, 222, 128, 0.12);
-  --success-text: #ffffff;
-  --danger: #f87171;
-  --danger-bg: rgba(248, 113, 113, 0.12);
-  --danger-text: #ffffff;
-  --warning: #facc15;
-  --warning-bg: rgba(250, 204, 21, 0.12);
-  --warning-text: #0f172a;
-  --info: #60a5fa;
-  --info-bg: rgba(96, 165, 250, 0.12);
-  --info-text: #ffffff;
+	/* Semantic */
+	--success: #4ade80;
+	--success-bg: rgba(74, 222, 128, 0.12);
+	--success-text: #ffffff;
+	--danger: #f87171;
+	--danger-bg: rgba(248, 113, 113, 0.12);
+	--danger-text: #ffffff;
+	--warning: #facc15;
+	--warning-bg: rgba(250, 204, 21, 0.12);
+	--warning-text: #0f172a;
+	--info: #60a5fa;
+	--info-bg: rgba(96, 165, 250, 0.12);
+	--info-text: #ffffff;
 
-  /* Accent */
-  --accent-teal: #2dd4bf;
-  --accent-violet: #a78bfa;
+	/* Accent */
+	--accent-teal: #2dd4bf;
+	--accent-violet: #a78bfa;
 
-  /* Shadows — darker for dark mode */
-  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.5);
-  --shadow-dropdown: 0 4px 16px rgba(0, 0, 0, 0.5);
-  --shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.6);
+	/* Shadows: darker for dark mode */
+	--shadow-card: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.3);
+	--shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.5);
+	--shadow-dropdown: 0 4px 16px rgba(0, 0, 0, 0.5);
+	--shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.6);
 }
 
-/* ===== GLOBAL BASE — minimal, no transition on every element ===== */
+/* ===== GLOBAL BASE: minimal, no transition on every element ===== */
 * {
-  box-sizing: border-box;
+	box-sizing: border-box;
 }
 
 html,
 body {
-  font-family: var(--font-sans);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+	font-family: var(--font-sans);
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
 }
 
 /* Respect reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    transition-duration: 1ms !important;
-    animation-duration: 1ms !important;
-  }
+
+	*,
+	*::before,
+	*::after {
+		transition-duration: 1ms !important;
+		animation-duration: 1ms !important;
+	}
 }

@@ -4,8 +4,11 @@ import { getJobById } from "@/api/jobs.api";
 import { PageHeader } from "@/components/public/shared/PageHeader";
 import { GlassCard } from "@/components/public/shared/GlassCard";
 import { formatRupiah, resolveImageUrl, toWhatsappLink } from "@/utils/format";
+import { usePublicText } from "@/hooks/usePublicText";
 
 export default function KarirDetailPage() {
+	const text = usePublicText();
+	const t = text.pages.karirDetail;
 	const { id } = useParams();
 	const { data: job } = useQuery({
 		queryKey: ["job-detail", id],
@@ -14,12 +17,12 @@ export default function KarirDetailPage() {
 	});
 
 	if (!job) {
-		return <p className="px-4 py-20 text-center text-sm text-[var(--text-muted)]">Lowongan tidak ditemukan.</p>;
+		return <p className="px-4 py-20 text-center text-sm text-[var(--text-muted)]">{t.notFound}</p>;
 	}
 
 	return (
 		<section className="pb-20">
-			<PageHeader kicker="Karir Detail" title={job.title} description={job.type} />
+			<PageHeader kicker={t.kicker} title={job.title} description={job.type} />
 			<div className="mx-auto max-w-5xl px-4 md:px-8">
 				<GlassCard hoverable={false} className="overflow-hidden p-0">
 					<img
@@ -29,25 +32,25 @@ export default function KarirDetailPage() {
 						className="h-56 w-full object-cover md:h-72"
 					/>
 					<div className="p-5 md:p-6">
-						<p className="text-sm font-semibold">Deskripsi</p>
+						<p className="text-sm font-semibold">{t.description}</p>
 						<p className="mt-2 text-sm text-[var(--text-muted)]">{job.description}</p>
-						<p className="mt-5 text-sm font-semibold">Kualifikasi</p>
+						<p className="mt-5 text-sm font-semibold">{t.qualifications}</p>
 						<p className="mt-2 text-sm text-[var(--text-muted)]">{job.requirements}</p>
-						<p className="mt-5 text-sm font-semibold">Benefit</p>
+						<p className="mt-5 text-sm font-semibold">{t.benefits}</p>
 						<p className="mt-2 text-sm text-[var(--text-muted)]">{job.benefits}</p>
 						{job.show_salary ? (
-							<p className="mt-5 text-sm text-red-600 dark:text-red-300">
-								Range gaji: {formatRupiah(job.salary_min ?? 0)} - {formatRupiah(job.salary_max ?? 0)}
+							<p className="mt-5 text-sm text-[var(--brand)]">
+								{t.salaryRange} {formatRupiah(job.salary_min ?? 0)} - {formatRupiah(job.salary_max ?? 0)}
 							</p>
 						) : null}
 						{job.whatsapp_apply ? (
 							<a
-								href={toWhatsappLink(job.whatsapp_apply, `Halo, saya ingin melamar posisi ${job.title}`)}
+								href={toWhatsappLink(job.whatsapp_apply, `${t.waMessage} ${job.title}`)}
 								target="_blank"
 								rel="noreferrer"
 								className="btn-primary mt-6 inline-flex rounded-full px-5 py-2.5 text-sm font-semibold"
 							>
-								Lamar via WhatsApp
+								{t.applyWa}
 							</a>
 						) : null}
 					</div>

@@ -9,12 +9,11 @@ import {
 	PieChartOutlined,
 	SettingOutlined,
 } from "@ant-design/icons";
-import { Button, Card, Dropdown, Modal, Select, Space, Switch, Tag, Tooltip } from "antd";
-import type { MenuProps } from "antd";
-import { DndContext, DragEndEvent, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
-import { SortableContext, arrayMove, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
-import { useSortable } from "@dnd-kit/sortable";
+import { DndContext, type DragEndEvent, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import type { MenuProps } from "antd";
+import { Button, Card, Dropdown, Modal, Select, Space, Switch, Tag, Tooltip } from "antd";
 import { useState } from "react";
 import { useLocalStorage } from "usehooks-ts";
 
@@ -86,7 +85,9 @@ function SortableWidget({ widget, onRemove, onToggle }: SortableWidgetProps) {
 				{widget.enabled ? (
 					widget.component
 				) : (
-					<div className="flex h-40 items-center justify-center" style={{ color: "var(--text-muted)" }}>Widget dinonaktifkan</div>
+					<div className="flex h-40 items-center justify-center" style={{ color: "var(--text-muted)" }}>
+						Widget dinonaktifkan
+					</div>
 				)}
 			</Card>
 		</div>

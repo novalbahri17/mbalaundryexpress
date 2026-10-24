@@ -23,4 +23,3 @@ export const ensureUniqueSlug = (input: string, existingSlugs: string[]): string
 	}
 	return candidate;
 };
-

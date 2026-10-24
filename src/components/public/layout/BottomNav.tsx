@@ -1,36 +1,39 @@
-import { Gift, Home, MapPin, Phone } from "lucide-react";
+import { Gift, Home, MapPin, Phone, Star } from "lucide-react";
 import { NavLink } from "react-router-dom";
-import { useLocaleStore } from "@/store/localeStore";
+import { usePublicText } from "@/hooks/usePublicText";
 
-const items: Array<{ to: string; label: { id: string; en: string }; icon: typeof Home }> = [
-	{ to: "/", label: { id: "Beranda", en: "Home" }, icon: Home },
-	{ to: "/cabang", label: { id: "Cabang", en: "Branches" }, icon: MapPin },
-	{ to: "/promo", label: { id: "Promo", en: "Promo" }, icon: Gift },
-	{ to: "/kontak", label: { id: "Kontak", en: "Contact" }, icon: Phone },
-];
+const iconMap = [Home, MapPin, Gift, Star, Phone];
 
 export function BottomNav() {
-	const locale = useLocaleStore((state) => state.locale);
+	const text = usePublicText();
+
+	const items = [
+		{ to: "/", label: text.nav.home },
+		{ to: "/cabang", label: text.nav.branches },
+		{ to: "/promo", label: text.nav.promotions },
+		{ to: "/testimoni", label: text.nav.testimonials },
+		{ to: "/kontak", label: text.nav.contact },
+	];
 
 	return (
-		<nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/20 bg-white/90 pb-safe pt-2 backdrop-blur-xl md:hidden dark:border-white/10 dark:bg-neutral-950/90">
-			<ul className="grid grid-cols-4 gap-1 px-4 pb-2">
-				{items.map((item) => {
-					const Icon = item.icon;
+		<nav className="fixed inset-x-0 bottom-0 z-40 border-t border-neutral-200 bg-white pb-safe pt-1 md:hidden dark:border-neutral-800 dark:bg-neutral-950">
+			<ul className="grid grid-cols-5 gap-0.5 px-2 pb-2">
+				{items.map((item, index) => {
+					const Icon = iconMap[index];
 					return (
 						<li key={item.to}>
 							<NavLink
 								to={item.to}
 								className={({ isActive }) =>
-									`flex min-h-[44px] flex-col items-center justify-center rounded-xl px-1 py-1 text-[11px] font-medium transition-all ${
+									`flex min-h-[48px] flex-col items-center justify-center rounded-xl px-1 py-1 text-[11px] font-medium transition-colors ${
 										isActive
-											? "bg-ruby-500 text-white shadow-lg shadow-ruby-500/25"
-											: "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800/80"
+											? "bg-[var(--brand)] text-[var(--brand-text)]"
+											: "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
 									}`
 								}
 							>
 								<Icon className="mb-0.5 h-5 w-5" />
-								<span className="truncate">{item.label[locale]}</span>
+								<span className="truncate">{item.label}</span>
 							</NavLink>
 						</li>
 					);

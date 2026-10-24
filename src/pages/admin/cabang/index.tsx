@@ -1,23 +1,16 @@
-import {
-	EditOutlined,
-	PlusOutlined,
-	DeleteOutlined,
-	EyeOutlined,
-	ClockCircleOutlined,
-	AppstoreOutlined,
-	PictureOutlined,
-} from "@ant-design/icons";
-import { Button, Form, Input, InputNumber, Modal, Popconfirm, Select, Space, Switch, Table, Tag } from "antd";
+import { DeleteOutlined, EditOutlined, EyeOutlined, PlusOutlined, ToolOutlined } from "@ant-design/icons";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Alert, Button, Form, Input, InputNumber, Modal, Popconfirm, Select, Space, Switch, Table, Tag } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createBranch, deleteBranch, getBranches, updateBranch } from "@/api/branches.api";
 import { getDistricts, getProvinces, getRegencies, getVillages } from "@/api/wilayah.api";
 import { ImageUpload } from "@/components/admin/ImageUpload";
-import { RichTextEditor } from "@/components/admin/RichTextEditor";
 import { MetronicPage } from "@/components/admin/MetronicPage";
+import { TableEmptyState, TableErrorState } from "@/components/admin/QueryState";
+import { RichTextEditor } from "@/components/admin/RichTextEditor";
 import { useThemeStore } from "@/store/themeStore";
 import type { Branch } from "@/types/database.types";
 import { resolveImageUrl } from "@/utils/format";
@@ -37,8 +30,9 @@ type BranchFormValues = {
 	whatsapp?: string;
 	email?: string;
 	description?: string;
-	price_wash: number;
-	price_dry: number;
+	coin_value: number;
+	qris_enabled: boolean;
+	cash_enabled: boolean;
 	sort_order: number;
 	status: Branch["status"];
 	is_active: boolean;
@@ -84,7 +78,13 @@ export default function CabangAdminPage() {
 
 	const isDark = mode === "dark";
 
-	const { data: branchRes, isLoading } = useQuery({
+	const {
+		data: branchRes,
+		isLoading,
+		isError,
+		error,
+		refetch,
+	} = useQuery({
 		queryKey: ["admin-branches"],
 		queryFn: () => getBranches({ activeOnly: false, perPage: 500 }),
 	});
@@ -155,8 +155,9 @@ export default function CabangAdminPage() {
 			whatsapp: record.whatsapp,
 			email: record.email,
 			description: record.description,
-			price_wash: record.price_wash,
-			price_dry: record.price_dry,
+			coin_value: record.coin_value ?? 10000,
+			qris_enabled: record.qris_enabled ?? false,
+			cash_enabled: record.cash_enabled ?? true,
 			sort_order: record.sort_order,
 			status: record.status,
 			is_active: record.is_active,
@@ -208,8 +209,9 @@ export default function CabangAdminPage() {
 		formData.append("whatsapp", branchValues.whatsapp ?? "");
 		formData.append("email", branchValues.email ?? "");
 		formData.append("description", branchValues.description ?? "");
-		formData.append("price_wash", String(branchValues.price_wash));
-		formData.append("price_dry", String(branchValues.price_dry));
+		formData.append("coin_value", String(branchValues.coin_value ?? 10000));
+		formData.append("qris_enabled", branchValues.qris_enabled ? "true" : "false");
+		formData.append("cash_enabled", branchValues.cash_enabled ? "true" : "false");
 		formData.append("sort_order", String(branchValues.sort_order));
 		formData.append("status", branchValues.status);
 		formData.append("is_active", branchValues.is_active ? "true" : "false");
@@ -256,60 +258,27 @@ export default function CabangAdminPage() {
 		{ title: "Slug", dataIndex: "slug" },
 		{ title: "Status", dataIndex: "status", render: (value: Branch["status"]) => statusTag(value) },
 		{
-			title: "Harga",
-			render: (_, record) => (
-				<div className="text-xs">
-					<div>Cuci: Rp {record.price_wash.toLocaleString("id-ID")}</div>
-					<div>Kering: Rp {record.price_dry.toLocaleString("id-ID")}</div>
-				</div>
-			),
-		},
-		{
 			title: "Aktif",
 			dataIndex: "is_active",
 			render: (value: boolean) => (value ? <Tag color="blue">Aktif</Tag> : <Tag>Tidak Aktif</Tag>),
 		},
 		{
-			title: "Kelola Sub-Halaman",
+			title: "Kelola",
 			key: "manage",
-			width: 340,
+			width: 260,
 			render: (_, record) => (
 				<div className="flex flex-wrap gap-2">
 					<Link
-						to={`/admin/cabang/${record.id}/jam`}
+						to={`/admin/cabang/${record.id}`}
 						className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-all hover:-translate-y-px"
 						style={{
-							backgroundColor: "var(--bg-card)",
-							borderColor: "var(--border)",
-							color: "var(--text-secondary)",
+							backgroundColor: "var(--brand-bg)",
+							borderColor: "var(--brand)",
+							color: "var(--brand)",
 						}}
 					>
-						<ClockCircleOutlined />
-						<span>Jam</span>
-					</Link>
-					<Link
-						to={`/admin/cabang/${record.id}/fasilitas`}
-						className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-all hover:-translate-y-px"
-						style={{
-							backgroundColor: "var(--bg-card)",
-							borderColor: "var(--border)",
-							color: "var(--text-secondary)",
-						}}
-					>
-						<AppstoreOutlined />
-						<span>Fasilitas</span>
-					</Link>
-					<Link
-						to={`/admin/cabang/${record.id}/galeri`}
-						className="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold transition-all hover:-translate-y-px"
-						style={{
-							backgroundColor: "var(--bg-card)",
-							borderColor: "var(--border)",
-							color: "var(--text-secondary)",
-						}}
-					>
-						<PictureOutlined />
-						<span>Galeri</span>
+						<ToolOutlined />
+						<span>Jam, Mesin, Fasilitas, Galeri</span>
 					</Link>
 					<Link
 						to={`/cabang/${record.slug}`}
@@ -361,15 +330,16 @@ export default function CabangAdminPage() {
 	return (
 		<MetronicPage
 			title="Cabang"
-			subtitle="Kelola daftar cabang, harga, dan sub-halaman operasional"
+			subtitle="Tambah dan edit data dasar cabang. Jam, mesin, fasilitas, dan galeri diatur di tombol Kelola."
 			actionLabel="Tambah Cabang"
 			onAction={() => {
 				setEditing(null);
 				setCoverFile(null);
 				form.resetFields();
 				form.setFieldsValue({
-					price_wash: 10000,
-					price_dry: 10000,
+					coin_value: 10000,
+					qris_enabled: false,
+					cash_enabled: true,
 					sort_order: 0,
 					status: "buka",
 					is_active: true,
@@ -383,13 +353,25 @@ export default function CabangAdminPage() {
 		>
 			<div className="card">
 				<div className="table-container">
-					<Table
-						rowKey="id"
-						loading={isLoading}
-						columns={columns}
-						dataSource={rows}
-						pagination={{ pageSize: 10, showSizeChanger: false }}
-					/>
+					{isError ? (
+						<TableErrorState title="Gagal memuat daftar cabang" error={error} onRetry={() => void refetch()} />
+					) : (
+						<Table
+							rowKey="id"
+							loading={isLoading}
+							columns={columns}
+							dataSource={rows}
+							pagination={{ pageSize: 10, showSizeChanger: false }}
+							locale={{
+								emptyText: (
+									<TableEmptyState
+										title="Belum ada cabang."
+										hint="Tambahkan cabang pertama supaya alamat dan tarif bisa tampil di situs publik."
+									/>
+								),
+							}}
+						/>
+					)}
 				</div>
 			</div>
 
@@ -407,7 +389,14 @@ export default function CabangAdminPage() {
 				<Form
 					layout="vertical"
 					form={form}
-					initialValues={{ status: "buka", is_active: true, price_wash: 10000, price_dry: 10000, sort_order: 0 }}
+					initialValues={{
+						status: "buka",
+						is_active: true,
+						coin_value: 10000,
+						qris_enabled: false,
+						cash_enabled: true,
+						sort_order: 0,
+					}}
 				>
 					<div className="form-grid">
 						<Form.Item label="Nama Cabang" name="name" rules={[{ required: true, message: "Nama cabang wajib diisi" }]}>
@@ -509,13 +498,13 @@ export default function CabangAdminPage() {
 							]);
 							return (
 								<div
-										className="mb-4 rounded-xl border border-dashed px-3 py-2 text-xs"
-										style={{
-											borderColor: "var(--border)",
-											backgroundColor: "var(--bg-surface)",
-											color: "var(--text-secondary)",
-										}}
-									>
+									className="mb-4 rounded-xl border border-dashed px-3 py-2 text-xs"
+									style={{
+										borderColor: "var(--border)",
+										backgroundColor: "var(--bg-surface)",
+										color: "var(--text-secondary)",
+									}}
+								>
 									<span className="font-semibold">Preview Alamat Tersimpan:</span> {previewAddress || "-"}
 								</div>
 							);
@@ -583,22 +572,53 @@ export default function CabangAdminPage() {
 					</Form.Item>
 
 					<div className="form-grid">
-						<Form.Item label="Harga Cuci" name="price_wash" rules={[{ required: true }]}>
+						<Form.Item
+							label="Harga 1 Coin"
+							name="coin_value"
+							tooltip="Harga tunai tiap mesin = jumlah coin × harga coin ini"
+						>
 							<InputNumber className="form-input w-full" min={0} step={500} />
 						</Form.Item>
-						<Form.Item label="Harga Kering" name="price_dry" rules={[{ required: true }]}>
-							<InputNumber className="form-input w-full" min={0} step={500} />
-						</Form.Item>
-						<Form.Item label="Sort Order" name="sort_order">
+						<Form.Item
+							label="Sort Order"
+							name="sort_order"
+							tooltip="Urutan tampil cabang di halaman publik. Angka kecil tampil lebih dulu; kalau angkanya sama, diurutkan sesuai nama."
+						>
 							<InputNumber className="form-input w-full" min={0} />
 						</Form.Item>
 					</div>
+
+					<Alert
+						type="info"
+						showIcon
+						className="mb-4"
+						message="Harga cuci & kering per mesin diatur di halaman Kelola → Mesin & Tarif."
+					/>
 
 					<div className="form-grid">
 						<Form.Item label="Status Operasional" name="status" rules={[{ required: true }]}>
 							<Select className="form-input" options={statusOptions} />
 						</Form.Item>
 						<Form.Item label="Cabang Aktif" name="is_active" valuePropName="checked">
+							<Switch />
+						</Form.Item>
+					</div>
+
+					<div className="form-grid">
+						<Form.Item
+							label="Terima Tunai / Coin"
+							name="cash_enabled"
+							valuePropName="checked"
+							tooltip="Kalau dimatikan, harga tunai tidak muncul dan pembayaran hanya lewat QRIS"
+						>
+							<Switch />
+						</Form.Item>
+						<Form.Item
+							label="Tampilkan Harga QRIS"
+							name="qris_enabled"
+							valuePropName="checked"
+							tooltip="Kalau dimatikan, tarif QRIS tidak muncul di halaman publik"
+						>
 							<Switch />
 						</Form.Item>
 					</div>

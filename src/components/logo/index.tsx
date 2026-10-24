@@ -1,5 +1,5 @@
-import { cn } from "@/utils/index";
 import { NavLink } from "react-router";
+import { cn } from "@/utils/index";
 import { Icon } from "../icon";
 
 interface Props {
@@ -15,4 +15,3 @@ function Logo({ size = 50, className }: Props) {
 }
 
 export default Logo;
-

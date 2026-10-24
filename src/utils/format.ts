@@ -1,33 +1,58 @@
 ﻿import { format } from "date-fns";
-import { id } from "date-fns/locale";
+import { enUS, id } from "date-fns/locale";
 
-export const formatRupiah = (value: number): string =>
-	new Intl.NumberFormat("id-ID", {
+/**
+ * Locale aktif situs publik. Dipakai oleh helper format di file ini.
+ *
+ * Default-nya `id-ID` supaya panel admin (yang seluruhnya berbahasa
+ * Indonesia) tidak perlu berubah sama sekali. Halaman publik akan memanggil
+ * `setFormatLocale()` lewat `usePublicText()` ketika pengguna mengganti bahasa.
+ */
+export type FormatLocale = "id-ID" | "en-US";
+
+let activeLocale: FormatLocale = "id-ID";
+
+export const setFormatLocale = (locale: FormatLocale): void => {
+	activeLocale = locale;
+};
+
+export const getFormatLocale = (): FormatLocale => activeLocale;
+
+const dateFnsLocale = (locale: FormatLocale) => (locale === "en-US" ? enUS : id);
+
+export const formatRupiah = (value: number, locale: FormatLocale = activeLocale): string =>
+	new Intl.NumberFormat(locale, {
 		style: "currency",
 		currency: "IDR",
 		maximumFractionDigits: 0,
 	}).format(value);
 
-export const formatCurrency = (value: number): string =>
-	new Intl.NumberFormat("id-ID", {
+export const formatCurrency = (value: number, locale: FormatLocale = activeLocale): string =>
+	new Intl.NumberFormat(locale, {
 		style: "currency",
 		currency: "IDR",
 		maximumFractionDigits: 0,
 	}).format(value);
 
-export const formatCompact = (value: number): string =>
-	new Intl.NumberFormat("id-ID", {
+export const formatCompact = (value: number, locale: FormatLocale = activeLocale): string =>
+	new Intl.NumberFormat(locale, {
 		notation: "compact",
 		maximumFractionDigits: 1,
 	}).format(value);
 
-export const formatDate = (value: string | Date, pattern = "dd MMMM yyyy"): string => {
+/** "12.500" (id) / "12,500" (en). */
+export const formatNumber = (value: number, locale: FormatLocale = activeLocale): string =>
+	new Intl.NumberFormat(locale).format(value);
+
+export const formatDate = (value: string | Date, pattern = "dd MMMM yyyy", locale?: FormatLocale): string => {
 	const date = typeof value === "string" ? new Date(value) : value;
 	if (Number.isNaN(date.getTime())) return "-";
-	return format(date, pattern, { locale: id });
+	const resolved = locale ?? activeLocale;
+	return format(date, pattern, { locale: dateFnsLocale(resolved) });
 };
 
-export const formatDateTime = (value: string | Date): string => formatDate(value, "dd MMM yyyy HH:mm");
+export const formatDateTime = (value: string | Date, locale?: FormatLocale): string =>
+	formatDate(value, "dd MMM yyyy HH:mm", locale);
 
 export const toWhatsappLink = (phone: string, text?: string): string => {
 	const normalized = phone.replace(/^0/, "62").replace(/[^\d]/g, "");
@@ -41,6 +66,24 @@ export const toWhatsappLink = (phone: string, text?: string): string => {
 export const dayNameId = (date = new Date()): string => {
 	const dayMap = ["minggu", "senin", "selasa", "rabu", "kamis", "jumat", "sabtu"];
 	return dayMap[date.getDay()] ?? "senin";
+};
+
+/**
+ * Jam operasional 24 jam disimpan sebagai 00:00 - 23:59.
+ * Helper ini dipakai admin maupun situs publik supaya labelnya konsisten.
+ */
+export const isFullDayHours = (openTime?: string, closeTime?: string): boolean =>
+	Boolean(openTime && closeTime && openTime.slice(0, 5) === "00:00" && closeTime.slice(0, 5) === "23:59");
+
+/** "07:00 - 23:00" atau "24 JAM" kalau buka sehari penuh. */
+export const formatOpeningHours = (
+	openTime: string | undefined,
+	closeTime: string | undefined,
+	fullDayLabel = "24 JAM",
+): string => {
+	if (isFullDayHours(openTime, closeTime)) return fullDayLabel;
+	if (!openTime && !closeTime) return "-";
+	return `${openTime?.slice(0, 5) ?? "-"} - ${closeTime?.slice(0, 5) ?? "-"}`;
 };
 
 const blockedUrlProtocols = ["javascript:", "vbscript:", "data:text/html"];

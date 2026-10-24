@@ -1,4 +1,5 @@
 import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	Button,
 	Form,
@@ -6,6 +7,7 @@ import {
 	Input,
 	InputNumber,
 	Modal,
+	message,
 	Popconfirm,
 	Radio,
 	Select,
@@ -13,17 +15,16 @@ import {
 	Switch,
 	Table,
 	Tag,
-	message,
 } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createJob, deleteJob, getJobs, updateJob } from "@/api/jobs.api";
 import { ImageUpload } from "@/components/admin/ImageUpload";
 import { MetronicPage } from "@/components/admin/MetronicPage";
+import { TableEmptyState, TableErrorState } from "@/components/admin/QueryState";
+import { useThemeStore } from "@/store/themeStore";
 import type { Job } from "@/types/database.types";
 import { resolveImageUrl, sanitizeUrl } from "@/utils/format";
-import { useThemeStore } from "@/store/themeStore";
 
 type ImageSourceType = "upload" | "url";
 
@@ -76,7 +77,13 @@ export default function LokerAdminPage() {
 	const isDark = mode === "dark";
 	const safePreviewUrl = sanitizeUrl(imageUrl);
 
-	const { data: jobs = [], isLoading } = useQuery({
+	const {
+		data: jobs = [],
+		isLoading,
+		isError,
+		error,
+		refetch,
+	} = useQuery({
 		queryKey: ["admin-jobs"],
 		queryFn: () => getJobs(),
 	});
@@ -224,9 +231,7 @@ export default function LokerAdminPage() {
 		{
 			title: "Terbuka",
 			dataIndex: "is_open",
-			render: (value: boolean) => (
-				<Tag color={value ? "green" : "red"}>{value ? "Aktif" : "Tutup"}</Tag>
-			),
+			render: (value: boolean) => <Tag color={value ? "green" : "red"}>{value ? "Aktif" : "Tutup"}</Tag>,
 		},
 		{
 			title: "Gaji",
@@ -274,13 +279,25 @@ export default function LokerAdminPage() {
 		>
 			<div className="card">
 				<div className="table-container">
-					<Table
-						rowKey="id"
-						columns={columns}
-						dataSource={jobs}
-						loading={isLoading}
-						pagination={{ pageSize: 10, showSizeChanger: false }}
-					/>
+					{isError ? (
+						<TableErrorState title="Gagal memuat lowongan" error={error} onRetry={() => void refetch()} />
+					) : (
+						<Table
+							rowKey="id"
+							columns={columns}
+							dataSource={jobs}
+							loading={isLoading}
+							pagination={{ pageSize: 10, showSizeChanger: false }}
+							locale={{
+								emptyText: (
+									<TableEmptyState
+										title="Belum ada lowongan."
+										hint="Buat lowongan supaya halaman karier tidak kosong."
+									/>
+								),
+							}}
+						/>
+					)}
 				</div>
 			</div>
 
@@ -357,8 +374,16 @@ export default function LokerAdminPage() {
 						</Form.Item>
 					</div>
 
-					<Form.Item label="Deskripsi Pekerjaan" name="description" rules={[{ required: true, message: "Deskripsi wajib diisi" }]}>
-						<Input.TextArea rows={4} placeholder="Jelaskan tugas dan tanggung jawab pekerjaan..." className="form-input" />
+					<Form.Item
+						label="Deskripsi Pekerjaan"
+						name="description"
+						rules={[{ required: true, message: "Deskripsi wajib diisi" }]}
+					>
+						<Input.TextArea
+							rows={4}
+							placeholder="Jelaskan tugas dan tanggung jawab pekerjaan..."
+							className="form-input"
+						/>
 					</Form.Item>
 
 					<Form.Item label="Kualifikasi / Requirements" name="requirements">

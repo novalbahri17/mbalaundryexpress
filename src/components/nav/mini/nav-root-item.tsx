@@ -54,4 +54,3 @@ export const NavRootItem = (item: NavItemProps) => {
 		</NavItemRenderer>
 	);
 };
-

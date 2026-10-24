@@ -4,8 +4,8 @@
  */
 
 import { motion } from "framer-motion";
+import { Check, ChevronDown, Eye, EyeOff } from "lucide-react";
 import { forwardRef, useState } from "react";
-import { Eye, EyeOff, Check, ChevronDown } from "lucide-react";
 import { cn } from "@/utils";
 
 // ============================================

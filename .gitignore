@@ -31,7 +31,6 @@ stats.html
 
 # runtime
 uploads
-pb_data
 *.pid
 
 # temp / debug files
@@ -44,5 +43,8 @@ tsc-errors*.txt
 tsc_output*.txt
 build_log.txt
 trigger.txt
+
+# folder kerja lokal, jangan di-push
+anti-slop/
 
 referensi/

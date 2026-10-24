@@ -1,9 +1,9 @@
-import { Suspense, useEffect } from "react";
-import { ConfigProvider, App as AntdApp, theme as antdTheme } from "antd";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { App as AntdApp, theme as antdTheme, ConfigProvider } from "antd";
+import { Suspense, useEffect } from "react";
 import { Helmet, HelmetProvider } from "react-helmet-async";
-import { RouterProvider } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
+import { RouterProvider } from "react-router-dom";
 import { Toaster as SonnerToaster } from "sonner";
 import { appRouter } from "@/router";
 import { useThemeStore } from "@/store/themeStore";
@@ -15,8 +15,10 @@ function ThemeSync() {
 	const setMode = useThemeStore((state) => state.setMode);
 
 	useEffect(() => {
-		// Always default to light mode if no preference saved
-		if (!window.localStorage.getItem("mba-theme")) {
+		// Light mode hanya dipakai kalau pengguna belum pernah memilih tema.
+		// Kunci harus sama dengan `name` di persist() themeStore ("mba-theme-storage"),
+		// kalau tidak pilihan tema gelap akan ter-reset ke terang setiap muat ulang.
+		if (!window.localStorage.getItem("mba-theme-storage")) {
 			setMode("light");
 		}
 	}, [setMode]);
@@ -101,9 +103,6 @@ export default function App() {
 	return (
 		<HelmetProvider>
 			<QueryClientProvider client={queryClient}>
-				<Helmet>
-					<title>{import.meta.env.VITE_SITE_NAME || "MBA Laundry Express"}</title>
-				</Helmet>
 				<ThemeSync />
 				<Toaster
 					position="bottom-right"

@@ -3,10 +3,10 @@
  * Premium card with hover effects and motion
  */
 
-import { motion, type HTMLMotionProps } from "framer-motion";
+import { type HTMLMotionProps, motion } from "framer-motion";
 import { forwardRef } from "react";
-import { cn } from "@/utils";
 import { transitions } from "@/design-system/tokens/animations";
+import { cn } from "@/utils";
 
 // ============================================
 // TYPES

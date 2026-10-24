@@ -3,11 +3,7 @@ import { getPromos } from "@/api/promos.api";
 
 export const PROMOS_QUERY_KEY = "promos";
 
-export const usePromos = (options?: {
-	showOnHome?: boolean;
-	activeOnly?: boolean;
-	branchId?: string;
-}) =>
+export const usePromos = (options?: { showOnHome?: boolean; activeOnly?: boolean; branchId?: string }) =>
 	useQuery({
 		queryKey: [PROMOS_QUERY_KEY, options],
 		queryFn: async () => {
@@ -22,4 +18,3 @@ export const usePromos = (options?: {
 		},
 		staleTime: 60_000,
 	});
-

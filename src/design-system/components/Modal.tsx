@@ -3,11 +3,11 @@
  * Premium modal with backdrop blur and animations
  */
 
-import { motion, AnimatePresence } from "framer-motion";
-import { useEffect, useCallback } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
-import { cn } from "@/utils";
+import { useCallback, useEffect } from "react";
 import { transitions } from "@/design-system/tokens/animations";
+import { cn } from "@/utils";
 
 // ============================================
 // TYPES

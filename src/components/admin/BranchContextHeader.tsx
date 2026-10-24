@@ -2,17 +2,19 @@ import {
 	AppstoreOutlined,
 	ClockCircleOutlined,
 	EnvironmentOutlined,
+	GiftOutlined,
 	PictureOutlined,
 	ShopOutlined,
+	ToolOutlined,
 } from "@ant-design/icons";
-import { Alert, Skeleton, Tag } from "antd";
 import { useQuery } from "@tanstack/react-query";
+import { Alert, Skeleton, Tag } from "antd";
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { getBranchById } from "@/api/branches.api";
 import type { Branch } from "@/types/database.types";
 
-type BranchContextTab = "jam" | "fasilitas" | "galeri";
+type BranchContextTab = "ringkasan" | "jam" | "mesin" | "fasilitas" | "galeri" | "promo";
 
 type BranchContextHeaderProps = {
 	branchId?: string;
@@ -26,9 +28,12 @@ type NavItem = {
 };
 
 const navItems: NavItem[] = [
+	{ key: "ringkasan", label: "Ringkasan", icon: <ShopOutlined /> },
 	{ key: "jam", label: "Jam Operasional", icon: <ClockCircleOutlined /> },
+	{ key: "mesin", label: "Mesin & Tarif", icon: <ToolOutlined /> },
 	{ key: "fasilitas", label: "Fasilitas", icon: <AppstoreOutlined /> },
 	{ key: "galeri", label: "Galeri Cabang", icon: <PictureOutlined /> },
+	{ key: "promo", label: "Promo Cabang", icon: <GiftOutlined /> },
 ];
 
 const statusMap: Record<Branch["status"], { text: string; color: string }> = {
@@ -68,14 +73,7 @@ export function BranchContextHeader({ branchId, activeTab }: BranchContextHeader
 
 	if (isError || !data) {
 		const text = error instanceof Error ? error.message : "Cabang tidak ditemukan";
-		return (
-			<Alert
-				type="warning"
-				showIcon
-				message="Gagal memuat konteks cabang"
-				description={text}
-			/>
-		);
+		return <Alert type="warning" showIcon message="Gagal memuat konteks cabang" description={text} />;
 	}
 
 	const statusInfo = statusMap[data.status] ?? statusMap.buka;
@@ -90,7 +88,9 @@ export function BranchContextHeader({ branchId, activeTab }: BranchContextHeader
 					<p className="text-xs font-semibold tracking-wide uppercase" style={{ color: "var(--text-muted)" }}>
 						Sedang Mengelola Cabang
 					</p>
-					<h2 className="mt-1 text-lg font-bold" style={{ color: "var(--text-primary)" }}>{data.name}</h2>
+					<h2 className="mt-1 text-lg font-bold" style={{ color: "var(--text-primary)" }}>
+						{data.name}
+					</h2>
 					<div className="mt-2 flex flex-wrap items-center gap-2">
 						<Tag color={statusInfo.color}>{statusInfo.text}</Tag>
 						<Tag color={data.is_active ? "blue" : "default"}>{data.is_active ? "Aktif" : "Nonaktif"}</Tag>
@@ -121,7 +121,7 @@ export function BranchContextHeader({ branchId, activeTab }: BranchContextHeader
 					return (
 						<Link
 							key={item.key}
-							to={`/admin/cabang/${data.id}/${item.key}`}
+							to={item.key === "ringkasan" ? `/admin/cabang/${data.id}` : `/admin/cabang/${data.id}/${item.key}`}
 							className="inline-flex h-9 items-center rounded-lg border px-3 text-sm font-semibold transition-all"
 							style={
 								isActive
@@ -129,11 +129,11 @@ export function BranchContextHeader({ branchId, activeTab }: BranchContextHeader
 											borderColor: "var(--brand)",
 											backgroundColor: "var(--brand-bg)",
 											color: "var(--brand)",
-									  }
+										}
 									: {
 											borderColor: "var(--border)",
 											color: "var(--text-secondary)",
-									  }
+										}
 							}
 						>
 							<span className="mr-2 text-xs">{item.icon}</span>

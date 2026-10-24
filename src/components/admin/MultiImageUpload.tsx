@@ -173,7 +173,7 @@ export function MultiImageUpload({
 				{...getRootProps()}
 				className={`cursor-pointer rounded-xl border-2 border-dashed p-8 text-center transition ${
 					isDragActive
-						? "border-red-500 bg-red-50 dark:bg-red-500/10"
+						? "border-ruby-500 bg-ruby-50 dark:bg-ruby-500/10"
 						: uploadingFiles.length >= maxFiles
 							? "border-slate-200 bg-slate-50 cursor-not-allowed"
 							: "border-slate-300 hover:border-red-400 dark:border-slate-700"
@@ -182,7 +182,7 @@ export function MultiImageUpload({
 				<input {...getInputProps()} multiple />
 				{isProcessing ? (
 					<Space direction="vertical" className="w-full">
-						<LoadingOutlined className="text-2xl text-red-600" />
+						<LoadingOutlined className="text-2xl text-ruby-600" />
 						<p className="text-sm text-slate-600">Mengompres gambar...</p>
 					</Space>
 				) : uploadingFiles.length >= maxFiles ? (
@@ -192,7 +192,7 @@ export function MultiImageUpload({
 					</>
 				) : (
 					<>
-						<InboxOutlined className="text-2xl text-red-600" />
+						<InboxOutlined className="text-2xl text-ruby-600" />
 						<p className="mt-2 text-sm font-medium">Drag & drop gambar di sini, atau klik untuk pilih</p>
 						<p className="text-xs text-slate-500 mt-1">
 							Maks {maxFiles} gambar, {maxFileSize}MB per file. Auto-compress ke WebP

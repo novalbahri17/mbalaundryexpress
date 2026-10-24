@@ -1,4 +1,4 @@
-import { createRecord, deleteRecord, escapeFilterValue, listRecords, pb, updateRecord } from "@/api/pocketbase";
+import { createRecord, deleteRecord, escapeFilterValue, fileUrl, listRecords, updateRecord } from "@/api/client";
 import type { BranchGallery } from "@/types/database.types";
 
 // Helper to get absolute URL for gallery image
@@ -8,8 +8,8 @@ const getGalleryImageUrl = (item: BranchGallery): string | undefined => {
 	// If already a full URL, return as-is
 	if (item.image.startsWith("http")) return item.image;
 
-	// Generate URL using PocketBase SDK
-	const url = pb.files.getURL({ id: item.id, collectionId: "", collectionName: "branch_gallery" }, item.image);
+	// Generate URL dari API server kita sendiri
+	const url = fileUrl("branch_gallery", { id: item.id }, item.image);
 
 	// If URL is relative, make it absolute
 	if (url && url.startsWith("/") && typeof window !== "undefined") {

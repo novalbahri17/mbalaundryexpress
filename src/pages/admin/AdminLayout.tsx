@@ -1,19 +1,11 @@
-import {
-	ArrowLeftOutlined,
-	DashboardOutlined,
-	LockOutlined,
-	LogoutOutlined,
-	SettingOutlined,
-} from "@ant-design/icons";
-import { Avatar, Button, Dropdown, Tooltip } from "antd";
+import { DashboardOutlined, LockOutlined, LogoutOutlined, SettingOutlined } from "@ant-design/icons";
 import type { MenuProps } from "antd";
-import { useMemo, useState } from "react";
-import toast from "react-hot-toast";
+import { Avatar, Dropdown } from "antd";
 import {
 	BarChart3,
 	GitBranch,
-	LucideBookOpen,
 	Image,
+	LucideBookOpen,
 	Megaphone,
 	MessageSquareMore,
 	Settings2,
@@ -21,11 +13,13 @@ import {
 	Star,
 	Users,
 } from "lucide-react";
+import { useMemo, useState } from "react";
+import toast from "react-hot-toast";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { useUserActions, useUserInfo } from "@/store/userStore";
-import { useBranding } from "@/hooks/useBranding";
 import { AdminFavicon } from "@/components/admin/AdminFavicon";
 import NotificationCenter from "@/components/admin/NotificationCenter";
+import { useBranding } from "@/hooks/useBranding";
+import { useUserActions, useUserInfo } from "@/store/userStore";
 
 type MenuGroupKey = "group-operasional" | "group-konten" | "group-komunikasi";
 
@@ -82,7 +76,7 @@ function SidebarLogo({ collapsed }: { collapsed: boolean }) {
 				{branding?.logo_url ? (
 					<img src={branding.logo_url} alt="Logo" className="h-8 w-8 rounded-lg object-contain" />
 				) : (
-					<div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-[#C62828] to-[#1565C0]">
+					<div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#C62828]">
 						<span className="text-sm font-bold text-white">M</span>
 					</div>
 				)}
@@ -95,13 +89,13 @@ function SidebarLogo({ collapsed }: { collapsed: boolean }) {
 			{branding?.logo_url ? (
 				<img src={branding.logo_url} alt="Logo" className="h-8 w-8 rounded-lg object-contain" />
 			) : (
-				<div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-[#C62828] to-[#1565C0]">
+				<div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#C62828]">
 					<span className="text-sm font-bold text-white">M</span>
 				</div>
 			)}
 			<div className="flex flex-col overflow-hidden">
 				<span className="text-sm font-bold text-white truncate">{branding?.site_title || "MBA Admin"}</span>
-				<span className="text-[10px] text-white/50">Control Panel</span>
+				<span className="truncate text-[10px] text-white/70">Panel Admin</span>
 			</div>
 		</div>
 	);
@@ -162,7 +156,7 @@ function SidebarMenu({
 	return (
 		<div className="sidebar-menu-container">
 			<div className="menu-items">
-				{items?.map((item: any, index: number) => {
+				{items?.map((item: any) => {
 					if (item.type === "group") {
 						return (
 							<div key={item.key} className="menu-group">
@@ -245,7 +239,6 @@ export default function AdminLayout() {
 	);
 
 	const pageTitle = menuByKey.get(selected)?.label ?? "Dashboard";
-	const isDashboard = selected === dashboardMenuEntry.key;
 
 	const goTo = (key: string) => {
 		navigate(key);
@@ -348,11 +341,7 @@ export default function AdminLayout() {
 					<div className="header-right">
 						<NotificationCenter />
 
-						<Dropdown
-							menu={{ items: userMenuItems }}
-							trigger={["click"]}
-							placement="bottomRight"
-						>
+						<Dropdown menu={{ items: userMenuItems }} trigger={["click"]} placement="bottomRight">
 							<button className="user-dropdown-trigger">
 								<Avatar size={32} className="user-avatar">
 									{avatarInitial}
@@ -385,7 +374,7 @@ const metronicAdminStyles = `
 
 	/* ===== SIDEBAR TOKENS ===== */
 	:root {
-		--sidebar-bg: linear-gradient(180deg, #1e1e2d 0%, #191924 100%);
+		--sidebar-bg: #1b1b26;
 		--sidebar-border: rgba(255, 255, 255, 0.05);
 		--sidebar-scrollbar: rgba(255, 255, 255, 0.1);
 		--sidebar-text: #9CA3AF;
@@ -507,9 +496,8 @@ const metronicAdminStyles = `
 	}
 
 	.menu-item-link.menu-item-active {
-		background: linear-gradient(90deg, rgba(198, 40, 40, 0.9) 0%, rgba(239, 68, 68, 0.8) 100%);
+		background: var(--brand);
 		color: var(--sidebar-text-active);
-		box-shadow: 0 4px 12px rgba(198, 40, 40, 0.3);
 	}
 
 	.menu-item-icon {
@@ -552,6 +540,7 @@ const metronicAdminStyles = `
 		flex: 1;
 		margin-left: ${SIDEBAR_WIDTH}px;
 		min-height: 100vh;
+		min-width: 0;
 		display: flex;
 		flex-direction: column;
 		transition: margin-left 0.3s ease;
@@ -579,6 +568,9 @@ const metronicAdminStyles = `
 		display: flex;
 		align-items: center;
 		gap: 16px;
+		min-width: 0;
+		flex: 1 1 auto;
+		overflow: hidden;
 	}
 
 	.mobile-menu-btn {
@@ -645,6 +637,8 @@ const metronicAdminStyles = `
 		display: flex;
 		align-items: center;
 		gap: 16px;
+		min-width: 0;
+		flex: 0 0 auto;
 	}
 
 	/* User Dropdown */
@@ -698,6 +692,7 @@ const metronicAdminStyles = `
 	/* Page Content */
 	.page-content {
 		flex: 1;
+		min-width: 0;
 		padding: 24px;
 	}
 
@@ -779,6 +774,15 @@ const metronicAdminStyles = `
 
 		.header-right {
 			gap: 12px;
+		}
+
+		.page-header {
+			flex-wrap: wrap;
+			gap: 12px;
+		}
+
+		.header-actions {
+			flex-wrap: wrap;
 		}
 	}
 

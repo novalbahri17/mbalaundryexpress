@@ -1,15 +1,15 @@
 import type { Editor } from "@tiptap/react";
 import {
+	CheckCircle2,
 	ChevronDown,
 	ChevronRight,
 	Eye,
-	ImageIcon,
 	FileText,
-	Upload,
-	Trash2,
-	ListTree,
 	Gauge,
-	CheckCircle2,
+	ImageIcon,
+	ListTree,
+	Trash2,
+	Upload,
 	XCircle,
 } from "lucide-react";
 import { useRef, useState } from "react";
@@ -34,7 +34,14 @@ const categories: { value: ArticleCategory; label: string }[] = [
 	{ value: "promo-info", label: "Promo & Info" },
 ];
 
-export function EditorInspector({ article, onUpdate, editor, selectedImageSrc, selectedImageAttrs, onImageUpdate }: EditorInspectorProps) {
+export function EditorInspector({
+	article,
+	onUpdate,
+	editor,
+	selectedImageSrc,
+	selectedImageAttrs,
+	onImageUpdate,
+}: EditorInspectorProps) {
 	const [expandedSections, setExpandedSections] = useState({
 		article: true,
 		seo: true,
@@ -86,7 +93,7 @@ export function EditorInspector({ article, onUpdate, editor, selectedImageSrc, s
 	const seoScore = Math.round((seoChecks.filter((c) => c.ok).length / seoChecks.length) * 100);
 
 	// File disimpan lokal dulu, baru diupload ke field file `thumbnail` record article saat save.
-	// (Field file PocketBase menolak nilai URL string → validation_invalid_file / 400.)
+	// (Field file hanya menerima upload multipart, bukan URL string → 400.)
 	const handleThumbUpload = (file: File) => {
 		setThumbError(null);
 		if (file.size > 5 * 1024 * 1024) {
@@ -409,7 +416,9 @@ export function EditorInspector({ article, onUpdate, editor, selectedImageSrc, s
 						/>
 					</div>
 					<div className="seo-score-label">
-						<span className={`seo-score-value ${seoScore >= 80 ? "good" : seoScore >= 50 ? "mid" : "bad"}`}>{seoScore}%</span>
+						<span className={`seo-score-value ${seoScore >= 80 ? "good" : seoScore >= 50 ? "mid" : "bad"}`}>
+							{seoScore}%
+						</span>
 						<span>kelengkapan artikel</span>
 					</div>
 					<div className="seo-checklist">
@@ -537,7 +546,11 @@ export function EditorInspector({ article, onUpdate, editor, selectedImageSrc, s
 							<div className="inspector-thumbnail-preview">
 								<img src={pendingThumbUrl || article.thumbnail} alt="Thumbnail" />
 								<div className="thumbnail-overlay">
-									<button type="button" className="thumbnail-overlay-btn" onClick={() => thumbInputRef.current?.click()}>
+									<button
+										type="button"
+										className="thumbnail-overlay-btn"
+										onClick={() => thumbInputRef.current?.click()}
+									>
 										<Upload size={14} />
 										Ganti
 									</button>
@@ -560,12 +573,10 @@ export function EditorInspector({ article, onUpdate, editor, selectedImageSrc, s
 							<button type="button" className="inspector-upload-zone" onClick={() => thumbInputRef.current?.click()}>
 								<Upload size={20} />
 								<span>Klik untuk upload gambar</span>
-								<small>PNG, JPG, atau WebP — maks 5 MB</small>
+								<small>PNG, JPG, atau WebP. Maks 5 MB.</small>
 							</button>
 						)}
-						{pendingThumbUrl && (
-							<div className="inspector-hint">Gambar baru akan diupload saat artikel disimpan.</div>
-						)}
+						{pendingThumbUrl && <div className="inspector-hint">Gambar baru akan diupload saat artikel disimpan.</div>}
 						{thumbError && <div className="inspector-error">{thumbError}</div>}
 					</div>
 				)}
@@ -582,7 +593,8 @@ export function EditorInspector({ article, onUpdate, editor, selectedImageSrc, s
 					<div className="inspector-section-body">
 						<div className="inspector-field">
 							<label>
-								Meta Title <span className={`label-hint ${metaTitle.length > 60 ? "over" : ""}`}>{metaTitle.length}/60</span>
+								Meta Title{" "}
+								<span className={`label-hint ${metaTitle.length > 60 ? "over" : ""}`}>{metaTitle.length}/60</span>
 							</label>
 							<input
 								type="text"
@@ -594,7 +606,8 @@ export function EditorInspector({ article, onUpdate, editor, selectedImageSrc, s
 						</div>
 						<div className="inspector-field">
 							<label>
-								Meta Description <span className={`label-hint ${metaDesc.length > 160 ? "over" : ""}`}>{metaDesc.length}/160</span>
+								Meta Description{" "}
+								<span className={`label-hint ${metaDesc.length > 160 ? "over" : ""}`}>{metaDesc.length}/160</span>
 							</label>
 							<textarea
 								value={metaDesc}
@@ -609,7 +622,9 @@ export function EditorInspector({ article, onUpdate, editor, selectedImageSrc, s
 							<div className="google-preview-label">Pratinjau Google</div>
 							<div className="google-preview-title">{metaTitle || article.title || "Judul artikel"}</div>
 							<div className="google-preview-url">mbalaundryexpress.com/blog/{article.slug || "slug-artikel"}</div>
-							<div className="google-preview-desc">{metaDesc || excerpt || "Deskripsi artikel akan muncul di sini..."}</div>
+							<div className="google-preview-desc">
+								{metaDesc || excerpt || "Deskripsi artikel akan muncul di sini..."}
+							</div>
 						</div>
 					</div>
 				)}

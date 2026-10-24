@@ -3,10 +3,10 @@
  * Smooth page transitions with AnimatePresence
  */
 
-import { motion, AnimatePresence, type Variants } from "framer-motion";
+import { AnimatePresence, motion, type Variants } from "framer-motion";
 import { useLocation } from "react-router-dom";
-import { cn } from "@/utils";
 import { transitions } from "@/design-system/tokens/animations";
+import { cn } from "@/utils";
 
 // ============================================
 // TYPES

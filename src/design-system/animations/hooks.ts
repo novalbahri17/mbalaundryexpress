@@ -3,8 +3,8 @@
  * Custom hooks for micro-interactions
  */
 
-import { useState, useCallback, useEffect, useRef } from "react";
 import { useMotionValue, useSpring } from "framer-motion";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 // ============================================
 // USE HOVER SCALE
@@ -162,7 +162,7 @@ export function useCountUp(end: number, duration = 2000, start = 0) {
 			const progress = Math.min(elapsed / duration, 1);
 
 			// Easing function (easeOutQuart)
-			const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+			const easeOutQuart = 1 - (1 - progress) ** 4;
 			const current = Math.floor(start + (end - start) * easeOutQuart);
 
 			setCount(current);

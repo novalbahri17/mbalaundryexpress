@@ -41,11 +41,7 @@ export const minLength = (value: string, length: number, label: string): string 
 	return null;
 };
 
-export const sanitizeText = (value: string): string =>
-	value
-		.replace(/[<>]/g, "")
-		.replace(/\s+/g, " ")
-		.trim();
+export const sanitizeText = (value: string): string => value.replace(/[<>]/g, "").replace(/\s+/g, " ").trim();
 
 export const rateLimitByKey = (key: string, limit: number, windowMs: number): boolean => {
 	if (typeof window === "undefined") return true;

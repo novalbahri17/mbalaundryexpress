@@ -1,4 +1,12 @@
-import { createRecord, deleteRecord, escapeFilterValue, fileUrl, getRecordById, listRecords, updateRecord } from "@/api/pocketbase";
+import {
+	createRecord,
+	deleteRecord,
+	escapeFilterValue,
+	fileUrl,
+	getRecordById,
+	listRecords,
+	updateRecord,
+} from "@/api/client";
 import type { Job } from "@/types/database.types";
 
 const isDirectUrl = (value?: string): boolean =>
@@ -41,5 +49,6 @@ export const getJobById = async (id: string): Promise<Job> => {
 };
 
 export const createJob = (payload: Partial<Job> | FormData): Promise<Job> => createRecord("jobs", payload);
-export const updateJob = (id: string, payload: Partial<Job> | FormData): Promise<Job> => updateRecord("jobs", id, payload);
+export const updateJob = (id: string, payload: Partial<Job> | FormData): Promise<Job> =>
+	updateRecord("jobs", id, payload);
 export const deleteJob = (id: string): Promise<void> => deleteRecord("jobs", id);

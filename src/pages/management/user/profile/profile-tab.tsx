@@ -1,3 +1,5 @@
+import { faker } from "@faker-js/faker";
+import { Timeline } from "antd";
 import { Icon } from "@/components/icon";
 import { useUserInfo } from "@/store/userStore";
 import { themeVars } from "@/theme/theme.css";
@@ -5,8 +7,6 @@ import { Badge } from "@/ui/badge";
 import { Button } from "@/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ui/card";
 import { Text } from "@/ui/typography";
-import { faker } from "@faker-js/faker";
-import { Timeline } from "antd";
 
 export default function ProfileTab() {
 	const { username } = useUserInfo();
@@ -167,7 +167,7 @@ export default function ProfileTab() {
 									children: (
 										<div className="flex flex-col">
 											<div className="flex items-center justify-between">
-												<Text>Create a new project for client 😎</Text>
+												<Text>Create a new project for client</Text>
 												<div className="opacity-50">April, 18</div>
 											</div>
 											<Text variant="caption" color="secondary">

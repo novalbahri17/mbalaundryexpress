@@ -1,4 +1,4 @@
-import { createRecord, deleteRecord, escapeFilterValue, listRecords, updateRecord } from "@/api/pocketbase";
+import { createRecord, deleteRecord, escapeFilterValue, listRecords, updateRecord } from "@/api/client";
 import type { ContactMessage, Partnership, SiteSetting } from "@/types/database.types";
 
 export const getSiteSettings = async (): Promise<SiteSetting[]> => {
@@ -70,5 +70,3 @@ export const createContactMessage = (payload: Partial<ContactMessage>): Promise<
 export const updateContactMessage = (id: string, payload: Partial<ContactMessage>): Promise<ContactMessage> =>
 	updateRecord("contact_messages", id, payload);
 export const deleteContactMessage = (id: string): Promise<void> => deleteRecord("contact_messages", id);
-
-

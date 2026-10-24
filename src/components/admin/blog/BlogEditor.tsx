@@ -1,5 +1,3 @@
-import { useEditor, EditorContent, NodeViewWrapper, ReactNodeViewRenderer } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
 import { Extension, type NodeViewProps } from "@tiptap/core";
 import Image from "@tiptap/extension-image";
 import Link from "@tiptap/extension-link";
@@ -7,45 +5,48 @@ import Placeholder from "@tiptap/extension-placeholder";
 import TextAlign from "@tiptap/extension-text-align";
 import TextStyle from "@tiptap/extension-text-style";
 import Underline from "@tiptap/extension-underline";
+import { EditorContent, NodeViewWrapper, ReactNodeViewRenderer, useEditor } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
 import {
+	AlertCircle,
+	AlignCenter,
+	AlignLeft,
+	AlignRight,
+	ArrowLeft,
 	Bold,
-	Italic,
-	Underline as UnderlineIcon,
-	Strikethrough,
-	List,
-	ListOrdered,
-	Quote,
-	Link2,
-	ImageIcon,
+	BookOpen,
+	CheckCircle2,
+	CircleDot,
+	CloudUpload,
 	Heading2,
 	Heading3,
-	Undo,
-	Redo,
-	AlignLeft,
-	AlignCenter,
-	AlignRight,
-	Trash2,
-	ArrowLeft,
-	Pilcrow,
-	Text,
-	AlertCircle,
+	ImageIcon,
+	Italic,
+	Link2,
+	List,
+	ListOrdered,
+	Loader2,
+	Maximize2,
 	Megaphone,
-	BookOpen,
+	Pilcrow,
+	Quote,
+	Redo,
+	RemoveFormatting,
 	Shirt,
 	Sparkles,
-	CheckCircle2,
-	Loader2,
-	CloudUpload,
-	CircleDot,
+	Strikethrough,
+	Text,
+	Trash2,
 	Type,
-	RemoveFormatting,
+	Underline as UnderlineIcon,
+	Undo,
 } from "lucide-react";
-import { useCallback, useEffect, useState, useRef, type CSSProperties } from "react";
+import { type CSSProperties, useCallback, useEffect, useRef, useState } from "react";
+import { pb } from "@/api/client";
 import { EditorInspector } from "@/components/admin/blog/EditorInspector";
+import type { Article, ArticleCategory } from "@/types/database.types";
 import { SlashCommand } from "./SlashCommand";
 import { TemplatePicker } from "./TemplatePicker";
-import type { Article, ArticleCategory } from "@/types/database.types";
-import { pb } from "@/api/pocketbase";
 
 interface BlogEditorProps {
 	article?: Partial<Article>;
@@ -452,13 +453,13 @@ const FontSize = Extension.create({
 });
 
 // ============ UPLOAD HANDLER ============
-async function uploadImageToPocketBase(file: File): Promise<string> {
+async function uploadImageToServer(file: File): Promise<string> {
 	const formData = new FormData();
 	formData.append("file", file);
 	formData.append("type", "article-image");
 
-	const record = await pb.collection("branding_files").create(formData);
-	return pb.files.getURL(record, record.file);
+	const record = await pb.collection("branding_files").create<{ id: string; file: string }>(formData);
+	return pb.files.getURL({ id: record.id, collectionName: "branding_files" }, record.file);
 }
 
 const slugify = (value: string) =>
@@ -605,7 +606,7 @@ export function BlogEditor({ article, onSave, onCancel, isSaving }: BlogEditorPr
 			setImageUploadProgress(true);
 			setImageUploadError(null);
 			try {
-				const url = await uploadImageToPocketBase(file);
+				const url = await uploadImageToServer(file);
 				editor.chain().focus().setImage({ src: url, alt: file.name }).run();
 			} catch {
 				setImageUploadError("Gagal mengupload gambar. Coba lagi.");
@@ -747,25 +748,89 @@ export function BlogEditor({ article, onSave, onCancel, isSaving }: BlogEditorPr
 
 	// Toolbar button config
 	const toolbarButtons: Array<
-		| { type: "sep" }
-		| { icon: React.ReactNode; action: () => void; active?: boolean; title: string; disabled?: boolean }
+		{ type: "sep" } | { icon: React.ReactNode; action: () => void; active?: boolean; title: string; disabled?: boolean }
 	> = [
-		{ icon: <Bold size={16} />, action: () => editor?.chain().focus().toggleBold().run(), active: editor?.isActive("bold"), title: "Tebal (Ctrl+B)" },
-		{ icon: <Italic size={16} />, action: () => editor?.chain().focus().toggleItalic().run(), active: editor?.isActive("italic"), title: "Miring (Ctrl+I)" },
-		{ icon: <UnderlineIcon size={16} />, action: () => editor?.chain().focus().toggleUnderline().run(), active: editor?.isActive("underline"), title: "Garis Bawah (Ctrl+U)" },
-		{ icon: <Strikethrough size={16} />, action: () => editor?.chain().focus().toggleStrike().run(), active: editor?.isActive("strike"), title: "Coret" },
+		{
+			icon: <Bold size={16} />,
+			action: () => editor?.chain().focus().toggleBold().run(),
+			active: editor?.isActive("bold"),
+			title: "Tebal (Ctrl+B)",
+		},
+		{
+			icon: <Italic size={16} />,
+			action: () => editor?.chain().focus().toggleItalic().run(),
+			active: editor?.isActive("italic"),
+			title: "Miring (Ctrl+I)",
+		},
+		{
+			icon: <UnderlineIcon size={16} />,
+			action: () => editor?.chain().focus().toggleUnderline().run(),
+			active: editor?.isActive("underline"),
+			title: "Garis Bawah (Ctrl+U)",
+		},
+		{
+			icon: <Strikethrough size={16} />,
+			action: () => editor?.chain().focus().toggleStrike().run(),
+			active: editor?.isActive("strike"),
+			title: "Coret",
+		},
 		{ type: "sep" },
-		{ icon: <Heading2 size={16} />, action: () => editor?.chain().focus().toggleHeading({ level: 2 }).run(), active: editor?.isActive("heading", { level: 2 }), title: "Judul 2" },
-		{ icon: <Heading3 size={16} />, action: () => editor?.chain().focus().toggleHeading({ level: 3 }).run(), active: editor?.isActive("heading", { level: 3 }), title: "Judul 3" },
-		{ icon: <Type size={16} />, action: () => editor?.chain().focus().setParagraph().run(), active: editor?.isActive("paragraph"), title: "Paragraf" },
+		{
+			icon: <Heading2 size={16} />,
+			action: () => editor?.chain().focus().toggleHeading({ level: 2 }).run(),
+			active: editor?.isActive("heading", { level: 2 }),
+			title: "Judul 2",
+		},
+		{
+			icon: <Heading3 size={16} />,
+			action: () => editor?.chain().focus().toggleHeading({ level: 3 }).run(),
+			active: editor?.isActive("heading", { level: 3 }),
+			title: "Judul 3",
+		},
+		{
+			icon: <Type size={16} />,
+			action: () => editor?.chain().focus().setParagraph().run(),
+			active: editor?.isActive("paragraph"),
+			title: "Paragraf",
+		},
 		{ type: "sep" },
-		{ icon: <List size={16} />, action: () => editor?.chain().focus().toggleBulletList().run(), active: editor?.isActive("bulletList"), title: "Daftar Poin" },
-		{ icon: <ListOrdered size={16} />, action: () => editor?.chain().focus().toggleOrderedList().run(), active: editor?.isActive("orderedList"), title: "Daftar Nomor" },
-		{ icon: <Quote size={16} />, action: () => editor?.chain().focus().toggleBlockquote().run(), active: editor?.isActive("blockquote"), title: "Kutipan" },
+		{
+			icon: <List size={16} />,
+			action: () => editor?.chain().focus().toggleBulletList().run(),
+			active: editor?.isActive("bulletList"),
+			title: "Daftar Poin",
+		},
+		{
+			icon: <ListOrdered size={16} />,
+			action: () => editor?.chain().focus().toggleOrderedList().run(),
+			active: editor?.isActive("orderedList"),
+			title: "Daftar Nomor",
+		},
+		{
+			icon: <Quote size={16} />,
+			action: () => editor?.chain().focus().toggleBlockquote().run(),
+			active: editor?.isActive("blockquote"),
+			title: "Kutipan",
+		},
 		{ type: "sep" },
-		{ icon: <AlignLeft size={16} />, action: () => editor?.chain().focus().setTextAlign("left").run(), active: editor?.isActive({ textAlign: "left" }), title: "Rata Kiri" },
-		{ icon: <AlignCenter size={16} />, action: () => editor?.chain().focus().setTextAlign("center").run(), active: editor?.isActive({ textAlign: "center" }), title: "Rata Tengah" },
-		{ icon: <AlignRight size={16} />, action: () => editor?.chain().focus().setTextAlign("right").run(), active: editor?.isActive({ textAlign: "right" }), title: "Rata Kanan" },
+		{
+			icon: <AlignLeft size={16} />,
+			action: () => editor?.chain().focus().setTextAlign("left").run(),
+			active: editor?.isActive({ textAlign: "left" }),
+			title: "Rata Kiri",
+		},
+		{
+			icon: <AlignCenter size={16} />,
+			action: () => editor?.chain().focus().setTextAlign("center").run(),
+			active: editor?.isActive({ textAlign: "center" }),
+			title: "Rata Tengah",
+		},
+		{
+			icon: <AlignRight size={16} />,
+			action: () => editor?.chain().focus().setTextAlign("right").run(),
+			active: editor?.isActive({ textAlign: "right" }),
+			title: "Rata Kanan",
+		},
 		{ type: "sep" },
 		{
 			icon: <Link2 size={16} />,
@@ -782,10 +847,27 @@ export function BlogEditor({ article, onSave, onCancel, isSaving }: BlogEditorPr
 			active: false,
 			title: "Upload Gambar",
 		},
-		{ icon: <RemoveFormatting size={16} />, action: () => editor?.chain().focus().clearNodes().unsetAllMarks().run(), active: false, title: "Hapus Format" },
+		{
+			icon: <RemoveFormatting size={16} />,
+			action: () => editor?.chain().focus().clearNodes().unsetAllMarks().run(),
+			active: false,
+			title: "Hapus Format",
+		},
 		{ type: "sep" },
-		{ icon: <Undo size={16} />, action: () => editor?.chain().focus().undo().run(), active: false, title: "Undo (Ctrl+Z)", disabled: !editor?.can().undo() },
-		{ icon: <Redo size={16} />, action: () => editor?.chain().focus().redo().run(), active: false, title: "Redo (Ctrl+Y)", disabled: !editor?.can().redo() },
+		{
+			icon: <Undo size={16} />,
+			action: () => editor?.chain().focus().undo().run(),
+			active: false,
+			title: "Undo (Ctrl+Z)",
+			disabled: !editor?.can().undo(),
+		},
+		{
+			icon: <Redo size={16} />,
+			action: () => editor?.chain().focus().redo().run(),
+			active: false,
+			title: "Redo (Ctrl+Y)",
+			disabled: !editor?.can().redo(),
+		},
 	];
 
 	const changeImageAttr = (attrs: Record<string, unknown>) => {
@@ -795,9 +877,7 @@ export function BlogEditor({ article, onSave, onCancel, isSaving }: BlogEditorPr
 				// Update attributes in place via a transaction. Do NOT use .focus() or
 				// setNodeSelection here: stealing focus would pull typing out of the
 				// Inspector input fields and replace the selected image with that text.
-				editor.view.dispatch(
-					editor.state.tr.setNodeMarkup(pos, undefined, { ...node.attrs, ...attrs }),
-				);
+				editor.view.dispatch(editor.state.tr.setNodeMarkup(pos, undefined, { ...node.attrs, ...attrs }));
 				// Keep local attr state in sync (setNodeMarkup doesn't fire onSelectionUpdate)
 				setSelectedImageAttrs({ ...(node.attrs as Record<string, string>), ...(attrs as Record<string, string>) });
 			}
@@ -967,7 +1047,7 @@ export function BlogEditor({ article, onSave, onCancel, isSaving }: BlogEditorPr
 							</div>
 						</div>
 
-						{/* Image Controls (when image selected) — in-flow bar, no portal (avoids React removeChild crash) */}
+						{/* Image Controls (when image selected): in-flow bar, no portal (avoids React removeChild crash) */}
 						{selectedImageSrc && editor && (
 							<div className="image-bubble-menu image-bubble-inline">
 								<div className="image-bubble-inner">
@@ -1028,7 +1108,7 @@ export function BlogEditor({ article, onSave, onCancel, isSaving }: BlogEditorPr
 										title="Penuh (100%)"
 										type="button"
 									>
-										⛶
+										<Maximize2 className="h-3.5 w-3.5" />
 									</button>
 									<BubbleNumber
 										value={selectedImageAttrs?.width === "custom" ? (selectedImageAttrs?.widthValue ?? "") : ""}
@@ -1047,7 +1127,7 @@ export function BlogEditor({ article, onSave, onCancel, isSaving }: BlogEditorPr
 										placeholder="auto"
 										suffix="px"
 										min={0}
-										title="Tinggi custom (px) — kosong = proporsional"
+										title="Tinggi custom (px). Kosong berarti proporsional."
 									/>
 								</div>
 								<div className="image-bubble-inner">
@@ -1100,7 +1180,8 @@ export function BlogEditor({ article, onSave, onCancel, isSaving }: BlogEditorPr
 										title="Tanpa bayangan"
 										type="button"
 									>
-										–
+										<span aria-hidden>0</span>
+										<span className="sr-only">Tanpa bayangan</span>
 									</button>
 									<button
 										className={`bubble-btn bubble-btn-sm ${selectedImageAttrs?.shadow === "sm" ? "active" : ""}`}
@@ -1135,7 +1216,7 @@ export function BlogEditor({ article, onSave, onCancel, isSaving }: BlogEditorPr
 										suffix="px"
 										min={0}
 										max={20}
-										title="Ketebalan bingkai (px) — 0/kosong = tanpa"
+										title="Ketebalan bingkai (px). 0 atau kosong berarti tanpa bingkai."
 									/>
 									<input
 										type="color"

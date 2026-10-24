@@ -4,14 +4,13 @@
  * Value: Rp 100.000.000
  */
 
-// Tokens
-export * from "./tokens";
+// Animations
+export * from "./animations";
 
 // Components
 export * from "./components";
-
-// Animations
-export * from "./animations";
+// Tokens
+export * from "./tokens";
 
 // Version
 export const DESIGN_SYSTEM_VERSION = "2.0.0-premium";

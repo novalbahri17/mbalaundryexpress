@@ -4,12 +4,6 @@
 	"outputDirectory": "dist",
 	"installCommand": "pnpm install --frozen-lockfile",
 	"framework": "vite",
-	"rewrites": [
-		{
-			"source": "/pb-api/:path*",
-			"destination": "https://pb.mbalaundryexpress.com/:path*"
-		}
-	],
 	"headers": [
 		{
 			"source": "/assets/(.*)",

@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Popconfirm, Tooltip, message } from "antd";
+import { message, Popconfirm, Tooltip } from "antd";
 import {
 	BookOpen,
 	CalendarDays,
@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { createArticle, deleteArticle, getArticles, updateArticle } from "@/api/articles.api";
-import { BlogEditor, type ArticleEditorData } from "@/components/admin/blog/BlogEditor";
+import { type ArticleEditorData, BlogEditor } from "@/components/admin/blog/BlogEditor";
 import type { Article, ArticleCategory } from "@/types/database.types";
 import { formatCompact, formatDate } from "@/utils/format";
 
@@ -109,8 +109,8 @@ export default function BlogAdminPage() {
 	const handleSave = async (data: ArticleEditorData) => {
 		setIsSaving(true);
 		try {
-			// `articles.thumbnail` adalah field FILE PocketBase → wajib dikirim sebagai file asli
-			// lewat multipart FormData. URL string akan ditolak (validation_invalid_file / 400).
+			// `articles.thumbnail` adalah field file → wajib dikirim sebagai file asli
+			// lewat multipart FormData. URL string akan ditolak (400).
 			const fd = new FormData();
 			fd.append("title", data.title);
 			fd.append("slug", data.slug);
@@ -125,7 +125,7 @@ export default function BlogAdminPage() {
 			if (data.thumbnailFile) {
 				fd.append("thumbnail", data.thumbnailFile);
 			} else if (!data.thumbnail && selectedArticle?.thumbnail) {
-				// gambar utama dihapus → kirim nilai kosong agar PocketBase menghapus file lama
+				// gambar utama dihapus → kirim nilai kosong agar file lama terhapus
 				fd.append("thumbnail", "");
 			}
 
@@ -291,20 +291,12 @@ export default function BlogAdminPage() {
 
 				<div className="blog-view-toggle">
 					<Tooltip title="Tampilan kartu">
-						<button
-							type="button"
-							className={viewMode === "grid" ? "active" : ""}
-							onClick={() => setViewMode("grid")}
-						>
+						<button type="button" className={viewMode === "grid" ? "active" : ""} onClick={() => setViewMode("grid")}>
 							<LayoutGrid size={15} />
 						</button>
 					</Tooltip>
 					<Tooltip title="Tampilan tabel">
-						<button
-							type="button"
-							className={viewMode === "table" ? "active" : ""}
-							onClick={() => setViewMode("table")}
-						>
+						<button type="button" className={viewMode === "table" ? "active" : ""} onClick={() => setViewMode("table")}>
 							<List size={15} />
 						</button>
 					</Tooltip>
@@ -470,7 +462,9 @@ function ArticleCard({
 						<ImageOff size={26} />
 					</div>
 				)}
-				<span className={`card-status ${article.status}`}>{article.status === "published" ? "Published" : "Draft"}</span>
+				<span className={`card-status ${article.status}`}>
+					{article.status === "published" ? "Published" : "Draft"}
+				</span>
 			</div>
 
 			<div className="article-card-body" onClick={onEdit}>

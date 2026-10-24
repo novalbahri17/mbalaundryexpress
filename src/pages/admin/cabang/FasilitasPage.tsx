@@ -1,24 +1,16 @@
 import { DeleteOutlined, EditOutlined, PlusOutlined } from "@ant-design/icons";
-import { Button, Form, Input, InputNumber, Modal, Popconfirm, Select, Space, Switch, Table, message } from "antd";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Button, Form, Input, InputNumber, Modal, message, Popconfirm, Space, Table } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useState } from "react";
 import { useParams } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { deleteBranchFacility, getBranchFacilities, saveBranchFacility } from "@/api/branches.api";
 import { BranchContextHeader } from "@/components/admin/BranchContextHeader";
+import { FacilityIconPicker } from "@/components/admin/FacilityIconPicker";
 import { MetronicPage } from "@/components/admin/MetronicPage";
+import { TableEmptyState, TableErrorState } from "@/components/admin/QueryState";
+import { getFacilityIcon } from "@/lib/facility-icons";
 import type { BranchFacility } from "@/types/database.types";
-
-const iconOptions = [
-	"washing-machine",
-	"droplets",
-	"wind",
-	"wifi",
-	"air-vent",
-	"sofa",
-	"parking-square",
-	"shield-check",
-];
 
 type FasilitasFormValues = {
 	name: string;
@@ -33,7 +25,13 @@ export default function CabangFasilitasPage() {
 	const [form] = Form.useForm<FasilitasFormValues>();
 	const queryClient = useQueryClient();
 
-	const { data = [], isLoading } = useQuery({
+	const {
+		data = [],
+		isLoading,
+		isError,
+		error,
+		refetch,
+	} = useQuery({
 		queryKey: ["branch-facilities", id],
 		queryFn: () => getBranchFacilities(id ?? ""),
 		enabled: Boolean(id),
@@ -74,7 +72,20 @@ export default function CabangFasilitasPage() {
 
 	const columns: ColumnsType<BranchFacility> = [
 		{ title: "Nama", dataIndex: "name" },
-		{ title: "Icon", dataIndex: "icon", render: (value?: string) => value || "-" },
+		{
+			title: "Icon",
+			dataIndex: "icon",
+			width: 200,
+			render: (value: string | undefined, record: BranchFacility) => {
+				const Icon = getFacilityIcon(value, record.name);
+				return (
+					<span className="flex items-center gap-2">
+						<Icon className="h-4 w-4 text-[var(--brand)]" />
+						<span className="text-sm">{value || "-"}</span>
+					</span>
+				);
+			},
+		},
 		{ title: "Urutan", dataIndex: "sort_order" },
 		{
 			title: "Aksi",
@@ -121,7 +132,24 @@ export default function CabangFasilitasPage() {
 
 			<div className="card mt-4">
 				<div className="table-container">
-					<Table rowKey="id" loading={isLoading} dataSource={data} columns={columns} />
+					{isError ? (
+						<TableErrorState title="Gagal memuat fasilitas cabang" error={error} onRetry={() => void refetch()} />
+					) : (
+						<Table
+							rowKey="id"
+							loading={isLoading}
+							dataSource={data}
+							columns={columns}
+							locale={{
+								emptyText: (
+									<TableEmptyState
+										title="Belum ada fasilitas."
+										hint="Tambahkan fasilitas pertama supaya pelanggan tahu apa saja yang tersedia di cabang ini."
+									/>
+								),
+							}}
+						/>
+					)}
 				</div>
 			</div>
 
@@ -141,12 +169,20 @@ export default function CabangFasilitasPage() {
 			>
 				<Form layout="vertical" form={form} initialValues={{ sort_order: 0 }}>
 					<Form.Item label="Nama" name="name" rules={[{ required: true, message: "Nama fasilitas wajib diisi" }]}>
-						<Input className="form-input" />
+						<Input className="form-input" placeholder="mis. WiFi Gratis, Sofa Ruang Tunggu" />
 					</Form.Item>
-					<Form.Item label="Icon" name="icon">
-						<Input placeholder={`Contoh: ${iconOptions.join(", ")}`} className="form-input" />
+					<Form.Item
+						label="Ikon"
+						name="icon"
+						tooltip="Pilih ikon yang paling mewakili fasilitas ini. Klik lagi untuk membatalkan pilihan."
+					>
+						<FacilityIconPicker />
 					</Form.Item>
-					<Form.Item label="Sort Order" name="sort_order">
+					<Form.Item
+						label="Sort Order"
+						name="sort_order"
+						tooltip="Urutan tampil fasilitas di halaman cabang. Angka kecil tampil lebih dulu."
+					>
 						<InputNumber className="form-input w-full" min={0} />
 					</Form.Item>
 				</Form>

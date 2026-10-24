@@ -15,13 +15,7 @@ export interface SectionProps extends PropsWithChildren<HTMLAttributes<HTMLEleme
 	reveal?: boolean;
 }
 
-export function Section({
-	size = "md",
-	reveal = false,
-	className,
-	children,
-	...props
-}: SectionProps) {
+export function Section({ size = "md", reveal = false, className, children, ...props }: SectionProps) {
 	const content = (
 		<section className={cn(sectionSizeClass[size], className)} {...props}>
 			{children}
@@ -42,4 +36,3 @@ export function Section({
 		</motion.div>
 	);
 }
-

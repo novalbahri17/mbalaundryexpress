@@ -17,4 +17,3 @@ export function NavHorizontal({ data, className, ...props }: NavProps) {
 		</nav>
 	);
 }
-

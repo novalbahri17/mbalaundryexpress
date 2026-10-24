@@ -1,6 +1,6 @@
 import type { ColumnsType } from "antd/es/table";
-import { CrudManager } from "@/components/admin/CrudManager";
 import { createPartnership, deletePartnership, getPartnerships, updatePartnership } from "@/api/settings.api";
+import { CrudManager } from "@/components/admin/CrudManager";
 import { MetronicPage } from "@/components/admin/MetronicPage";
 import type { Partnership } from "@/types/database.types";
 
@@ -14,10 +14,7 @@ const columns: ColumnsType<Partnership> = [
 
 export default function KemitraanAdminPage() {
 	return (
-		<MetronicPage
-			title="Kemitraan"
-			subtitle="Kelola form partnership dan kemitraan usaha"
-		>
+		<MetronicPage title="Kemitraan" subtitle="Kelola form partnership dan kemitraan usaha">
 			<CrudManager<Partnership>
 				title="Partnership"
 				queryKey="admin-partnerships"

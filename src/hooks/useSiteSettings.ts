@@ -16,4 +16,3 @@ export const useSiteSettingsMap = () =>
 		queryFn: getSiteSettingsMap,
 		staleTime: 60_000,
 	});
-

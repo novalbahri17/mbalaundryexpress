@@ -78,12 +78,9 @@ export default {
 				},
 			},
 			backgroundImage: {
-				"gradient-primary": "linear-gradient(135deg, #C62828 0%, #1565C0 100%)",
-				"gradient-aurora": "linear-gradient(120deg, #C62828 0%, #1565C0 52%, #00695C 100%)",
-				"gradient-surface": "linear-gradient(180deg, #FFFFFF 0%, #F5F7FF 100%)",
-				"gradient-hero-light": "linear-gradient(135deg, #FFF5F5 0%, #F0F4FF 50%, #F0FFFE 100%)",
-				"gradient-hero-dark": "linear-gradient(135deg, #1A0A0A 0%, #0A0A1A 50%, #0A1A18 100%)",
-				"gradient-mesh": "radial-gradient(circle at 20% 20%, rgba(198,40,40,0.22), transparent 40%), radial-gradient(circle at 80% 10%, rgba(21,101,192,0.2), transparent 35%), radial-gradient(circle at 60% 80%, rgba(0,105,92,0.2), transparent 35%)",
+				// Anti-slop: was a ruby→sapphire gradient. Single brand color now.
+				"gradient-primary": "var(--brand)",
+				"gradient-surface": "var(--bg-app)",
 			},
 			boxShadow: {
 				xs: "0 1px 2px rgba(2, 6, 23, 0.06)",
@@ -92,9 +89,10 @@ export default {
 				lg: "0 14px 34px rgba(2, 6, 23, 0.16)",
 				xl: "0 22px 50px rgba(2, 6, 23, 0.18)",
 				"2xl": "0 28px 80px rgba(2, 6, 23, 0.22)",
-				"ruby-glow": "0 0 40px rgba(198, 40, 40, 0.2)",
-				"sapphire-glow": "0 0 46px rgba(21, 101, 192, 0.2)",
-				"teal-glow": "0 0 48px rgba(0, 105, 92, 0.2)",
+				// Anti-slop: glow shadows replaced by normal elevation.
+				"ruby-glow": "0 3px 10px rgba(2, 6, 23, 0.08)",
+				"sapphire-glow": "0 3px 10px rgba(2, 6, 23, 0.08)",
+				"teal-glow": "0 3px 10px rgba(2, 6, 23, 0.08)",
 			},
 			backdropBlur: {
 				glass: "16px",
@@ -105,11 +103,8 @@ export default {
 				"glass-lg": "1.75rem",
 			},
 			keyframes: {
-				orbFloat: {
-					"0%": { transform: "translate3d(0,0,0) scale(1)" },
-					"50%": { transform: "translate3d(0,-24px,0) scale(1.04)" },
-					"100%": { transform: "translate3d(0,0,0) scale(1)" },
-				},
+				// Identity motif: the washing-machine drum. The one motion the
+				// product actually owns.
 				drumSpin: {
 					"0%": { transform: "rotate(0deg)" },
 					"100%": { transform: "rotate(360deg)" },
@@ -118,37 +113,15 @@ export default {
 					"0%": { opacity: "0", transform: "translateY(16px)" },
 					"100%": { opacity: "1", transform: "translateY(0)" },
 				},
-				slideInLeft: {
-					"0%": { opacity: "0", transform: "translateX(-24px)" },
-					"100%": { opacity: "1", transform: "translateX(0)" },
-				},
-				borderFlow: {
-					"0%": { backgroundPosition: "0% 50%" },
-					"50%": { backgroundPosition: "100% 50%" },
-					"100%": { backgroundPosition: "0% 50%" },
-				},
 				shimmer: {
 					"0%": { backgroundPosition: "-200% 0" },
 					"100%": { backgroundPosition: "200% 0" },
 				},
-				pulse2: {
-					"0%, 100%": { opacity: "0.6", transform: "scale(1)" },
-					"50%": { opacity: "1", transform: "scale(1.05)" },
-				},
-				floatY: {
-					"0%, 100%": { transform: "translateY(0px)" },
-					"50%": { transform: "translateY(-12px)" },
-				},
 			},
 			animation: {
-				orb: "orbFloat 10s ease-in-out infinite",
 				"drum-spin": "drumSpin 3s linear infinite",
 				"fade-in-up": "fadeInUp 0.6s ease forwards",
-				"slide-in-left": "slideInLeft 0.6s ease forwards",
-				"border-flow": "borderFlow 6s ease infinite",
 				shimmer: "shimmer 2s linear infinite",
-				pulse2: "pulse2 3s ease-in-out infinite",
-				"float-y": "floatY 4s ease-in-out infinite",
 			},
 		},
 	},

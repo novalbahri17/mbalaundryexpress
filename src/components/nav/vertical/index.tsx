@@ -11,4 +11,3 @@ export function NavVertical({ data, className, ...props }: NavProps) {
 		</nav>
 	);
 }
-

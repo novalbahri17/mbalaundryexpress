@@ -1,16 +1,19 @@
 import { lazy, useEffect } from "react";
 import type { RouteObject } from "react-router-dom";
 import { Navigate, Outlet } from "react-router-dom";
-import { isAuthenticated } from "@/api/pocketbase";
+import { isAuthenticated } from "@/api/client";
 import { useUserActions, useUserToken } from "@/store/userStore";
 
 const AdminLayout = lazy(() => import("@/pages/admin/AdminLayout"));
 const LoginPage = lazy(() => import("@/pages/admin/LoginPage"));
 const DashboardPage = lazy(() => import("@/pages/admin/DashboardPage"));
 const CabangPage = lazy(() => import("@/pages/admin/cabang"));
+const CabangKelolaPage = lazy(() => import("@/pages/admin/cabang/KelolaPage"));
 const CabangJamPage = lazy(() => import("@/pages/admin/cabang/JamPage"));
 const CabangFasilitasPage = lazy(() => import("@/pages/admin/cabang/FasilitasPage"));
+const CabangMesinPage = lazy(() => import("@/pages/admin/cabang/MesinPage"));
 const CabangGaleriPage = lazy(() => import("@/pages/admin/cabang/GaleriPage"));
+const CabangPromoPage = lazy(() => import("@/pages/admin/cabang/PromoPage"));
 const PromoPage = lazy(() => import("@/pages/admin/promo"));
 const LokerPage = lazy(() => import("@/pages/admin/loker"));
 const BlogPage = lazy(() => import("@/pages/admin/blog"));
@@ -59,8 +62,12 @@ export const adminRoutes: RouteObject = {
 					children: [
 						{ path: "dashboard", element: <DashboardPage /> },
 						{ path: "cabang", element: <CabangPage /> },
+						{ path: "cabang/:id", element: <CabangKelolaPage /> },
 						{ path: "cabang/:id/jam", element: <CabangJamPage /> },
 						{ path: "cabang/:id/fasilitas", element: <CabangFasilitasPage /> },
+						{ path: "cabang/:id/mesin", element: <CabangMesinPage /> },
+						{ path: "cabang/:id/promo", element: <CabangPromoPage /> },
+						{ path: "cabang/:id/promo", element: <CabangPromoPage /> },
 						{ path: "cabang/:id/galeri", element: <CabangGaleriPage /> },
 						{ path: "promo", element: <PromoPage /> },
 						{ path: "loker", element: <LokerPage /> },

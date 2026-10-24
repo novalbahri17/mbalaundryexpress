@@ -1,3 +1,5 @@
+import { faker } from "@faker-js/faker";
+import { type CSSProperties, useState } from "react";
 import CyanBlur from "@/assets/images/background/cyan-blur.png";
 import RedBlur from "@/assets/images/background/red-blur.png";
 import { AvatarGroup } from "@/components/avatar-group";
@@ -10,8 +12,6 @@ import { ScrollArea } from "@/ui/scroll-area";
 import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/ui/tabs";
 import { Text } from "@/ui/typography";
-import { faker } from "@faker-js/faker";
-import { type CSSProperties, useState } from "react";
 
 export default function NoticeButton() {
 	const [drawerOpen, setDrawerOpen] = useState(false);
@@ -473,7 +473,7 @@ function NoticeTab() {
 						<div className="mt-3 grid grid-cols-2 gap-3">
 							{notification.artworks.map((artwork: any) => (
 								<div key={artwork.id} className="relative">
-									<div className="aspect-video bg-gradient-to-br from-purple-400 to-pink-400 rounded-lg" />
+									<div className="aspect-video rounded-lg bg-neutral-200 dark:bg-neutral-800" />
 									<div className="mt-2">
 										<Text variant="subTitle2">{artwork.title}</Text>
 										<Text variant="caption" color="secondary">

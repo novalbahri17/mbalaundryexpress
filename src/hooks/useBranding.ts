@@ -1,5 +1,5 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { pb } from "@/api/pocketbase";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { pb } from "@/api/client";
 
 export interface BrandingSettings {
 	logo_url?: string;
@@ -17,6 +17,7 @@ export interface BrandingSettings {
 	favicon_url?: string;
 	site_title?: string;
 	site_description?: string;
+	logo_file?: { fileList?: Array<{ originFileObj?: File }> };
 }
 
 const BRANDING_TEXT_KEYS = [
@@ -53,71 +54,60 @@ const DEFAULT_BRANDING: BrandingSettings = {
 	site_description: "Self Service Laundry Modern di Surabaya",
 };
 
-// Upload file to branding_files collection
-async function uploadBrandingFile(file: File): Promise<string> {
-	console.log("[useBranding] Uploading file:", file.name, file.size);
+interface BrandingFileRecord {
+	id: string;
+	type: string;
+	file: string;
+}
 
-	// Hapus file branding lama
-	try {
-		const existing = await pb.collection("branding_files").getFullList();
-		console.log("[useBranding] Found existing files:", existing.length);
-		for (const record of existing) {
-			await pb.collection("branding_files").delete(record.id);
-			console.log("[useBranding] Deleted old file:", record.id);
-		}
-	} catch (e) {
-		console.log("[useBranding] No existing files or error:", e);
+// Semua file branding lama dihapus, lalu file baru diunggah.
+async function uploadBrandingFile(file: File): Promise<string> {
+	const existing = await pb.collection("branding_files").getFullList<{ id: string }>();
+	for (const record of existing) {
+		await pb.collection("branding_files").delete(record.id);
 	}
 
-	// Upload file baru
-	const record = await pb.collection("branding_files").create({
+	const record = await pb.collection("branding_files").create<BrandingFileRecord>({
 		type: "logo",
-		file: file,
+		file,
 	});
 
-	const url = pb.files.getURL(record, record.file);
-	console.log("[useBranding] Uploaded new file, URL:", url);
-	return url;
+	return pb.files.getURL({ id: record.id, collectionName: "branding_files" }, record.file);
 }
 
 export function useBranding() {
 	return useQuery({
 		queryKey: ["branding"],
 		queryFn: async (): Promise<BrandingSettings> => {
-			console.log("[useBranding] Fetching branding...");
-
-			// Get text settings from site_settings
-			const records = await pb.collection("site_settings").getFullList({
-				filter: BRANDING_TEXT_KEYS.map((k) => `key="${k}"`).join(" || "),
-			});
+			const records = await pb.collection("site_settings").getFullList<{ key: string; value: string }>();
 
 			const settings: Record<string, string> = {};
 			for (const record of records) {
 				settings[record.key] = record.value;
 			}
 
-			// Get logo/favicon dari branding_files collection
-			let logoUrl = DEFAULT_BRANDING.logo_url;
-			let faviconUrl = DEFAULT_BRANDING.favicon_url;
+			// Urutan prioritas:
+			// 1. `branding_files` dengan type "logo" (hasil upload terbaru dari admin)
+			// 2. `site_settings.logo_url` / `favicon_url` (bisa diisi manual)
+			// 3. default bawaan
+			let logoUrl = settings.logo_url || DEFAULT_BRANDING.logo_url;
+			let faviconUrl = settings.favicon_url || DEFAULT_BRANDING.favicon_url;
 
 			try {
-				const brandingFiles = await pb.collection("branding_files").getFullList({
+				const brandingFiles = await pb.collection("branding_files").getFullList<BrandingFileRecord>({
 					sort: "-created",
 				});
-				console.log("[useBranding] Found branding files:", brandingFiles.length);
 
 				const logoFile = brandingFiles.find((f) => f.type === "logo");
-
 				if (logoFile) {
-					logoUrl = pb.files.getURL(logoFile, logoFile.file);
-					faviconUrl = logoUrl; // Use same logo as favicon
-					console.log("[useBranding] Using custom logo:", logoUrl);
+					logoUrl = pb.files.getURL({ id: logoFile.id, collectionName: "branding_files" }, logoFile.file);
+					faviconUrl = logoUrl;
 				}
-			} catch (e) {
-				console.log("[useBranding] Could not fetch branding files:", e);
+			} catch {
+				// Pakai logo dari site_settings / bawaan bila belum ada file tersimpan.
 			}
 
-			const result = {
+			return {
 				logo_url: logoUrl,
 				logo_width: Number(settings.logo_width) || DEFAULT_BRANDING.logo_width,
 				logo_height: Number(settings.logo_height) || DEFAULT_BRANDING.logo_height,
@@ -134,12 +124,7 @@ export function useBranding() {
 				site_title: settings.site_title || DEFAULT_BRANDING.site_title,
 				site_description: settings.site_description || DEFAULT_BRANDING.site_description,
 			};
-
-			console.log("[useBranding] Result:", result);
-			return result;
 		},
-		staleTime: 0,
-		refetchOnWindowFocus: true,
 	});
 }
 
@@ -147,18 +132,16 @@ export function useUpdateBranding() {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: async (settings: BrandingSettings & { logo_file?: File }) => {
-			console.log("[useUpdateBranding] Starting update...", settings.logo_file?.name);
-
-			// Upload logo file jika ada
+		mutationFn: async (settings: BrandingSettings) => {
 			if (settings.logo_file) {
-				const logoUrl = await uploadBrandingFile(settings.logo_file);
-				settings.logo_url = logoUrl;
-				settings.favicon_url = logoUrl; // Same logo for favicon
-				console.log("[useUpdateBranding] Logo uploaded:", logoUrl);
+				const file = settings.logo_file.fileList?.[0]?.originFileObj;
+				if (file) {
+					const logoUrl = await uploadBrandingFile(file);
+					settings.logo_url = logoUrl;
+					settings.favicon_url = logoUrl;
+				}
 			}
 
-			// Update text settings ke site_settings
 			const updates: Promise<unknown>[] = [];
 
 			for (const key of BRANDING_TEXT_KEYS) {
@@ -167,7 +150,7 @@ export function useUpdateBranding() {
 
 				const existing = await pb
 					.collection("site_settings")
-					.getFirstListItem(`key="${key}"`)
+					.getFirstListItem<{ id: string }>(`key = "${key}"`)
 					.catch(() => null);
 
 				if (existing) {
@@ -188,16 +171,10 @@ export function useUpdateBranding() {
 			}
 
 			await Promise.all(updates);
-			console.log("[useUpdateBranding] Settings updated");
 		},
 		onSuccess: () => {
-			console.log("[useUpdateBranding] Success, invalidating queries...");
 			queryClient.invalidateQueries({ queryKey: ["branding"] });
 			queryClient.invalidateQueries({ queryKey: ["site-settings"] });
-
-			setTimeout(() => {
-				queryClient.refetchQueries({ queryKey: ["branding"] });
-			}, 500);
 		},
 	});
 }

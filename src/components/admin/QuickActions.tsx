@@ -8,8 +8,8 @@ import {
 	SettingOutlined,
 	ToolOutlined,
 } from "@ant-design/icons";
-import { Button, Dropdown, FloatButton, Tooltip } from "antd";
 import type { MenuProps } from "antd";
+import { Button, Dropdown, FloatButton, Tooltip } from "antd";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 

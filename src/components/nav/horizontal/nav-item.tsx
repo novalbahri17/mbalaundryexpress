@@ -61,4 +61,3 @@ const ItemIcon = ({ depth = 1 }: { depth?: number }) => {
 	const icon = depth === 1 ? "eva:arrow-ios-downward-fill" : "eva:arrow-ios-forward-fill";
 	return <Icon icon={icon} style={navItemStyles.arrow} />;
 };
-

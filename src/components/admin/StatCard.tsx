@@ -19,10 +19,22 @@ export function StatCard({ title, value, icon, extra, helper }: StatCardProps) {
 		>
 			<div className="flex items-start justify-between gap-3">
 				<div>
-					<p className="text-xs uppercase tracking-[0.12em]" style={{ color: "var(--text-muted)" }}>{title}</p>
-					<p className="mt-2 text-[2rem] font-bold tabular-nums leading-none" style={{ color: "var(--text-primary)" }}>{value}</p>
-					{helper ? <p className="mt-2 text-xs font-medium" style={{ color: "var(--text-muted)" }}>{helper}</p> : null}
-					{extra ? <div className="mt-2 text-xs" style={{ color: "var(--text-muted)" }}>{extra}</div> : null}
+					<p className="text-xs uppercase tracking-[0.12em]" style={{ color: "var(--text-muted)" }}>
+						{title}
+					</p>
+					<p className="mt-2 text-[2rem] font-bold tabular-nums leading-none" style={{ color: "var(--text-primary)" }}>
+						{value}
+					</p>
+					{helper ? (
+						<p className="mt-2 text-xs font-medium" style={{ color: "var(--text-muted)" }}>
+							{helper}
+						</p>
+					) : null}
+					{extra ? (
+						<div className="mt-2 text-xs" style={{ color: "var(--text-muted)" }}>
+							{extra}
+						</div>
+					) : null}
 				</div>
 				{icon ? (
 					<div

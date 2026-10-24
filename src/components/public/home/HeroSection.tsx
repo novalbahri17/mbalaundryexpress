@@ -1,191 +1,136 @@
-import { CheckCircle2, Clock, MapPin, Star, TrendingUp, Users, ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, CheckCircle2, MapPin, Wallet } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useMemo } from "react";
 
 import { Button } from "@/design-system";
+import { useBranches } from "@/hooks/useBranches";
+import { effectivePrice, groupMachines, isQrisEnabled, useAllBranchMachines } from "@/hooks/useBranchMachines";
+import { usePublicText } from "@/hooks/usePublicText";
 import { HeroImageGrid } from "./HeroImageGrid";
 
-const stats = [
-	{ icon: TrendingUp, value: "12.5K+", label: "Cucian Selesai", color: "from-ruby-500 to-ruby-600" },
-	{ icon: Star, value: "4.9", label: "Rating Google", color: "from-amber-400 to-amber-500" },
-	{ icon: Users, value: "500+", label: "Pelanggan Puas", color: "from-sapphire-500 to-sapphire-600" },
-	{ icon: MapPin, value: "2", label: "Cabang Aktif", color: "from-teal-500 to-teal-600" },
-];
-
-const features = [
-	{ icon: Star, text: "4.9/5 dari 500+ review" },
-	{ icon: MapPin, text: "2 cabang di Surabaya" },
-	{ icon: Clock, text: "Buka 07:00 - 23:00" },
-	{ icon: CheckCircle2, text: "Mesin selalu bersih" },
-];
+const fadeUp = {
+	initial: { opacity: 0, y: 16 },
+	animate: { opacity: 1, y: 0 },
+};
 
 export function HeroSection() {
+	const text = usePublicText();
+	const t = text.home.hero;
+	const { data: branches = [] } = useBranches({ activeOnly: true });
+	const { data: allMachines = [] } = useAllBranchMachines();
+	const activeBranchCount = branches.length;
+
+	// Harga terendah yang benar-benar ada di database (bukan angka statis).
+	const cheapest = useMemo(() => {
+		let minWash = Infinity;
+		let minDry = Infinity;
+		for (const branch of branches) {
+			const coinValue = branch.coin_value ?? 10000;
+			const qrisOn = isQrisEnabled(branch);
+			const cashOn = branch.cash_enabled !== false;
+			// Cabang tanpa metode bayar aktif tidak dipakai sebagai acuan harga.
+			if (!qrisOn && !cashOn) continue;
+			const rows = groupMachines(allMachines.filter((m) => m.branch_id === branch.id));
+			for (const row of rows) {
+				const price = effectivePrice(row, coinValue, qrisOn);
+				if (row.kind === "wash") minWash = Math.min(minWash, price);
+				else minDry = Math.min(minDry, price);
+			}
+		}
+		return {
+			wash: Number.isFinite(minWash) ? minWash : 0,
+			dry: Number.isFinite(minDry) ? minDry : 0,
+		};
+	}, [branches, allMachines]);
+
+	const priceLabel = useMemo(() => {
+		if (!cheapest.wash && !cheapest.dry) return t.priceTransparent;
+		const washPart = cheapest.wash ? `Rp ${cheapest.wash.toLocaleString(text.numberLocale)} ${text.common.washes}` : "";
+		const dryPart = cheapest.dry ? `Rp ${cheapest.dry.toLocaleString(text.numberLocale)} ${text.common.dries}` : "";
+		return `${t.startFrom} ${[washPart, dryPart].filter(Boolean).join(", ")}`;
+	}, [cheapest, t.priceTransparent, t.startFrom, text.numberLocale, text.common.washes, text.common.dries]);
+
+	// Fakta nyata dari API. Tidak ada angka karangan.
+	const facts = [
+		{ icon: Wallet, text: priceLabel },
+		{ icon: MapPin, text: activeBranchCount > 0 ? `${activeBranchCount} ${t.activeBranches}` : t.branchFallback },
+		{ icon: CheckCircle2, text: t.openHours },
+	];
+
 	return (
-		<section className="relative min-h-[100svh] overflow-hidden bg-gradient-to-b from-neutral-50 via-white to-neutral-50 pt-24 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 sm:pt-28 lg:pt-32">
-			{/* Animated Background */}
-			<div className="pointer-events-none absolute inset-0 overflow-hidden">
-				<motion.div
-					animate={{
-						x: [0, 20, 0],
-						y: [0, -15, 0],
-						scale: [1, 1.05, 1],
-					}}
-					transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-					className="absolute -left-20 top-10 h-[300px] w-[300px] rounded-full bg-ruby-500/10 blur-[80px] dark:bg-ruby-500/15 sm:h-[400px] sm:w-[400px] lg:h-[600px] lg:w-[600px]"
-				/>
-				<motion.div
-					animate={{
-						x: [0, -15, 0],
-						y: [0, 20, 0],
-						scale: [1, 1.1, 1],
-					}}
-					transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-					className="absolute -right-20 top-20 h-[250px] w-[250px] rounded-full bg-sapphire-500/10 blur-[70px] dark:bg-sapphire-500/15 sm:h-[350px] sm:w-[350px] lg:h-[500px] lg:w-[500px]"
-				/>
-				<motion.div
-					animate={{
-						x: [0, 15, 0],
-						y: [0, 15, 0],
-						scale: [1, 1.03, 1],
-					}}
-					transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-					className="absolute bottom-10 left-1/3 h-[200px] w-[200px] rounded-full bg-teal-500/8 blur-[70px] dark:bg-teal-500/12 sm:h-[300px] sm:w-[300px] lg:h-[400px] lg:w-[400px]"
-				/>
-
-				{/* Grid Pattern */}
-				<div
-					className="absolute inset-0 opacity-[0.02] dark:opacity-[0.03]"
-					style={{
-						backgroundImage: `linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)`,
-						backgroundSize: "40px 40px",
-					}}
-				/>
-			</div>
-
-			<div className="relative z-10 mx-auto flex min-h-[calc(100svh-6rem)] max-w-[1400px] flex-col justify-center px-4 py-8 sm:px-6 sm:py-12 lg:px-12 lg:py-16">
-				<div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-2 lg:gap-12">
-					{/* Left Content */}
+		<section className="relative overflow-hidden bg-[var(--bg-app)] pt-24 sm:pt-28 lg:pt-32">
+			<div className="relative z-10 mx-auto max-w-[1400px] px-4 pb-16 sm:px-6 sm:pb-20 lg:px-12">
+				<div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-16">
+					{/* Left content */}
 					<div className="flex flex-col items-center text-center lg:items-start lg:text-left">
-						{/* Badge */}
-						<motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-							<span className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-ruby-100 to-rose-100 px-3 py-1.5 text-xs font-semibold text-ruby-700 dark:from-ruby-950/50 dark:to-rose-950/50 dark:text-ruby-300 sm:gap-2 sm:px-4 sm:py-2 sm:text-sm">
-								<Sparkles className="h-3 w-3 sm:h-4 sm:w-4" />
-								Self-Service Laundry Modern
-							</span>
-						</motion.div>
-
-						{/* Headline */}
-						<motion.h1
-							initial={{ opacity: 0, y: 20 }}
-							animate={{ opacity: 1, y: 0 }}
-							transition={{ duration: 0.5, delay: 0.1 }}
-							className="mt-4 text-3xl font-bold leading-[1.1] tracking-tight text-neutral-900 dark:text-white sm:text-4xl md:text-5xl lg:text-[3.5rem] lg:leading-[1.1]"
-						>
-							Laundry Sendiri,
-							<br className="hidden sm:block" />
-							<span className="bg-gradient-to-r from-ruby-600 via-rose-500 to-ruby-600 bg-clip-text text-transparent">
-								Hemat Maksimal
-							</span>
-							<span className="text-neutral-400">,</span>
-							<br className="hidden sm:block" />
-							<span className="text-neutral-700 dark:text-neutral-200">Cepat Beres</span>
-						</motion.h1>
-
-						{/* Description */}
-						<motion.p
-							initial={{ opacity: 0, y: 20 }}
-							animate={{ opacity: 1, y: 0 }}
-							transition={{ duration: 0.5, delay: 0.2 }}
-							className="mt-4 max-w-md text-base leading-relaxed text-neutral-600 dark:text-neutral-300 sm:mt-6 sm:text-lg lg:max-w-xl"
-						>
-							Cuci dan kering sendiri dengan mesin modern. Hanya Rp 10.000 untuk cuci, Rp 10.000 untuk kering. Lokasi
-							strategis, buka sampai malam.
+						<motion.p {...fadeUp} transition={{ duration: 0.5 }} className="section-kicker">
+							{t.kicker}
 						</motion.p>
 
-						{/* CTA Buttons */}
+						<motion.h1
+							{...fadeUp}
+							transition={{ duration: 0.5, delay: 0.08 }}
+							className="mt-5 text-[clamp(2rem,7vw,3.4rem)] font-extrabold leading-[1.08] tracking-[-0.03em] text-[var(--text-primary)]"
+						>
+							{t.titleLine1}
+							<br className="hidden sm:block" />
+							<span className="text-[var(--brand)]">{t.titleHighlight}</span>,
+							<br className="hidden sm:block" />
+							{t.titleLine3}
+						</motion.h1>
+
+						<motion.p
+							{...fadeUp}
+							transition={{ duration: 0.5, delay: 0.16 }}
+							className="mt-5 max-w-md text-base leading-relaxed text-[var(--text-secondary)] sm:text-lg lg:max-w-xl"
+						>
+							{t.description}
+						</motion.p>
+
 						<motion.div
-							initial={{ opacity: 0, y: 20 }}
-							animate={{ opacity: 1, y: 0 }}
-							transition={{ duration: 0.5, delay: 0.3 }}
-							className="mt-6 flex w-full flex-col gap-3 sm:mt-8 sm:flex-row sm:justify-center lg:justify-start"
+							{...fadeUp}
+							transition={{ duration: 0.5, delay: 0.24 }}
+							className="mt-7 flex w-full flex-col gap-3 sm:flex-row sm:justify-center lg:justify-start"
 						>
 							<Link to="/cabang" className="w-full sm:w-auto">
 								<Button
 									size="lg"
-									leftIcon={<MapPin className="h-4 w-4 sm:h-5 sm:w-5" />}
-									rightIcon={<ArrowRight className="h-4 w-4 sm:h-5 sm:w-5" />}
+									leftIcon={<MapPin className="h-5 w-5" />}
+									rightIcon={<ArrowRight className="h-5 w-5" />}
 									className="w-full"
 								>
-									Pilih Cabang
+									{t.ctaBranches}
 								</Button>
 							</Link>
-							<Link to="/cara-pakai" className="w-full sm:w-auto">
+							<Link to="/harga" className="w-full sm:w-auto">
 								<Button variant="outline" size="lg" className="w-full">
-									Lihat Harga
+									{t.ctaPricing}
 								</Button>
 							</Link>
 						</motion.div>
 
-						{/* Features - Scrollable on mobile */}
-						<motion.div
-							initial={{ opacity: 0, y: 20 }}
-							animate={{ opacity: 1, y: 0 }}
-							transition={{ duration: 0.5, delay: 0.4 }}
-							className="mt-6 w-full sm:mt-8"
+						{/* Real facts, no invented numbers */}
+						<motion.ul
+							{...fadeUp}
+							transition={{ duration: 0.5, delay: 0.32 }}
+							className="mt-8 flex w-full flex-col gap-3 border-t border-[var(--border)] pt-6 sm:mt-10"
 						>
-							<div className="flex gap-2 overflow-x-auto pb-2 sm:flex-wrap sm:justify-center sm:overflow-visible sm:pb-0 lg:justify-start">
-								{features.map((feature, index) => (
-									<motion.div
-										key={feature.text}
-										initial={{ opacity: 0, scale: 0.9 }}
-										animate={{ opacity: 1, scale: 1 }}
-										transition={{ delay: 0.5 + index * 0.1 }}
-										className="flex shrink-0 items-center gap-1.5 rounded-full border border-neutral-200 bg-white/80 px-3 py-1.5 backdrop-blur-sm dark:border-neutral-700 dark:bg-neutral-800/80 sm:gap-2 sm:px-4"
-									>
-										<feature.icon className="h-3.5 w-3.5 text-ruby-500 sm:h-4 sm:w-4" />
-										<span className="whitespace-nowrap text-xs font-medium text-neutral-700 dark:text-neutral-300 sm:text-sm">
-											{feature.text}
-										</span>
-									</motion.div>
-								))}
-							</div>
-						</motion.div>
-
-						{/* Stats - 2x2 grid on mobile */}
-						<motion.div
-							initial={{ opacity: 0, y: 20 }}
-							animate={{ opacity: 1, y: 0 }}
-							transition={{ duration: 0.5, delay: 0.6 }}
-							className="mt-8 grid grid-cols-2 gap-4 border-t border-neutral-200/60 pt-6 dark:border-neutral-700/60 sm:mt-10 sm:gap-6 sm:pt-8 lg:grid-cols-4"
-						>
-							{stats.map((stat, index) => (
-								<motion.div
-									key={stat.label}
-									initial={{ opacity: 0, y: 20 }}
-									animate={{ opacity: 1, y: 0 }}
-									transition={{ delay: 0.7 + index * 0.1 }}
-									className="text-center"
-								>
-									<div
-										className={`mx-auto flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br ${stat.color} shadow-lg sm:h-12 sm:w-12`}
-									>
-										<stat.icon className="h-5 w-5 text-white sm:h-6 sm:w-6" />
-									</div>
-									<p className="mt-2 text-xl font-bold text-neutral-900 dark:text-white sm:mt-3 sm:text-2xl">
-										{stat.value}
-									</p>
-									<p className="text-xs text-neutral-500 dark:text-neutral-400 sm:text-sm">{stat.label}</p>
-								</motion.div>
+							{facts.map((fact) => (
+								<li key={fact.text} className="flex items-center gap-2.5 text-sm text-[var(--text-secondary)]">
+									<fact.icon className="h-4 w-4 shrink-0 text-[var(--brand)]" aria-hidden />
+									<span>{fact.text}</span>
+								</li>
 							))}
-						</motion.div>
+						</motion.ul>
 					</div>
 
-					{/* Right Content - Image Grid */}
+					{/* Right content - image grid */}
 					<motion.div
-						initial={{ opacity: 0, y: 40 }}
+						initial={{ opacity: 0, y: 24 }}
 						animate={{ opacity: 1, y: 0 }}
-						transition={{ duration: 0.7, delay: 0.3 }}
-						className="relative mx-auto w-full max-w-sm sm:max-w-md lg:mx-0 lg:max-w-none mt-8 lg:mt-0"
+						transition={{ duration: 0.6, delay: 0.2 }}
+						className="relative mx-auto mt-4 w-full max-w-sm sm:max-w-md lg:mx-0 lg:mt-0 lg:max-w-none"
 					>
 						<HeroImageGrid />
 					</motion.div>

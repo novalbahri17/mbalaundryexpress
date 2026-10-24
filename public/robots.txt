@@ -1,8 +1,17 @@
-﻿User-agent: *
+User-agent: *
 Allow: /
+
+# Area admin tidak perlu diindeks
 Disallow: /admin/
 Disallow: /admin/*
-Disallow: /pb-api/
 
+# Endpoint API bukan halaman
+Disallow: /api/
+
+# Parameter filter/pencarian bikin duplikat konten
+Disallow: /*?*sort=
+Disallow: /*?*filter=
+
+# Sitemap berbentuk indeks: memuat sitemap-core.xml (halaman inti)
+# dan sitemap-pages.xml (halaman pendukung).
 Sitemap: https://mbalaundryexpress.com/sitemap.xml
-

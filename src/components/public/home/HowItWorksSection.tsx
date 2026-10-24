@@ -2,41 +2,42 @@ import { motion } from "framer-motion";
 import { ArrowRight, CircleDollarSign, Clock, LayoutGrid } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ScrollReveal, StaggerContainer, StaggerItem } from "@/components/public/shared/ScrollReveal";
+import { usePublicText } from "@/hooks/usePublicText";
 import { cn } from "@/utils";
 
-const steps = [
-	{
-		number: "1",
-		title: "Pilih Mesin Kosong",
-		description: "Cari mesin cuci atau pengering yang tersedia. Cek kondisi mesin bersih.",
-		icon: LayoutGrid,
-		gradient: "from-ruby-500 to-rose-600",
-		bgClass: "bg-ruby-100 dark:bg-ruby-900/30",
-		iconClass: "text-ruby-600 dark:text-ruby-400",
-	},
-	{
-		number: "2",
-		title: "Bayar & Mulai",
-		description: "Scan QRIS atau masukkan koin sesuai tarif. Mesin otomatis mulai bekerja.",
-		icon: CircleDollarSign,
-		gradient: "from-sapphire-500 to-blue-600",
-		bgClass: "bg-sapphire-100 dark:bg-sapphire-900/30",
-		iconClass: "text-sapphire-600 dark:text-sapphire-400",
-	},
-	{
-		number: "3",
-		title: "Tunggu & Ambil",
-		description: "Estimasi 30-40 menit cuci, 20-30 menit kering. Ambil pakaian setelah selesai.",
-		icon: Clock,
-		gradient: "from-teal-500 to-emerald-600",
-		bgClass: "bg-teal-100 dark:bg-teal-900/30",
-		iconClass: "text-teal-600 dark:text-teal-400",
-	},
-];
-
 export function HowItWorksSection() {
+	const text = usePublicText();
+	const t = text.home.howItWorks;
+
+	const steps = [
+		{
+			number: "1",
+			title: t.step1Title,
+			description: t.step1Desc,
+			icon: LayoutGrid,
+			bgClass: "bg-ruby-100 dark:bg-ruby-900/30",
+			iconClass: "text-ruby-600 dark:text-ruby-400",
+		},
+		{
+			number: "2",
+			title: t.step2Title,
+			description: t.step2Desc,
+			icon: CircleDollarSign,
+			bgClass: "bg-sapphire-100 dark:bg-sapphire-900/30",
+			iconClass: "text-sapphire-600 dark:text-sapphire-400",
+		},
+		{
+			number: "3",
+			title: t.step3Title,
+			description: t.step3Desc,
+			icon: Clock,
+			bgClass: "bg-teal-100 dark:bg-teal-900/30",
+			iconClass: "text-teal-600 dark:text-teal-400",
+		},
+	];
+
 	return (
-		<section className="relative overflow-hidden bg-neutral-50 px-6 py-24 md:px-12 md:py-32 dark:bg-neutral-900">
+		<section className="section-block relative overflow-hidden bg-neutral-50 dark:bg-neutral-900">
 			{/* Background Pattern */}
 			<div className="pointer-events-none absolute inset-0 opacity-[0.03] dark:opacity-[0.05]">
 				<div
@@ -48,23 +49,19 @@ export function HowItWorksSection() {
 				/>
 			</div>
 
-			<div className="relative mx-auto flex max-w-[1200px] flex-col items-center">
+			<div className="section-inner relative flex flex-col items-center">
 				{/* HEADER */}
 				<ScrollReveal>
-					<span className="rounded-full bg-gradient-to-r from-ruby-500 to-ruby-600 px-4 py-2 text-[12px] font-bold uppercase tracking-wide text-white shadow-md">
-						Cara Pakai
-					</span>
+					<p className="section-kicker">{t.kicker}</p>
 				</ScrollReveal>
 
 				<ScrollReveal delay={0.1}>
-					<h2 className="mt-3 text-center text-[32px] font-bold leading-[1.2] text-neutral-900 md:text-[40px] dark:text-white">
-						Mudah! Cukup 3 Langkah
-					</h2>
+					<h2 className="section-title text-center">{t.title}</h2>
 				</ScrollReveal>
 
 				<ScrollReveal delay={0.2}>
 					<p className="mt-4 text-center text-[18px] leading-[1.5] text-neutral-600 dark:text-neutral-300">
-						Proses laundry mandiri yang simple dan cepat
+						{t.subtitle}
 					</p>
 				</ScrollReveal>
 
@@ -72,26 +69,28 @@ export function HowItWorksSection() {
 				<div className="relative mt-16 w-full">
 					<StaggerContainer className="grid w-full grid-cols-1 gap-8 md:grid-cols-3" staggerDelay={0.15}>
 						{steps.map((step, index) => (
-							<StaggerItem key={step.number}>
+							<StaggerItem key={step.number} className="h-full">
 								<motion.div
 									whileHover={{ y: -8 }}
 									transition={{ duration: 0.3 }}
-									className="group relative flex flex-col items-center rounded-[24px] border border-neutral-200 bg-white p-8 shadow-sm transition-all duration-300 hover:border-transparent hover:shadow-2xl md:p-10 dark:border-neutral-700 dark:bg-neutral-800"
+									className="group relative flex h-full flex-col items-center rounded-[24px] border border-neutral-200 bg-white p-8 shadow-sm transition-all duration-300 hover:border-transparent hover:shadow-2xl md:p-10 dark:border-neutral-700 dark:bg-neutral-800"
 								>
 									{/* Step Number Badge */}
 									<div
 										className={cn(
-											"absolute -top-4 left-1/2 flex h-8 -translate-x-1/2 items-center justify-center rounded-full bg-gradient-to-r px-4 text-[14px] font-bold text-white shadow-lg",
-											step.gradient,
+											"absolute -top-4 left-1/2 flex h-8 -translate-x-1/2 items-center justify-center rounded-full bg-ruby-700 px-4 text-[14px] font-bold text-white",
 										)}
 									>
-										Langkah {step.number}
+										{t.stepBadge} {step.number}
 									</div>
 
 									{/* Icon */}
 									<motion.div
-										whileHover={{ scale: 1.1, rotate: 5 }}
-										className={cn("mt-4 flex h-[90px] w-[90px] items-center justify-center rounded-[24px] shadow-inner transition-colors", step.bgClass)}
+										whileHover={{ scale: 1.05 }}
+										className={cn(
+											"mt-4 flex h-[90px] w-[90px] items-center justify-center rounded-[24px] transition-colors",
+											step.bgClass,
+										)}
 									>
 										<step.icon className={cn("h-10 w-10", step.iconClass)} />
 									</motion.div>
@@ -100,7 +99,9 @@ export function HowItWorksSection() {
 									<h3 className="mt-6 text-center text-[22px] font-bold text-neutral-900 transition-colors group-hover:text-ruby-600 dark:text-white dark:group-hover:text-ruby-400">
 										{step.title}
 									</h3>
-									<p className="mt-3 text-center text-[16px] leading-[1.75] text-neutral-600 dark:text-neutral-300">{step.description}</p>
+									<p className="mt-3 text-center text-[16px] leading-[1.75] text-neutral-600 dark:text-neutral-300">
+										{step.description}
+									</p>
 
 									{/* Arrow indicator */}
 									{index < steps.length - 1 && (
@@ -121,8 +122,8 @@ export function HowItWorksSection() {
 							to="/cara-pakai"
 							className="group inline-flex items-center justify-center gap-2 rounded-xl bg-white px-8 py-4 text-[16px] font-semibold text-ruby-500 shadow-lg transition-all hover:gap-3 hover:bg-ruby-50 hover:shadow-xl dark:bg-neutral-800 dark:text-ruby-400 dark:hover:bg-ruby-900/20"
 						>
-							Panduan Lengkap
-							<ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+							{t.cta}
+							<ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />{" "}
 						</Link>
 					</div>
 				</ScrollReveal>

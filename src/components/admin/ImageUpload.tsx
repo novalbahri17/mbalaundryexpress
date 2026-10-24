@@ -46,7 +46,7 @@ export function ImageUpload({
 				className={`cursor-pointer rounded-xl border border-dashed p-6 text-center transition ${isDragActive ? "border-red-500 bg-red-50 dark:bg-red-500/10" : "border-slate-300 dark:border-slate-700"}`}
 			>
 				<input {...getInputProps()} />
-				<InboxOutlined className="text-xl text-red-600" />
+				<InboxOutlined className="text-xl text-ruby-600" />
 				<p className="mt-2 text-sm">Drag & drop gambar, atau klik untuk pilih file</p>
 			</div>
 			{imageSrc ? (

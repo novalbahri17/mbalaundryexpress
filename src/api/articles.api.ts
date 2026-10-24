@@ -1,4 +1,12 @@
-import { createRecord, deleteRecord, escapeFilterValue, fileUrl, getRecordById, listRecords, updateRecord } from "@/api/pocketbase";
+import {
+	createRecord,
+	deleteRecord,
+	escapeFilterValue,
+	fileUrl,
+	getRecordById,
+	listRecords,
+	updateRecord,
+} from "@/api/client";
 import type { Article } from "@/types/database.types";
 
 const isDirectUrl = (value?: string): boolean =>
@@ -26,7 +34,7 @@ export const getArticles = async (params?: {
 	search?: string;
 }): Promise<Article[]> => {
 	const filters: string[] = [];
-	if (params?.publishedOnly) filters.push("status = \"published\"");
+	if (params?.publishedOnly) filters.push('status = "published"');
 	if (params?.category) filters.push(`category = \"${escapeFilterValue(params.category)}\"`);
 	if (params?.search) {
 		const safeSearch = escapeFilterValue(params.search);
@@ -55,7 +63,8 @@ export const getArticleBySlug = async (slug: string): Promise<Article | null> =>
 	return res.items[0] ? mapThumbnail(res.items[0]) : null;
 };
 
-export const createArticle = (payload: Partial<Article> | FormData): Promise<Article> => createRecord("articles", payload);
+export const createArticle = (payload: Partial<Article> | FormData): Promise<Article> =>
+	createRecord("articles", payload);
 export const updateArticle = (id: string, payload: Partial<Article> | FormData): Promise<Article> =>
 	updateRecord("articles", id, payload);
 export const deleteArticle = (id: string): Promise<void> => deleteRecord("articles", id);
@@ -63,5 +72,3 @@ export const deleteArticle = (id: string): Promise<void> => deleteRecord("articl
 export const incrementArticleViews = async (id: string, currentViews: number): Promise<void> => {
 	await updateRecord("articles", id, { views: currentViews + 1 });
 };
-
-

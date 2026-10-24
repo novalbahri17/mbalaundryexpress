@@ -6,7 +6,7 @@ import {
 	getRecordById,
 	listRecords,
 	updateRecord,
-} from "@/api/pocketbase";
+} from "@/api/client";
 import type { Promo, PromoBranch } from "@/types/database.types";
 
 const nowIso = (): string => new Date().toISOString();
@@ -42,7 +42,8 @@ export const getPromos = async (params?: {
 	if (params?.activeOnly) {
 		filters.push("is_active = true");
 		filters.push(`start_date <= \"${nowIso()}\"`);
-		filters.push(`end_date >= \"${nowIso()}\"`);
+		// Promo tanpa end_date = tanpa tenggat waktu, jadi selalu dianggap aktif.
+		filters.push(`(end_date = null || end_date >= \"${nowIso()}\")`);
 	}
 	if (params?.showOnHome) filters.push("show_on_home = true");
 
@@ -50,11 +51,29 @@ export const getPromos = async (params?: {
 		page: params?.page,
 		perPage: params?.perPage ?? 20,
 		filter: filters.join(" && "),
-		sort: "+priority,+end_date",
+		sort: "+priority,-created",
 	});
 
+	// Lampirkan nama cabang untuk promo non-global, supaya kartu promo di
+	// halaman publik bisa menyebut cabang mana promo itu berlaku.
+	const allLinks = await listRecords("promo_branches", { page: 1, perPage: 500 });
+	const branchRecords = await listRecords("branches", { page: 1, perPage: 500 });
+	const branchNameById = new Map(branchRecords.items.map((b) => [b.id, b.name]));
+	const branchNamesByPromo = new Map<string, string[]>();
+	for (const link of allLinks.items) {
+		const name = branchNameById.get(link.branch_id);
+		if (!name) continue;
+		const list = branchNamesByPromo.get(link.promo_id) ?? [];
+		list.push(name);
+		branchNamesByPromo.set(link.promo_id, list);
+	}
+	const withBranches = (promo: Promo): Promo =>
+		promo.is_global
+			? { ...promo, branch_names: [] }
+			: { ...promo, branch_names: branchNamesByPromo.get(promo.id) ?? [] };
+
 	if (!params?.branchId) {
-		return { items: res.items.map(mapPromoImage), totalItems: res.totalItems };
+		return { items: res.items.map(mapPromoImage).map(withBranches), totalItems: res.totalItems };
 	}
 
 	const relation = await listRecords("promo_branches", {
@@ -63,7 +82,10 @@ export const getPromos = async (params?: {
 		filter: `branch_id = \"${escapeFilterValue(params.branchId)}\"`,
 	});
 	const promoIds = new Set(relation.items.map((item) => item.promo_id));
-	const filtered = res.items.filter((promo) => promo.is_global || promoIds.has(promo.id)).map(mapPromoImage);
+	const filtered = res.items
+		.filter((promo) => promo.is_global || promoIds.has(promo.id))
+		.map(mapPromoImage)
+		.map(withBranches);
 	return { items: filtered, totalItems: filtered.length };
 };
 
@@ -98,6 +120,12 @@ export const setPromoBranches = async (promoId: string, branchIds: string[]): Pr
 	}
 };
 
+/** Semua relasi promo-cabang dalam sekali request. */
+export const listPromoBranchLinks = async (): Promise<PromoBranch[]> => {
+	const res = await listRecords("promo_branches", { page: 1, perPage: 500 });
+	return res.items;
+};
+
 export const getPromoBranches = async (promoId: string): Promise<PromoBranch[]> => {
 	const res = await listRecords("promo_branches", {
 		page: 1,
@@ -108,15 +136,18 @@ export const getPromoBranches = async (promoId: string): Promise<PromoBranch[]> 
 };
 
 export const getTopValidPromo = async (): Promise<Promo | null> => {
-	const promos = await getPromos({ status: "published", activeOnly: true, showOnHome: true, perPage: 1, page: 1 });
-	return promos.items[0] ?? null;
+	const promos = await getPromos({ status: "published", activeOnly: true, showOnHome: true, perPage: 50, page: 1 });
+	// Promo bertenggat diprioritaskan, promo tanpa tenggat tampil paling belakang.
+	const withDeadline = promos.items.filter((promo) => Boolean(promo.end_date));
+	const evergreen = promos.items.filter((promo) => !promo.end_date);
+	return withDeadline[0] ?? evergreen[0] ?? null;
 };
 
 export const expirePromos = async (): Promise<void> => {
 	const expired = await listRecords("promos", {
 		page: 1,
 		perPage: 500,
-		filter: `status != \"expired\" && end_date < \"${nowIso()}\"`,
+		filter: `status != \"expired\" && end_date != null && end_date < \"${nowIso()}\"`,
 	});
 
 	for (const promo of expired.items) {

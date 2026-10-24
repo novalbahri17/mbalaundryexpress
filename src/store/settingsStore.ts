@@ -31,4 +31,3 @@ export const useSettingsStore = create<SettingsStore>((set) => ({
 			},
 		})),
 }));
-

@@ -1,21 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://mbalaundryexpress.com/</loc></url>
-  <url><loc>https://mbalaundryexpress.com/cabang</loc></url>
-  <url><loc>https://mbalaundryexpress.com/promo</loc></url>
-  <url><loc>https://mbalaundryexpress.com/harga</loc></url>
-  <url><loc>https://mbalaundryexpress.com/kalkulator</loc></url>
-  <url><loc>https://mbalaundryexpress.com/cara-pakai</loc></url>
-  <url><loc>https://mbalaundryexpress.com/faq</loc></url>
-  <url><loc>https://mbalaundryexpress.com/blog</loc></url>
-  <url><loc>https://mbalaundryexpress.com/testimoni</loc></url>
-  <url><loc>https://mbalaundryexpress.com/galeri</loc></url>
-  <url><loc>https://mbalaundryexpress.com/karir</loc></url>
-  <url><loc>https://mbalaundryexpress.com/kemitraan</loc></url>
-  <url><loc>https://mbalaundryexpress.com/korporat</loc></url>
-  <url><loc>https://mbalaundryexpress.com/tentang</loc></url>
-  <url><loc>https://mbalaundryexpress.com/kontak</loc></url>
-  <url><loc>https://mbalaundryexpress.com/spin</loc></url>
-  <url><loc>https://mbalaundryexpress.com/loyalitas</loc></url>
-  <url><loc>https://mbalaundryexpress.com/statistik</loc></url>
-</urlset>
+<!-- Indeks sitemap. Dipisah dua tingkat supaya Google tahu mana halaman inti
+     (kandidat sitelink) dan mana halaman pendukung.
+     URL /sitemap.xml ini sengaja dipertahankan supaya submission lama tetap valid. -->
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <sitemap>
+    <loc>https://mbalaundryexpress.com/sitemap-core.xml</loc>
+    <lastmod>2026-10-23</lastmod>
+  </sitemap>
+  <sitemap>
+    <loc>https://mbalaundryexpress.com/sitemap-pages.xml</loc>
+    <lastmod>2026-10-23</lastmod>
+  </sitemap>
+</sitemapindex>

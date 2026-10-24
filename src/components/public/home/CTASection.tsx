@@ -1,10 +1,13 @@
-import { Clock, MapPin, Star } from "lucide-react";
+import { Clock, MapPin } from "lucide-react";
 import { motion } from "framer-motion";
 import { useBranches } from "@/hooks/useBranches";
+import { usePublicText } from "@/hooks/usePublicText";
 import { useSiteSettingsMap } from "@/hooks/useSiteSettings";
 import { Button } from "@/design-system";
 
 export function CTASection() {
+	const text = usePublicText();
+	const t = text.home.cta;
 	const { data: branches = [] } = useBranches({ activeOnly: true });
 	const { data: settings = {} } = useSiteSettingsMap();
 
@@ -12,20 +15,14 @@ export function CTASection() {
 	const whatsapp = settings.site_whatsapp || "628123456789";
 
 	return (
-		<section className="relative overflow-hidden bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-900 px-4 py-16 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 sm:px-6 sm:py-20 md:px-12 md:py-32">
-			{/* Background Effects */}
-			<div className="pointer-events-none absolute inset-0">
-				<div className="absolute left-1/4 top-0 h-[300px] w-[300px] rounded-full bg-ruby-500/10 blur-[80px] sm:h-[400px] sm:w-[400px] md:h-[500px] md:w-[500px]" />
-				<div className="absolute bottom-0 right-1/4 h-[250px] w-[250px] rounded-full bg-sapphire-500/10 blur-[70px] sm:h-[300px] sm:w-[300px] md:h-[400px] md:w-[400px]" />
-			</div>
-
-			<div className="relative mx-auto max-w-[800px] text-center">
+		<section className="section-block relative overflow-hidden bg-neutral-900 dark:bg-neutral-950">
+			<div className="section-inner relative !max-w-[800px] text-center">
 				<motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
 					<h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl md:text-5xl lg:text-6xl">
-						Yuk, Coba Sekarang!
+						{t.title}
 					</h2>
 					<p className="mx-auto mt-4 max-w-md text-base leading-relaxed text-neutral-300 sm:mt-6 sm:text-lg md:text-xl">
-						Laundry sendiri lebih hemat dan praktis. Pilih cabang terdekat dan langsung datang rasakan kualitasnya!
+						{t.description}
 					</p>
 
 					<motion.div
@@ -51,7 +48,7 @@ export function CTASection() {
 									</svg>
 								}
 							>
-								Chat WhatsApp Sekarang
+								{t.button}
 							</Button>
 						</a>
 					</motion.div>
@@ -62,27 +59,17 @@ export function CTASection() {
 						whileInView={{ opacity: 1, y: 0 }}
 						viewport={{ once: true }}
 						transition={{ delay: 0.4 }}
-						className="mt-10 inline-flex flex-wrap items-center justify-center gap-4 rounded-full border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-md sm:mt-12 sm:gap-6 sm:px-8 sm:py-4"
+						className="mt-10 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 sm:mt-12"
 					>
-						<div className="flex items-center gap-2 text-white">
-							<div className="flex h-8 w-8 items-center justify-center rounded-full bg-teal-500/20 sm:h-10 sm:w-10">
-								<MapPin className="h-4 w-4 text-teal-400 sm:h-5 sm:w-5" />
-							</div>
-							<span className="text-sm font-medium sm:text-base">{branchCount || 0} Cabang</span>
+						<div className="flex items-center gap-2.5 text-white">
+							<MapPin className="h-5 w-5 text-teal-400" aria-hidden />
+							<span className="text-sm font-medium sm:text-base">
+								{branchCount} {t.branchCount}
+							</span>
 						</div>
-						<div className="h-6 w-px bg-white/20 hidden sm:block" />
-						<div className="flex items-center gap-2 text-white">
-							<div className="flex h-8 w-8 items-center justify-center rounded-full bg-amber-500/20 sm:h-10 sm:w-10">
-								<Star className="h-4 w-4 text-amber-400 sm:h-5 sm:w-5" />
-							</div>
-							<span className="text-sm font-medium sm:text-base">4.9 Rating</span>
-						</div>
-						<div className="h-6 w-px bg-white/20 hidden sm:block" />
-						<div className="flex items-center gap-2 text-white">
-							<div className="flex h-8 w-8 items-center justify-center rounded-full bg-ruby-500/20 sm:h-10 sm:w-10">
-								<Clock className="h-4 w-4 text-ruby-400 sm:h-5 sm:w-5" />
-							</div>
-							<span className="text-sm font-medium sm:text-base">Buka Sampai Malam</span>
+						<div className="flex items-center gap-2.5 text-white">
+							<Clock className="h-5 w-5 text-ruby-400" aria-hidden />
+							<span className="text-sm font-medium sm:text-base">{t.openHours}</span>
 						</div>
 					</motion.div>
 				</motion.div>

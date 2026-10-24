@@ -51,8 +51,14 @@ html {
   overflow-x: hidden;
 }
 
+/*
+ * `overflow-x: clip` dipakai (bukan `hidden`) karena `hidden` membuat <body>
+ * menjadi scroll container tersendiri. Akibatnya `position: sticky` pada
+ * header admin berhenti menempel dan ikut tergulir ke atas.
+ * `clip` tetap memotong luapan horizontal tanpa membuat scroll container.
+ */
 body {
-  overflow-x: hidden;
+  overflow-x: clip;
   position: relative;
 }
 
@@ -87,39 +93,28 @@ select {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgba(198, 40, 40, 0.5), rgba(239, 83, 80, 0.45));
+  background: var(--border-strong);
   border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--brand);
+  background-clip: content-box;
 }
 
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 
-@keyframes orbFloat {
+@keyframes drumSpin {
   0% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-
-  50% {
-    transform: translate3d(0, -24px, 0) scale(1.03);
+    transform: rotate(0deg);
   }
 
   100% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-}
-
-@keyframes promoBorder {
-  0% {
-    background-position: 0% 50%;
-  }
-
-  50% {
-    background-position: 100% 50%;
-  }
-
-  100% {
-    background-position: 0% 50%;
+    transform: rotate(360deg);
   }
 }
 
@@ -179,18 +174,6 @@ select {
   }
 }
 
-@keyframes cursorPulse {
-  0% {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 0.6;
-  }
-
-  100% {
-    transform: translate(-50%, -50%) scale(1.6);
-    opacity: 0;
-  }
-}
-
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -207,11 +190,11 @@ select {
   animation: fadeIn 0.5s ease-out;
 }
 
+/* Anti-slop: solid surface, no glassmorphism. A laundry site is not a glass UI. */
 .glass-card {
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
 }
 
 .section-wrap {
@@ -226,34 +209,96 @@ select {
   }
 }
 
+/* ---------------------------------------------------------------------------
+ * Ritme vertikal landing page.
+ * Sebelumnya tiap section punya py sendiri-sendiri (py-16 / py-20 / py-24 /
+ * py-32 dengan px yang juga beda-beda), jadi jarak antar-section terasa
+ * tidak menentu. Sekarang satu ukuran, dipakai semua section.
+ * ------------------------------------------------------------------------- */
+.section-block {
+  padding-block: 4.5rem;
+  padding-inline: 1rem;
+}
+
+@media (min-width: 640px) {
+  .section-block {
+    padding-block: 5.5rem;
+    padding-inline: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .section-block {
+    padding-block: 7rem;
+    padding-inline: 3rem;
+  }
+}
+
+/* Batas lebar isi section. Sama untuk semua, supaya tepi kiri-kanan lurus. */
+.section-inner {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 1200px;
+}
+
+/* Blok pembuka section (kicker + judul + subjudul) */
+.section-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* Anti-slop: kicker is typographic, not a gradient pill. One brand accent, no gradient. */
 .section-kicker {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  border-radius: 999px;
-  border: 1px solid rgba(198, 40, 40, 0.16);
-  background: linear-gradient(135deg, rgba(198, 40, 40, 0.1), rgba(21, 101, 192, 0.08));
-  padding: 0.375rem 0.75rem;
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--accent-ruby);
+  color: var(--brand);
+}
+
+/* Anti-slop: kicker reads as a rule + label, giving the page a rhythm marker. */
+.section-kicker::before {
+  content: "";
+  width: 1.75rem;
+  height: 2px;
+  background: var(--brand);
 }
 
 .section-title {
   margin-top: 1rem;
-  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-size: clamp(1.75rem, 4.2vw, 2.75rem);
   font-weight: 800;
-  letter-spacing: -0.03em;
-  line-height: 1.08;
+  letter-spacing: -0.025em;
+  line-height: 1.12;
+  text-wrap: balance;
+  color: var(--text-primary);
 }
 
 .section-subtitle {
-  margin-top: 1rem;
+  margin-top: 0.875rem;
+  max-width: 42rem;
   color: var(--text-muted);
   font-size: 1rem;
-  line-height: 1.75;
+  line-height: 1.7;
+  text-wrap: pretty;
+}
+
+/* Hormati preferensi sistem: matikan semua animasi dekoratif. */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 .hero-noise::before {
@@ -266,27 +311,30 @@ select {
   background-size: 14px 14px;
 }
 
+/* Anti-slop: this was a textured noise overlay re-declared by callers. */
+
+/* Anti-slop: grid/dot blueprint backgrounds removed. */
+
 .gradient-text {
-  background: linear-gradient(135deg, var(--accent-ruby), var(--accent-blue));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--brand);
 }
 
+/* Anti-slop: one solid brand accent, no rainbow gradient, no glow bloom. */
 .btn-primary {
-  background: linear-gradient(135deg, var(--accent-ruby), var(--accent-blue));
-  color: #fff;
-  box-shadow: 0 8px 32px rgba(198, 40, 40, 0.28);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  background: var(--brand);
+  color: var(--brand-text);
+  box-shadow: var(--shadow-card);
+  transition: background-color 0.18s ease, box-shadow 0.18s ease;
 }
 
 .btn-primary:hover {
-  transform: scale(1.02);
-  box-shadow: 0 0 40px rgba(198, 40, 40, 0.2), 0 10px 35px rgba(198, 40, 40, 0.3);
+  background: var(--brand-hover);
+  box-shadow: var(--shadow-card-hover);
 }
 
 .btn-primary:active {
-  transform: scale(0.98);
+  background: var(--brand-hover);
+  transform: translateY(1px);
 }
 
 .nav-link {
@@ -303,7 +351,7 @@ select {
   transform: scaleX(0);
   transform-origin: left;
   transition: transform 0.2s ease;
-  background: linear-gradient(135deg, var(--accent-ruby), var(--accent-blue));
+  background: var(--brand);
 }
 
 .nav-link:hover::after,
@@ -311,18 +359,15 @@ select {
   transform: scaleX(1);
 }
 
+/* Anti-slop: was an animated rainbow gradient border. Now a quiet brand rule. */
 .animated-gradient-border {
-  background: linear-gradient(120deg, #C62828, #1565C0, #00695C, #EF5350);
-  background-size: 200% 200%;
-  animation: promoBorder 6s linear infinite;
-  padding: 1px;
-  border-radius: 1rem;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--brand);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
 }
 
-.dot-grid {
-  background-image: radial-gradient(circle, rgba(107, 114, 128, 0.18) 1px, transparent 1px);
-  background-size: 18px 18px;
-}
+/* Anti-slop: dot-grid blueprint pattern removed. */
 
 .scroll-progress {
   position: fixed;
@@ -331,29 +376,11 @@ select {
   height: 3px;
   width: 0%;
   z-index: 80;
-  background: linear-gradient(135deg, #C62828, #1565C0, #00695C);
+  background: var(--brand);
   transition: width 0.1s ease-out;
 }
 
-.custom-cursor {
-  width: 10px;
-  height: 10px;
-  border-radius: 999px;
-  z-index: 999;
-  background: rgba(198, 40, 40, 0.85);
-  margin-left: -5px;
-  margin-top: -5px;
-  transition: opacity 0.2s ease;
-}
-
-.custom-cursor::after {
-  content: "";
-  position: absolute;
-  inset: -8px;
-  border: 1px solid rgba(198, 40, 40, 0.35);
-  border-radius: 999px;
-  animation: cursorPulse 1.6s ease-out infinite;
-}
+/* Anti-slop: custom cursor removed (used a pulsing ring + brand dot). */
 
 .no-scrollbar {
   -ms-overflow-style: none;
@@ -364,16 +391,9 @@ select {
   display: none;
 }
 
+/* Anti-slop: was a colored glow bloom around every primary button. */
 .shadow-ruby-glow {
-  box-shadow: 0 0 40px rgba(198, 40, 40, 0.2), 0 10px 30px rgba(198, 40, 40, 0.22);
-}
-
-
-
-@media (max-width: 1024px) {
-  .custom-cursor {
-    display: none;
-  }
+  box-shadow: var(--shadow-card);
 }
 
 .card-flip {
@@ -412,7 +432,7 @@ select {
   display: none !important;
 }
 
-/* ===== Article prose (public blog detail) — mirrors admin editor styles ===== */
+/* ===== Article prose (public blog detail): mirrors admin editor styles ===== */
 .article-prose {
   color: var(--text-primary);
   font-size: 16px;
@@ -613,7 +633,7 @@ select {
   transform: scale(1.015);
 }
 
-/* "Perbesar" zoom button — bottom-right overlay, always visible */
+/* "Perbesar" zoom button: bottom-right overlay, always visible */
 .article-zoom-btn {
   position: absolute;
   bottom: 15px;
@@ -717,23 +737,20 @@ select {
 
 .mba-admin-menu .ant-menu-item-selected {
   color: #ffffff !important;
-  background: linear-gradient(135deg, #c62828 0%, #ef5350 100%) !important;
-  box-shadow: 0 10px 26px rgba(198, 40, 40, 0.26);
+  background: var(--brand) !important;
 }
 
 .admin-page-shell {
-  border: 1px solid rgba(15, 23, 42, 0.06);
+  border: 1px solid var(--border);
   border-radius: 20px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.96));
-  box-shadow: 0 20px 45px rgba(15, 23, 42, 0.06);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-card);
 }
 
 .dark .admin-page-shell {
-  border-color: rgba(255, 255, 255, 0.08);
-  background: linear-gradient(180deg, rgba(20, 20, 30, 0.92), rgba(20, 20, 30, 0.98));
-  box-shadow: 0 24px 45px rgba(2, 6, 23, 0.35);
+  border-color: var(--border);
+  background: var(--bg-card);
+  box-shadow: var(--shadow-card);
 }
 
 .admin-page-head {
@@ -801,6 +818,79 @@ select {
 
 .admin-data-table .ant-empty-description {
   font-weight: 600;
+}
+
+/* ---------------------------------------------------------------------------
+ * Admin responsif di layar kecil.
+ * Tabel lebar digulir di dalam kotaknya sendiri, bukan mendorong seluruh
+ * halaman sehingga muncul scroll horizontal.
+ * ------------------------------------------------------------------------- */
+.admin-data-table .ant-table-wrapper,
+.admin-data-table .ant-table-container,
+.admin-data-table .ant-table-content {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* Ant Design membungkus header dan body dalam satu tabel; pastikan min-width
+   tidak memaksa halaman melebar. */
+.admin-data-table .ant-table-content>table {
+  min-width: 640px;
+}
+
+.admin-responsive-tabs .ant-tabs-nav {
+  max-width: 100%;
+}
+
+.admin-responsive-tabs .ant-tabs-nav-wrap {
+  overflow-x: auto;
+}
+
+.admin-responsive-tabs .ant-tabs-nav-list {
+  flex-wrap: nowrap;
+}
+
+@media (max-width: 768px) {
+  .admin-data-table .ant-table-content>table {
+    min-width: 560px;
+  }
+
+  .admin-page-body {
+    padding: 0.75rem;
+  }
+
+  .admin-page-body .ant-card-body {
+    padding: 12px;
+  }
+
+  /* Baris tombol aksi boleh turun ke baris berikutnya, jangan melebar. */
+  .admin-page-body .ant-space,
+  .admin-page-body .ant-btn {
+    max-width: 100%;
+  }
+
+  /*
+   * Target sentuh minimum 44px di layar ponsel.
+   * Kontrol setinggi 22px (switch AntD) sulit ditekan dengan jari,
+   * jadi area kliknya diperbesar tanpa mengubah tampilan visualnya.
+   */
+  .ant-switch {
+    min-height: 44px;
+    box-sizing: border-box;
+    padding-top: 11px;
+    padding-bottom: 11px;
+    background-clip: content-box;
+  }
+
+  .ant-switch .ant-switch-handle {
+    top: 50%;
+    transform: translateY(-50%);
+  }
+
+  .admin-modal {
+    max-width: calc(100vw - 24px) !important;
+    margin: 12px auto !important;
+  }
 }
 
 .admin-modal .ant-modal-content {

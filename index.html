@@ -1,32 +1,282 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="MBA Laundry Express - Self Service Laundry Terpercaya" />
-    <meta name="theme-color" content="#C62828" />
-    <!-- Anti-detection: Hide generator -->
-    <meta name="generator" content="Generic CMS" />
-    <!-- Anti-detection: Load before everything -->
-    <script src="/anti-detect.js"></script>
-    <script src="/anti-wappalyzer.js"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      rel="preload"
-      as="style"
-      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
-    />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
-    />
-    <title>MBA Laundry Express</title>
-  </head>
-  <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
 
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- ==================== SEO DASAR (STATIS) ====================
+         Tag ini ditulis langsung di HTML supaya terbaca crawler tanpa
+         harus menjalankan JavaScript. Nilai di sini HARUS sama dengan
+         seoMap["/"] di src/components/public/layout/PublicSeo.tsx. -->
+  <title>MBA Laundry Express - Laundry Self Service Sidoarjo &amp; Surabaya</title>
+  <meta data-rh="true" name="description"
+    content="Laundry self service di Sidoarjo dan Surabaya. Cuci dan kering sendiri dengan mesin 17kg, harga transparan Rp 10.000 per mesin, buka 07.00-23.00 setiap hari." />
+  <link data-rh="true" rel="canonical" href="https://mbalaundryexpress.com/" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+  <meta name="author" content="MBA Laundry Express" />
+  <meta name="geo.region" content="ID-JI" />
+  <meta name="geo.placename" content="Sidoarjo, Surabaya" />
+  <meta name="theme-color" content="#C62828" />
+
+  <!-- Open Graph -->
+  <meta data-rh="true" property="og:type" content="website" />
+  <meta data-rh="true" property="og:locale" content="id_ID" />
+  <meta data-rh="true" property="og:site_name" content="MBA Laundry Express" />
+  <meta data-rh="true" property="og:title"
+    content="MBA Laundry Express - Laundry Self Service Sidoarjo &amp; Surabaya" />
+  <meta data-rh="true" property="og:description"
+    content="Laundry self service di Sidoarjo dan Surabaya. Mesin 17kg, Rp 10.000 per mesin, buka 07.00-23.00 setiap hari." />
+  <meta data-rh="true" property="og:url" content="https://mbalaundryexpress.com/" />
+  <meta data-rh="true" property="og:image" content="https://mbalaundryexpress.com/pwa-512x512.png" />
+
+  <!-- Twitter -->
+  <meta data-rh="true" name="twitter:card" content="summary_large_image" />
+  <meta data-rh="true" name="twitter:title"
+    content="MBA Laundry Express - Laundry Self Service Sidoarjo &amp; Surabaya" />
+  <meta data-rh="true" name="twitter:description"
+    content="Laundry self service di Sidoarjo dan Surabaya. Mesin 17kg, Rp 10.000 per mesin, buka 07.00-23.00 setiap hari." />
+  <meta data-rh="true" name="twitter:image" content="https://mbalaundryexpress.com/pwa-512x512.png" />
+
+  <!-- ==================== DATA TERSTRUKTUR (STATIS) ====================
+         Hanya fakta yang benar-benar ada: nama, alamat, jam buka, dan tarif.
+         Tidak ada rating atau jumlah ulasan buatan.
+         Nomor telepon sengaja tidak ditulis karena nomor di database masih
+         placeholder - isi dulu nomor asli di /admin/cabang. -->
+  <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": "https://mbalaundryexpress.com/#organization",
+            "name": "MBA Laundry Express",
+            "url": "https://mbalaundryexpress.com/",
+            "logo": {
+              "@type": "ImageObject",
+              "url": "https://mbalaundryexpress.com/pwa-512x512.png"
+            },
+            "description": "Jaringan laundry self service di Sidoarjo dan Surabaya dengan mesin cuci dan pengering kapasitas 17kg."
+          },
+          {
+            "@type": "WebSite",
+            "@id": "https://mbalaundryexpress.com/#website",
+            "url": "https://mbalaundryexpress.com/",
+            "name": "MBA Laundry Express",
+            "inLanguage": "id-ID",
+            "publisher": { "@id": "https://mbalaundryexpress.com/#organization" }
+          },
+          {
+            "@type": "ItemList",
+            "@id": "https://mbalaundryexpress.com/#sitelinks",
+            "name": "Halaman utama MBA Laundry Express",
+            "itemListElement": [
+              {
+                "@type": "SiteNavigationElement",
+                "position": 1,
+                "name": "Lokasi Cabang",
+                "description": "Alamat dan jam buka cabang di Sidoarjo dan Surabaya",
+                "url": "https://mbalaundryexpress.com/cabang"
+              },
+              {
+                "@type": "SiteNavigationElement",
+                "position": 2,
+                "name": "Daftar Harga",
+                "description": "Tarif cuci dan kering per mesin",
+                "url": "https://mbalaundryexpress.com/harga"
+              },
+              {
+                "@type": "SiteNavigationElement",
+                "position": 3,
+                "name": "Promo Aktif",
+                "description": "Promo dan diskon laundry yang sedang berjalan",
+                "url": "https://mbalaundryexpress.com/promo"
+              },
+              {
+                "@type": "SiteNavigationElement",
+                "position": 4,
+                "name": "Cara Pakai",
+                "description": "Panduan 3 langkah memakai mesin laundry self service",
+                "url": "https://mbalaundryexpress.com/cara-pakai"
+              },
+              {
+                "@type": "SiteNavigationElement",
+                "position": 5,
+                "name": "FAQ",
+                "description": "Pertanyaan yang sering ditanyakan",
+                "url": "https://mbalaundryexpress.com/faq"
+              },
+              {
+                "@type": "SiteNavigationElement",
+                "position": 6,
+                "name": "Kontak",
+                "description": "WhatsApp dan alamat MBA Laundry Express",
+                "url": "https://mbalaundryexpress.com/kontak"
+              }
+            ]
+          },
+          {
+            "@type": "BreadcrumbList",
+            "@id": "https://mbalaundryexpress.com/#breadcrumb",
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "name": "Beranda",
+                "item": "https://mbalaundryexpress.com/"
+              }
+            ]
+          },
+          {
+            "@type": "LaundryService",
+            "@id": "https://mbalaundryexpress.com/cabang/bohar",
+            "name": "MBA Laundry Bohar",
+            "url": "https://mbalaundryexpress.com/cabang/bohar",
+            "image": "https://mbalaundryexpress.com/pwa-512x512.png",
+            "parentOrganization": { "@id": "https://mbalaundryexpress.com/#organization" },
+            "address": {
+              "@type": "PostalAddress",
+              "streetAddress": "RT.5 RW.8 No.18, Balun, Bohar, Taman",
+              "addressLocality": "Sidoarjo",
+              "addressRegion": "Jawa Timur",
+              "postalCode": "61257",
+              "addressCountry": "ID"
+            },
+            "openingHoursSpecification": {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+              "opens": "07:00",
+              "closes": "23:00"
+            },
+            "priceRange": "Rp 10.000",
+            "makesOffer": [
+              { "@type": "Offer", "name": "Cuci", "price": "10000", "priceCurrency": "IDR" },
+              { "@type": "Offer", "name": "Kering", "price": "10000", "priceCurrency": "IDR" }
+            ]
+          },
+          {
+            "@type": "LaundryService",
+            "@id": "https://mbalaundryexpress.com/cabang/pagesangan",
+            "name": "MBA Laundry Pagesangan",
+            "url": "https://mbalaundryexpress.com/cabang/pagesangan",
+            "image": "https://mbalaundryexpress.com/pwa-512x512.png",
+            "parentOrganization": { "@id": "https://mbalaundryexpress.com/#organization" },
+            "address": {
+              "@type": "PostalAddress",
+              "streetAddress": "Jl. Pagesangan Utama No. 7, Jambangan",
+              "addressLocality": "Surabaya",
+              "addressRegion": "Jawa Timur",
+              "addressCountry": "ID"
+            },
+            "openingHoursSpecification": {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+              "opens": "07:00",
+              "closes": "23:00"
+            },
+            "priceRange": "Rp 10.000",
+            "makesOffer": [
+              { "@type": "Offer", "name": "Cuci", "price": "10000", "priceCurrency": "IDR" },
+              { "@type": "Offer", "name": "Kering", "price": "10000", "priceCurrency": "IDR" }
+            ]
+          },
+          {
+            "@type": "LaundryService",
+            "@id": "https://mbalaundryexpress.com/cabang/tawangsari",
+            "name": "MBA Laundry Tawangsari",
+            "url": "https://mbalaundryexpress.com/cabang/tawangsari",
+            "image": "https://mbalaundryexpress.com/pwa-512x512.png",
+            "parentOrganization": { "@id": "https://mbalaundryexpress.com/#organization" },
+            "address": {
+              "@type": "PostalAddress",
+              "streetAddress": "Tawangsari, Taman",
+              "addressLocality": "Sidoarjo",
+              "addressRegion": "Jawa Timur",
+              "addressCountry": "ID"
+            },
+            "openingHoursSpecification": {
+              "@type": "OpeningHoursSpecification",
+              "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+              "opens": "07:00",
+              "closes": "23:00"
+            },
+            "priceRange": "Rp 10.000 - Rp 30.000",
+            "makesOffer": [
+              { "@type": "Offer", "name": "Cuci 10kg", "price": "10000", "priceCurrency": "IDR" },
+              { "@type": "Offer", "name": "Cuci 17kg", "price": "20000", "priceCurrency": "IDR" },
+              { "@type": "Offer", "name": "Cuci 23kg", "price": "30000", "priceCurrency": "IDR" },
+              { "@type": "Offer", "name": "Kering 17kg", "price": "20000", "priceCurrency": "IDR" }
+            ]
+          }
+        ]
+      }
+    </script>
+
+  <!-- Favicon dipasang SEBELUM render, langsung dari logo yang sudah di-upload.
+         Tidak ada ikon default sama sekali: kalau cache belum ada, dipakai ikon
+         transparan supaya tab tidak pernah menampilkan logo bawaan. -->
+  <script>
+    (function () {
+      var href = "";
+      try {
+        var raw = localStorage.getItem("branding_settings");
+        if (raw) {
+          var b = JSON.parse(raw);
+          href = b.favicon_url || b.logo_url || "";
+        }
+      } catch (e) { }
+      if (!href) {
+        href =
+          "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+      }
+      var rels = ["icon", "shortcut icon", "apple-touch-icon"];
+      for (var i = 0; i < rels.length; i++) {
+        var link = document.createElement("link");
+        link.rel = rels[i];
+        link.href = href;
+        document.head.appendChild(link);
+      }
+    })();
+  </script>
+  <!-- Anti-detection: Hide generator -->
+  <meta name="generator" content="Generic CMS" />
+  <!-- Anti-detection: Load before everything -->
+  <script src="/anti-detect.js"></script>
+  <script src="/anti-wappalyzer.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preload" as="style"
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" />
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" />
+</head>
+
+<body>
+  <noscript>
+    <div style="max-width: 640px; margin: 4rem auto; padding: 0 1.25rem; font-family: system-ui, sans-serif">
+      <h1 style="font-size: 1.5rem; margin-bottom: 0.75rem">MBA Laundry Express</h1>
+      <p style="line-height: 1.6; color: #475569">
+        Laundry self service di Sidoarjo dan Surabaya. Mesin cuci dan pengering kapasitas 17kg, tarif Rp 10.000 per
+        mesin, buka setiap hari 07.00-23.00.
+      </p>
+      <h2 style="font-size: 1.125rem; margin: 2rem 0 0.75rem">Halaman</h2>
+      <ul style="line-height: 1.9; color: #475569; padding-left: 1.25rem">
+        <li><a href="/cabang" style="color: #c62828">Lokasi Cabang</a> - alamat dan jam buka cabang</li>
+        <li><a href="/harga" style="color: #c62828">Daftar Harga</a> - tarif cuci dan kering per mesin</li>
+        <li><a href="/promo" style="color: #c62828">Promo Aktif</a> - promo yang sedang berjalan</li>
+        <li><a href="/cara-pakai" style="color: #c62828">Cara Pakai</a> - panduan memakai mesin</li>
+        <li><a href="/faq" style="color: #c62828">FAQ</a> - pertanyaan yang sering ditanyakan</li>
+        <li><a href="/blog" style="color: #c62828">Blog Tips</a> - tips mencuci dan merawat pakaian</li>
+        <li><a href="/kalkulator" style="color: #c62828">Kalkulator Biaya</a> - hitung perkiraan biaya</li>
+        <li><a href="/kontak" style="color: #c62828">Kontak</a> - WhatsApp dan alamat</li>
+      </ul>
+      <p style="line-height: 1.6; color: #475569; margin-top: 2rem">
+        Aktifkan JavaScript untuk melihat daftar cabang, promo, dan tarif lengkap.
+      </p>
+    </div>
+  </noscript>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
+</html>

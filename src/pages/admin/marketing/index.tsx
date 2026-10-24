@@ -7,36 +7,33 @@ import {
 	PieChartOutlined,
 	RiseOutlined,
 } from "@ant-design/icons";
-import { Card, Col, Row, Segmented, Select, Statistic, Table, Tabs, Tag } from "antd";
+import { useQuery } from "@tanstack/react-query";
+import { Card, Col, Row, Statistic, Table, Tabs, Tag } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import {
-	getMarketingMetrics,
-	getPromoEffectiveness,
+	type ABTestResult,
+	type CampaignTracking,
+	getABTestResults,
 	getCampaignTracking,
 	getLeadFunnel,
-	getABTestResults,
-	type MarketingMetric,
-	type PromoEffectiveness,
-	type CampaignTracking,
+	getMarketingMetrics,
+	getPromoEffectiveness,
 	type LeadFunnelData,
-	type ABTestResult,
+	type PromoEffectiveness,
 } from "@/api/marketing.api";
-import { formatDate, formatCurrency } from "@/utils/format";
 import { MetronicPage } from "@/components/admin/MetronicPage";
 import { useThemeStore } from "@/store/themeStore";
-
-const { Option } = Select;
+import { formatCurrency, formatDate } from "@/utils/format";
 
 export default function MarketingDashboardPage() {
 	const { mode } = useThemeStore();
-	const [dateRange, setDateRange] = useState<"7days" | "30days" | "90days">("30days");
-	const [campaignPlatform, setCampaignPlatform] = useState<string>("all");
+	const [dateRange] = useState<"7days" | "30days" | "90days">("30days");
+	const [campaignPlatform] = useState<string>("all");
 
 	const isDark = mode === "dark";
 
-	const { data: metrics = [], isLoading: metricsLoading } = useQuery({
+	const { data: metrics = [] } = useQuery({
 		queryKey: ["marketing-metrics", dateRange],
 		queryFn: () => getMarketingMetrics("2024-03-01", "2024-03-30"),
 	});
@@ -89,7 +86,7 @@ export default function MarketingDashboardPage() {
 				<div>
 					<div className="font-semibold">{text}</div>
 					<div className="text-xs text-gray-500">
-						{formatDate(record.start_date)} - {formatDate(record.end_date)}
+						{formatDate(record.start_date)} - {record.end_date ? formatDate(record.end_date) : "Tanpa tenggat"}
 					</div>
 				</div>
 			),
@@ -174,7 +171,11 @@ export default function MarketingDashboardPage() {
 			title: "Drop-off Rate",
 			dataIndex: "dropoff_rate",
 			key: "dropoff_rate",
-			render: (value) => <div style={{ color: value > 50 ? (isDark ? "#f87171" : "#dc2626") : (isDark ? "#94a3b8" : "#4b5563") }}>{value.toFixed(1)}%</div>,
+			render: (value) => (
+				<div style={{ color: value > 50 ? (isDark ? "#f87171" : "#dc2626") : isDark ? "#94a3b8" : "#4b5563" }}>
+					{value.toFixed(1)}%
+				</div>
+			),
 		},
 	];
 
@@ -279,6 +280,7 @@ export default function MarketingDashboardPage() {
 
 			{/* Tabs for different sections */}
 			<Tabs
+				className="admin-responsive-tabs"
 				defaultActiveKey="1"
 				items={[
 					{

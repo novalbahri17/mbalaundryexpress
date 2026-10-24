@@ -16,4 +16,3 @@ export const useBranches = (options?: { activeOnly?: boolean; search?: string })
 		},
 		staleTime: 60_000,
 	});
-

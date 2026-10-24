@@ -3,7 +3,7 @@
  * Framer Motion variants & animation presets
  */
 
-import type { Variants, Transition } from "framer-motion";
+import type { Transition, Variants } from "framer-motion";
 
 // ============================================
 // TRANSITION PRESETS

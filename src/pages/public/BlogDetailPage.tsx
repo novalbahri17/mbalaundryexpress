@@ -24,20 +24,21 @@ import { getArticleBySlug, getArticles, incrementArticleViews } from "@/api/arti
 import { SafeImage } from "@/components/public/shared/SafeImage";
 import { formatDate, resolveImageUrl, sanitizeRichHtml } from "@/utils/format";
 import type { ArticleCategory } from "@/types/database.types";
+import { usePublicText } from "@/hooks/usePublicText";
 
-const CATEGORY_META: Record<ArticleCategory, { label: string; className: string }> = {
-	"tips-mencuci": { label: "Tips Mencuci", className: "bg-sapphire-500/10 text-sapphire-600 dark:text-sapphire-400" },
-	"tips-kering": { label: "Tips Kering", className: "bg-teal-500/10 text-teal-600 dark:text-teal-400" },
-	"perawatan-bahan": { label: "Perawatan Bahan", className: "bg-violet-500/10 text-violet-600 dark:text-violet-400" },
-	noda: { label: "Noda", className: "bg-amber-500/10 text-amber-600 dark:text-amber-400" },
-	umum: { label: "Umum", className: "bg-neutral-500/10 text-neutral-600 dark:text-neutral-400" },
-	berita: { label: "Berita", className: "bg-ruby-500/10 text-ruby-600 dark:text-ruby-400" },
-	"promo-info": { label: "Promo", className: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" },
+const CATEGORY_CLASS: Record<ArticleCategory, string> = {
+	"tips-mencuci": "bg-sapphire-500/10 text-sapphire-600 dark:text-sapphire-400",
+	"tips-kering": "bg-teal-500/10 text-teal-600 dark:text-teal-400",
+	"perawatan-bahan": "bg-violet-500/10 text-violet-600 dark:text-violet-400",
+	noda: "bg-amber-500/10 text-amber-600 dark:text-amber-400",
+	umum: "bg-neutral-500/10 text-neutral-600 dark:text-neutral-400",
+	berita: "bg-ruby-500/10 text-ruby-600 dark:text-ruby-400",
+	"promo-info": "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
 };
 
 // Zoom button injected into every content image (Maximize icon + "Perbesar" label).
 const ZOOM_SVG = `<svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>`;
-const ZOOM_BTN = `<button class="article-zoom-btn" type="button" aria-label="Perbesar gambar">${ZOOM_SVG}<span>Perbesar</span></button>`;
+const ZOOM_BTN = `<button class="article-zoom-btn" type="button">${ZOOM_SVG}<span class="article-zoom-label"></span></button>`;
 
 const IMAGE_WIDTH_MAP: Record<string, string> = { small: "25%", medium: "50%", large: "75%", full: "100%" };
 const IMAGE_SHADOW_MAP: Record<string, string> = {
@@ -101,13 +102,16 @@ const enhanceArticleHtml = (html: string): string =>
 	});
 
 export default function BlogDetailPage() {
+	const text = usePublicText();
+	const t = text.pages.blogDetail;
+	const blogCats = text.pages.blog.categories;
 	const { slug } = useParams();
 	const [lightbox, setLightbox] = useState<{ src: string; caption: string } | null>(null);
 	const [progress, setProgress] = useState(0);
 	const [showTop, setShowTop] = useState(false);
 	const [copied, setCopied] = useState(false);
 
-	const { data: article } = useQuery({
+	const { data: article, isLoading } = useQuery({
 		queryKey: ["article", slug],
 		queryFn: () => getArticleBySlug(slug ?? ""),
 		enabled: Boolean(slug),
@@ -124,7 +128,10 @@ export default function BlogDetailPage() {
 		void incrementArticleViews(article.id, article.views);
 	}, [article]);
 
-	const safeHtml = useMemo(() => enhanceArticleHtml(sanitizeRichHtml(article?.content ?? "")), [article?.content]);
+	const safeHtml = useMemo(
+		() => enhanceArticleHtml(sanitizeRichHtml(article?.content ?? "")),
+		[article?.content, t.zoom, t.zoomAria],
+	);
 
 	// Reading progress + back-to-top visibility
 	useEffect(() => {
@@ -153,20 +160,29 @@ export default function BlogDetailPage() {
 		};
 	}, [lightbox]);
 
+	if (isLoading) {
+		return (
+			<div className="flex min-h-[50vh] items-center justify-center px-4">
+				<p className="text-sm text-neutral-500 dark:text-neutral-400">{text.common.loading}</p>
+			</div>
+		);
+	}
+
 	if (!article) {
 		return (
 			<div className="flex min-h-[50vh] flex-col items-center justify-center px-4 text-center">
-				<p className="text-lg font-bold text-neutral-900 dark:text-white">Artikel tidak ditemukan</p>
-				<p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">Artikel mungkin sudah dihapus atau belum dipublikasikan.</p>
-				<Link to="/blog" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-ruby-600 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-ruby-700">
+				<p className="text-lg font-bold text-neutral-900 dark:text-white">{t.notFound}</p>
+				<p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">{t.notFound}</p>
+				<Link to="/blog" className="mt-6 inline-flex items-center gap-2 rounded-xl bg-ruby-700 px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-ruby-800">
 					<ArrowLeft className="h-4 w-4" />
-					Kembali ke Blog
+					{t.backToBlog}
 				</Link>
 			</div>
 		);
 	}
 
-	const meta = CATEGORY_META[article.category] ?? CATEGORY_META.umum;
+	const className = CATEGORY_CLASS[article.category] ?? CATEGORY_CLASS.umum;
+	const metaLabel = blogCats[article.category] ?? blogCats.umum;
 	const relatedItems = related.filter((item) => item.id !== article.id).slice(0, 4);
 	const heroSrc = resolveImageUrl(article.thumbnail, article.title);
 	const shareUrl = window.location.href;
@@ -176,10 +192,10 @@ export default function BlogDetailPage() {
 		try {
 			await navigator.clipboard.writeText(shareUrl);
 			setCopied(true);
-			toast.success("Link artikel disalin!");
+			toast.success(t.copiedToast);
 			setTimeout(() => setCopied(false), 2000);
 		} catch {
-			toast.error("Gagal menyalin link");
+			toast.error(t.copyFailedToast);
 		}
 	};
 
@@ -202,7 +218,7 @@ export default function BlogDetailPage() {
 			{/* Reading progress bar */}
 			<div className="pointer-events-none fixed inset-x-0 top-0 z-[60] h-1">
 				<div
-					className="h-full bg-gradient-to-r from-ruby-500 via-ruby-600 to-ruby-500 shadow-[0_0_8px_rgba(198,40,40,0.5)] transition-[width] duration-100 ease-out"
+					className="h-full bg-ruby-700 transition-[width] duration-100 ease-out"
 					style={{ width: `${progress}%` }}
 				/>
 			</div>
@@ -214,11 +230,11 @@ export default function BlogDetailPage() {
 					onClick={() => setLightbox(null)}
 					role="dialog"
 					aria-modal="true"
-					aria-label="Pratinjau gambar"
+					aria-label={t.imageAria}
 				>
 					<button
 						type="button"
-						aria-label="Tutup pratinjau"
+						aria-label={text.nav.closeMenu}
 						onClick={() => setLightbox(null)}
 						className="absolute right-4 top-4 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/25"
 					>
@@ -241,8 +257,6 @@ export default function BlogDetailPage() {
 
 			{/* Hero header */}
 			<header className="relative overflow-hidden pb-8 pt-14 md:pt-20">
-				<div className="pointer-events-none absolute -left-24 top-0 h-64 w-64 rounded-full bg-ruby-500/10 blur-3xl" />
-				<div className="pointer-events-none absolute -right-24 top-10 h-64 w-64 rounded-full bg-sapphire-500/10 blur-3xl" />
 				<div className="relative mx-auto max-w-[820px] px-4 text-center md:px-6">
 					<Link
 						to="/blog"
@@ -252,8 +266,8 @@ export default function BlogDetailPage() {
 						Semua Artikel
 					</Link>
 					<div>
-						<span className={`inline-flex rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-wide ${meta.className}`}>
-							{meta.label}
+						<span className={`inline-flex rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-wide ${className}`}>
+							{metaLabel}
 						</span>
 					</div>
 					<h1 className="mt-5 text-3xl font-extrabold leading-[1.15] tracking-tight text-neutral-900 dark:text-white md:text-[44px]">
@@ -272,7 +286,7 @@ export default function BlogDetailPage() {
 								<User className="h-[18px] w-[18px]" />
 							</span>
 							<span className="text-left leading-tight">
-								<span className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">Penulis</span>
+								<span className="block text-[11px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">{t.author}</span>
 								<span className="block font-bold text-neutral-800 dark:text-neutral-100">{article.author || "MBA Laundry Express"}</span>
 							</span>
 						</span>
@@ -283,17 +297,17 @@ export default function BlogDetailPage() {
 						</span>
 						<span className="inline-flex items-center gap-2 text-neutral-500 dark:text-neutral-400">
 							<Clock3 className="h-4 w-4" />
-							{article.read_time ?? 5} menit baca
+							{t.readTime.replace("{n}", String(article.read_time ?? 5))}
 						</span>
 						<span className="inline-flex items-center gap-2 text-neutral-500 dark:text-neutral-400">
 							<Eye className="h-4 w-4" />
-							{article.views + 1} views
+							{t.views.replace("{n}", String(article.views + 1))}
 						</span>
 					</div>
 				</div>
 			</header>
 
-			{/* Article body — centered reading column */}
+			{/* Article body: centered reading column */}
 			<div className="mx-auto max-w-[780px] px-4 md:px-6">
 				<motion.article
 					initial={{ opacity: 0, y: 20 }}
@@ -310,9 +324,9 @@ export default function BlogDetailPage() {
 							className="aspect-[16/9] w-full object-cover"
 							loading="eager"
 						/>
-						<button type="button" className="article-zoom-btn" onClick={() => setLightbox({ src: heroSrc, caption: article.title })}>
+						<button type="button" className="article-zoom-btn" aria-label={t.zoomAria} onClick={() => setLightbox({ src: heroSrc, caption: article.title })}>
 							<Maximize2 className="h-3.5 w-3.5" />
-							<span>Perbesar</span>
+							<span>{t.zoom}</span>
 						</button>
 					</div>
 
@@ -324,7 +338,7 @@ export default function BlogDetailPage() {
 						<div className="mt-10 flex flex-wrap items-center gap-2">
 							<span className="mr-1 inline-flex items-center gap-1.5 text-sm font-bold text-neutral-500 dark:text-neutral-400">
 								<Tag className="h-4 w-4" />
-								Tag:
+								{t.tag}
 							</span>
 							{article.tags.map((tag) => (
 								<span
@@ -341,14 +355,14 @@ export default function BlogDetailPage() {
 					<div className="mt-8 flex flex-col gap-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-5 dark:border-neutral-700/70 dark:bg-neutral-800/50 sm:flex-row sm:items-center sm:justify-between">
 						<p className="inline-flex items-center gap-2 text-sm font-bold text-neutral-700 dark:text-neutral-200">
 							<Share2 className="h-4 w-4 text-ruby-600 dark:text-ruby-400" />
-							Bagikan artikel ini
+							{t.share}
 						</p>
 						<div className="flex items-center gap-2">
 							<a
 								href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`}
 								target="_blank"
 								rel="noopener noreferrer"
-								aria-label="Bagikan ke Facebook"
+								aria-label={t.shareFacebook}
 								className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1877F2] text-white shadow-sm transition-transform hover:-translate-y-0.5"
 							>
 								<Facebook className="h-[18px] w-[18px]" />
@@ -357,7 +371,7 @@ export default function BlogDetailPage() {
 								href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`}
 								target="_blank"
 								rel="noopener noreferrer"
-								aria-label="Bagikan ke X / Twitter"
+								aria-label={t.shareTwitter}
 								className="flex h-10 w-10 items-center justify-center rounded-xl bg-neutral-900 text-white shadow-sm transition-transform hover:-translate-y-0.5 dark:bg-black"
 							>
 								<Twitter className="h-[18px] w-[18px]" />
@@ -366,7 +380,7 @@ export default function BlogDetailPage() {
 								href={`https://wa.me/?text=${encodeURIComponent(`${shareText} ${shareUrl}`)}`}
 								target="_blank"
 								rel="noopener noreferrer"
-								aria-label="Bagikan ke WhatsApp"
+								aria-label={t.shareWhatsapp}
 								className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#25D366] text-white shadow-sm transition-transform hover:-translate-y-0.5"
 							>
 								<MessageCircle className="h-[18px] w-[18px]" />
@@ -378,7 +392,7 @@ export default function BlogDetailPage() {
 								className="flex h-10 items-center gap-2 rounded-xl border border-neutral-300 bg-white px-3.5 text-sm font-semibold text-neutral-700 shadow-sm transition-all hover:-translate-y-0.5 hover:border-ruby-400 hover:text-ruby-600 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-200"
 							>
 								{copied ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
-								{copied ? "Tersalin" : "Salin Link"}
+								{copied ? t.copied : t.copyLink}
 							</button>
 						</div>
 					</div>
@@ -387,10 +401,11 @@ export default function BlogDetailPage() {
 				{/* Related articles */}
 				{relatedItems.length > 0 ? (
 					<div className="mt-16 border-t border-neutral-200 pt-10 dark:border-neutral-800">
-						<h2 className="text-xl font-extrabold tracking-tight text-neutral-900 dark:text-white md:text-2xl">Artikel Terkait</h2>
+						<h2 className="text-xl font-extrabold tracking-tight text-neutral-900 dark:text-white md:text-2xl">{t.related}</h2>
 						<div className="mt-6 grid gap-6 sm:grid-cols-2">
 							{relatedItems.map((item) => {
-								const itemMeta = CATEGORY_META[item.category] ?? CATEGORY_META.umum;
+								const itemMetaClass = CATEGORY_CLASS[item.category] ?? CATEGORY_CLASS.umum;
+								const itemMetaLabel = blogCats[item.category] ?? blogCats.umum;
 								return (
 									<Link
 										key={item.id}
@@ -407,8 +422,8 @@ export default function BlogDetailPage() {
 											/>
 										</div>
 										<div className="p-4">
-											<span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${itemMeta.className}`}>
-												{itemMeta.label}
+											<span className={`inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${itemMetaClass}`}>
+												{itemMetaLabel}
 											</span>
 											<p className="mt-2 line-clamp-2 text-[15px] font-bold leading-snug text-neutral-900 transition-colors group-hover:text-ruby-600 dark:text-white dark:group-hover:text-ruby-400">
 												{item.title}
@@ -430,7 +445,7 @@ export default function BlogDetailPage() {
 						className="inline-flex items-center gap-2 rounded-xl border border-neutral-300 bg-white px-6 py-3 text-sm font-bold text-neutral-700 shadow-sm transition-all hover:-translate-y-0.5 hover:border-ruby-400 hover:text-ruby-600 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-200"
 					>
 						<ArrowLeft className="h-4 w-4" />
-						Lihat semua artikel
+						{t.allArticles}
 					</Link>
 				</div>
 			</div>
@@ -439,7 +454,7 @@ export default function BlogDetailPage() {
 			{showTop ? (
 				<button
 					type="button"
-					aria-label="Kembali ke atas"
+					aria-label={t.backTop}
 					onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
 					className="fixed bottom-6 right-6 z-50 flex h-11 w-11 items-center justify-center rounded-full bg-ruby-600 text-white shadow-lg transition-all hover:-translate-y-1 hover:bg-ruby-700"
 				>

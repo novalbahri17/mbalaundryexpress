@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
-import { Card, Form, Input, Button, message, Slider, Switch, ColorPicker, Tabs, Upload, Spin } from "antd";
-import { UploadOutlined, SaveOutlined, EyeOutlined, ReloadOutlined } from "@ant-design/icons";
-import { useBranding, useUpdateBranding } from "@/hooks/useBranding";
-import { DynamicLogo } from "@/components/public/layout/DynamicLogo";
-import { updateFavicon } from "@/components/public/layout/DynamicFavicon";
-import { MetronicPage } from "@/components/admin/MetronicPage";
+import { EyeOutlined, ReloadOutlined, SaveOutlined, UploadOutlined } from "@ant-design/icons";
+import { Button, Card, ColorPicker, Form, Input, message, Slider, Spin, Switch, Tabs, Upload } from "antd";
 import type { UploadFile } from "antd/es/upload/interface";
+import { useEffect, useState } from "react";
+import { MetronicPage } from "@/components/admin/MetronicPage";
+import { updateFavicon } from "@/components/public/layout/DynamicFavicon";
+import { DynamicLogo } from "@/components/public/layout/DynamicLogo";
+import { useBranding, useUpdateBranding } from "@/hooks/useBranding";
 import { useThemeStore } from "@/store/themeStore";
 
 const { TextArea } = Input;
@@ -95,10 +95,7 @@ export default function BrandingPage() {
 	}
 
 	return (
-		<MetronicPage
-			title="Pengaturan Branding"
-			subtitle="Kelola logo, favicon, dan identitas brand"
-		>
+		<MetronicPage title="Pengaturan Branding" subtitle="Kelola logo, favicon, dan identitas brand">
 			<div className="card">
 				<div className="flex items-center justify-between mb-6">
 					<div className="flex gap-2">
@@ -139,7 +136,9 @@ export default function BrandingPage() {
 
 								{logoPreview && (
 									<div className="mt-4 p-4 rounded-lg" style={{ backgroundColor: "var(--bg-surface)" }}>
-										<p className="text-sm mb-2" style={{ color: "var(--text-secondary)" }}>Preview Logo:</p>
+										<p className="text-sm mb-2" style={{ color: "var(--text-secondary)" }}>
+											Preview Logo:
+										</p>
 										<div className="flex items-center gap-4">
 											<img src={logoPreview} alt="Logo Preview" className="h-16 object-contain" />
 											<img src={logoPreview} alt="Favicon Preview" className="w-8 h-8 object-contain" />
@@ -282,22 +281,35 @@ export default function BrandingPage() {
 					}
 					className="mt-4"
 				>
-					<div className="flex items-center gap-4 p-4 rounded-lg border" style={{ backgroundColor: "var(--bg-card)", borderColor: "var(--border)" }}>
+					<div
+						className="flex items-center gap-4 p-4 rounded-lg border"
+						style={{ backgroundColor: "var(--bg-card)", borderColor: "var(--border)" }}
+					>
 						<DynamicLogo />
 					</div>
 
 					{previewVisible && (
 						<div className="mt-6 space-y-4">
 							<div className="p-4 rounded-lg" style={{ backgroundColor: "var(--bg-surface)" }}>
-								<h4 className="font-semibold mb-2" style={{ color: "var(--text-primary)" }}>Header Preview:</h4>
-								<div className="flex items-center gap-4 p-4 rounded border" style={{ backgroundColor: "var(--bg-card)", borderColor: "var(--border)" }}>
+								<h4 className="font-semibold mb-2" style={{ color: "var(--text-primary)" }}>
+									Header Preview:
+								</h4>
+								<div
+									className="flex items-center gap-4 p-4 rounded border"
+									style={{ backgroundColor: "var(--bg-card)", borderColor: "var(--border)" }}
+								>
 									<DynamicLogo />
 								</div>
 							</div>
 
 							<div className="p-4 rounded-lg" style={{ backgroundColor: "var(--bg-surface)" }}>
-								<h4 className="font-semibold mb-2" style={{ color: "var(--text-primary)" }}>Footer Preview:</h4>
-								<div className="flex items-center gap-4 p-4 rounded" style={{ backgroundColor: isDark ? "#1a1d27" : "#111827" }}>
+								<h4 className="font-semibold mb-2" style={{ color: "var(--text-primary)" }}>
+									Footer Preview:
+								</h4>
+								<div
+									className="flex items-center gap-4 p-4 rounded"
+									style={{ backgroundColor: isDark ? "#1a1d27" : "#111827" }}
+								>
 									<DynamicLogo />
 								</div>
 							</div>

@@ -1,45 +1,45 @@
 import {
+	DeleteOutlined,
+	ExclamationCircleOutlined,
+	LinkOutlined,
+	LockOutlined,
+	LogoutOutlined,
+	UploadOutlined,
+} from "@ant-design/icons";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
 	Alert,
 	Button,
 	Card,
 	Col,
+	DatePicker,
+	Divider,
 	Form,
 	Input,
-	Row,
-	Switch,
-	DatePicker,
-	Upload,
-	message,
-	Select,
-	Popconfirm,
-	Tag,
 	Modal,
-	Divider,
-	Typography,
+	message,
+	Popconfirm,
+	Row,
+	Select,
 	Space,
+	Switch,
+	Tag,
+	Typography,
+	Upload,
 } from "antd";
-import { useThemeStore } from "@/store/themeStore";
-import { useEffect, useMemo, useState } from "react";
 import dayjs from "dayjs";
-import {
-	UploadOutlined,
-	DeleteOutlined,
-	LinkOutlined,
-	LockOutlined,
-	LogoutOutlined,
-	ExclamationCircleOutlined,
-} from "@ant-design/icons";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { getPageContentValueMap, saveBulkPageContents } from "@/api/pageContents.api";
+import { pb, updateAdminAccount } from "@/api/client";
 import { getSiteSettings, saveBulkSettings } from "@/api/settings.api";
+import { MetronicPage } from "@/components/admin/MetronicPage";
+import { AnnouncementCard, type AnnouncementType } from "@/components/public/home/AnnouncementModal";
+import { TabPanel, Tabs } from "@/design-system/components/Tabs";
 import { PAGE_CONTENT_QUERY_KEY } from "@/hooks/usePageContent";
 import { SITE_SETTINGS_QUERY_KEY } from "@/hooks/useSiteSettings";
-import { MetronicPage } from "@/components/admin/MetronicPage";
+import { useThemeStore } from "@/store/themeStore";
 import { normalizeHexColor, validateHexColor } from "@/utils/validation";
-import { AnnouncementCard, type AnnouncementType } from "@/components/public/home/AnnouncementModal";
-import { pb } from "@/api/pocketbase";
-import { useNavigate } from "react-router-dom";
-import { Tabs, TabPanel } from "@/design-system/components/Tabs";
 
 const { Text } = Typography;
 const { confirm } = Modal;
@@ -207,7 +207,13 @@ export default function PengaturanAdminPage() {
 		});
 
 		setAdminEmail(settingsMap.admin_email || pb.authStore.model?.email || "");
-		setWhatsappNumber(settingsMap.whatsapp_cs || pageContentMap.whatsapp_cs || settingsMap.whatsapp_number || pageContentMap.whatsapp_number || "");
+		setWhatsappNumber(
+			settingsMap.whatsapp_cs ||
+				pageContentMap.whatsapp_cs ||
+				settingsMap.whatsapp_number ||
+				pageContentMap.whatsapp_number ||
+				"",
+		);
 	}, [isFormsReady, appearanceForm, announcementForm, modulesForm, pageContentMap, settingsMap]);
 
 	const lightPreview = normalizeHexColor(Form.useWatch("landing_bg_color_light", appearanceForm), DEFAULT_LIGHT_BG);
@@ -286,7 +292,7 @@ export default function PengaturanAdminPage() {
 		});
 
 		try {
-			const existing = await pb.collection("branding_files").getFullList({
+			const existing = await pb.collection("branding_files").getFullList<{ id: string }>({
 				filter: 'type = "announcement"',
 			});
 			for (const record of existing) {
@@ -315,7 +321,7 @@ export default function PengaturanAdminPage() {
 
 	const uploadAnnouncementImage = async (file: File): Promise<string> => {
 		try {
-			const existing = await pb.collection("branding_files").getFullList({
+			const existing = await pb.collection("branding_files").getFullList<{ id: string }>({
 				filter: 'type = "announcement"',
 			});
 			for (const record of existing) {
@@ -325,12 +331,12 @@ export default function PengaturanAdminPage() {
 			// Ignore error
 		}
 
-		const record = await pb.collection("branding_files").create({
+		const record = await pb.collection("branding_files").create<{ id: string; file: string }>({
 			type: "announcement",
-			file: file,
+			file,
 		});
 
-		return pb.files.getURL(record, record.file);
+		return pb.files.getURL({ id: record.id, collectionName: "branding_files" }, record.file);
 	};
 
 	const saveAnnouncement = async () => {
@@ -588,17 +594,7 @@ export default function PengaturanAdminPage() {
 		}
 
 		try {
-			const currentEmail = pb.authStore.model?.email || "";
-			const userId = pb.authStore.model?.id || "";
-
-			// Re-authenticate with current credentials to get fresh token
-			await pb.collection("_superusers").authWithPassword(currentEmail, emailChangePassword);
-
-			// PocketBase v0.23+ requires emailSelector for email updates
-			await pb.collection("_superusers").update(userId, {
-				email: newLoginEmail,
-				emailSelector: currentEmail,
-			});
+			await updateAdminAccount({ currentPassword: emailChangePassword, email: newLoginEmail });
 
 			message.success("Email login berhasil diubah! Silakan login ulang dengan email baru.");
 			setNewLoginEmail("");
@@ -624,24 +620,16 @@ export default function PengaturanAdminPage() {
 		}
 
 		try {
-			const adminEmail = pb.authStore.model?.email;
-			if (!adminEmail) {
-				message.error("Tidak dapat mendapatkan email admin");
-				return;
-			}
-
-			await pb.collection("_superusers").authWithPassword(adminEmail, values.currentPassword);
-
-			await pb.collection("_superusers").update(pb.authStore.model?.id ?? "", {
+			await updateAdminAccount({
+				currentPassword: values.currentPassword,
 				password: values.newPassword,
-				passwordConfirm: values.newPassword,
 			});
 
 			message.success("Password berhasil diubah!");
 			securityForm.resetFields();
 			setSecurityModalOpen(false);
-		} catch (_error) {
-			message.error("Password saat ini salah atau terjadi kesalahan!");
+		} catch (error) {
+			message.error((error as Error)?.message || "Password saat ini salah atau terjadi kesalahan!");
 		}
 	};
 
@@ -672,28 +660,15 @@ export default function PengaturanAdminPage() {
 	];
 
 	return (
-		<MetronicPage
-			title="Pengaturan"
-			subtitle="Kelola konfigurasi sistem dan tampilan landing page"
-		>
+		<MetronicPage title="Pengaturan" subtitle="Kelola konfigurasi sistem dan tampilan landing page">
 			{/* Tab Navigation */}
 			<div className="mb-6">
-				<Tabs
-					tabs={tabs}
-					activeTab={activeTab}
-					onChange={setActiveTab}
-					variant="underline"
-					size="md"
-				/>
+				<Tabs tabs={tabs} activeTab={activeTab} onChange={setActiveTab} variant="underline" size="md" />
 			</div>
 
 			{/* ====== TAB: UMUM ====== */}
 			<TabPanel id="umum" activeTab={activeTab}>
-				<Card
-					title="Visibilitas Halaman"
-					className="card"
-					style={{ borderColor: "var(--border)" }}
-				>
+				<Card title="Visibilitas Halaman" className="card" style={{ borderColor: "var(--border)" }}>
 					<h3 className="text-base font-semibold mb-1" style={{ color: "var(--text-primary)" }}>
 						Manajemen Modul &amp; Halaman Publik
 					</h3>
@@ -733,11 +708,7 @@ export default function PengaturanAdminPage() {
 
 			{/* ====== TAB: LANDING PAGE ====== */}
 			<TabPanel id="landing" activeTab={activeTab}>
-				<Card
-					title="Tampilan Landing Page"
-					className="card"
-					style={{ borderColor: "var(--border)" }}
-				>
+				<Card title="Tampilan Landing Page" className="card" style={{ borderColor: "var(--border)" }}>
 					<h3 className="text-base font-semibold mb-1" style={{ color: "var(--text-primary)" }}>
 						Warna Background
 					</h3>
@@ -758,9 +729,13 @@ export default function PengaturanAdminPage() {
 								</Form.Item>
 
 								<div className="rounded-xl border p-3" style={{ borderColor: "var(--border)" }}>
-									<p className="mb-2 text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>Preview Light</p>
+									<p className="mb-2 text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>
+										Preview Light
+									</p>
 									<div className="h-16 rounded-lg" style={{ backgroundColor: lightPreview }} />
-									<p className="mt-2 text-xs font-mono" style={{ color: "var(--text-muted)" }}>{lightPreview}</p>
+									<p className="mt-2 text-xs font-mono" style={{ color: "var(--text-muted)" }}>
+										{lightPreview}
+									</p>
 								</div>
 							</Col>
 							<Col xs={24} md={12}>
@@ -774,9 +749,13 @@ export default function PengaturanAdminPage() {
 								</Form.Item>
 
 								<div className="rounded-xl border p-3" style={{ borderColor: "var(--border)" }}>
-									<p className="mb-2 text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>Preview Dark</p>
+									<p className="mb-2 text-xs font-semibold" style={{ color: "var(--text-secondary)" }}>
+										Preview Dark
+									</p>
 									<div className="h-16 rounded-lg" style={{ backgroundColor: darkPreview }} />
-									<p className="mt-2 text-xs font-mono" style={{ color: "var(--text-muted)" }}>{darkPreview}</p>
+									<p className="mt-2 text-xs font-mono" style={{ color: "var(--text-muted)" }}>
+										{darkPreview}
+									</p>
 								</div>
 							</Col>
 						</Row>
@@ -801,7 +780,7 @@ export default function PengaturanAdminPage() {
 								Magic Templates
 							</h3>
 							<p className="text-sm mb-4" style={{ color: "var(--text-muted)" }}>
-								 mulai cepat dengan template siap pakai.
+								mulai cepat dengan template siap pakai.
 							</p>
 							<div className="flex flex-wrap gap-2">
 								{(["promo", "libur", "maintenance", "info"] as AnnouncementType[]).map((t) => (
@@ -855,12 +834,24 @@ export default function PengaturanAdminPage() {
 
 								<Form.Item label="Isi Pengumuman" className="mb-2">
 									<div className="mb-2 flex flex-wrap gap-2">
-										<span className="text-xs" style={{ color: "var(--text-muted)" }}>Format:</span>
-										<Button size="small" onClick={() => insertTag("<b>", "</b>")}>Bold</Button>
-										<Button size="small" onClick={() => insertTag("<i>", "</i>")}>Italic</Button>
-										<Button size="small" onClick={() => insertTag("<u>", "</u>")}>Underline</Button>
-										<Button size="small" onClick={() => insertTag('<a href="#">', "</a>")}>Link</Button>
-										<Button size="small" onClick={() => insertTag("<br/>", "")}>New Line</Button>
+										<span className="text-xs" style={{ color: "var(--text-muted)" }}>
+											Format:
+										</span>
+										<Button size="small" onClick={() => insertTag("<b>", "</b>")}>
+											Bold
+										</Button>
+										<Button size="small" onClick={() => insertTag("<i>", "</i>")}>
+											Italic
+										</Button>
+										<Button size="small" onClick={() => insertTag("<u>", "</u>")}>
+											Underline
+										</Button>
+										<Button size="small" onClick={() => insertTag('<a href="#">', "</a>")}>
+											Link
+										</Button>
+										<Button size="small" onClick={() => insertTag("<br/>", "")}>
+											New Line
+										</Button>
 									</div>
 									<Form.Item name="announcement_text" noStyle>
 										<Input.TextArea
@@ -958,7 +949,10 @@ export default function PengaturanAdminPage() {
 									</div>
 
 									{hasExistingImage && (
-										<div className="mt-2 flex items-center justify-between rounded-lg px-3 py-1.5" style={{ backgroundColor: "var(--success-bg)" }}>
+										<div
+											className="mt-2 flex items-center justify-between rounded-lg px-3 py-1.5"
+											style={{ backgroundColor: "var(--success-bg)" }}
+										>
 											<span className="text-xs" style={{ color: "var(--success)" }}>
 												Banner aktif tersimpan
 											</span>
@@ -977,10 +971,15 @@ export default function PengaturanAdminPage() {
 									)}
 								</Form.Item>
 
-								<div className="rounded-xl border p-4" style={{ borderColor: "var(--border)", backgroundColor: "var(--bg-surface)" }}>
+								<div
+									className="rounded-xl border p-4"
+									style={{ borderColor: "var(--border)", backgroundColor: "var(--bg-surface)" }}
+								>
 									<div className="mb-3 text-sm font-semibold" style={{ color: "var(--text-secondary)" }}>
 										Tombol Aksi (CTA)
-										<Tag color="default" className="ml-1 font-normal">Opsional</Tag>
+										<Tag color="default" className="ml-1 font-normal">
+											Opsional
+										</Tag>
 									</div>
 									<Row gutter={12}>
 										<Col xs={24} sm={12}>
@@ -990,7 +989,10 @@ export default function PengaturanAdminPage() {
 										</Col>
 										<Col xs={24} sm={12}>
 											<Form.Item name="announcement_cta_url" label="URL Tujuan" className="mb-3">
-												<Input placeholder="https://..." prefix={<LinkOutlined style={{ color: "var(--text-muted)" }} />} />
+												<Input
+													placeholder="https://..."
+													prefix={<LinkOutlined style={{ color: "var(--text-muted)" }} />}
+												/>
 											</Form.Item>
 										</Col>
 									</Row>
@@ -1011,7 +1013,9 @@ export default function PengaturanAdminPage() {
 							className="rounded-xl border p-4 sticky top-4"
 							style={{ borderColor: "var(--border)", backgroundColor: "var(--bg-surface)" }}
 						>
-							<h4 className="mb-1 font-semibold" style={{ color: "var(--text-secondary)" }}>Smart Live Preview</h4>
+							<h4 className="mb-1 font-semibold" style={{ color: "var(--text-secondary)" }}>
+								Smart Live Preview
+							</h4>
 							<p className="mb-4 text-xs" style={{ color: "var(--text-muted)" }}>
 								Preview memantulkan tema, judul, dan tombol aksi secara langsung.
 							</p>
@@ -1041,11 +1045,7 @@ export default function PengaturanAdminPage() {
 
 			{/* ====== TAB: KONTAK ====== */}
 			<TabPanel id="kontak" activeTab={activeTab}>
-				<Card
-					title="Kontak &amp; Informasi"
-					className="card"
-					style={{ borderColor: "var(--border)" }}
-				>
+				<Card title="Kontak &amp; Informasi" className="card" style={{ borderColor: "var(--border)" }}>
 					<h3 className="text-base font-semibold mb-1" style={{ color: "var(--text-primary)" }}>
 						Informasi Kontak Landing Page
 					</h3>
@@ -1153,10 +1153,7 @@ export default function PengaturanAdminPage() {
 				</Card>
 
 				{/* Danger Zone */}
-				<Card
-					className="card"
-					style={{ borderColor: "var(--danger)", backgroundColor: "var(--danger-bg)" }}
-				>
+				<Card className="card" style={{ borderColor: "var(--danger)", backgroundColor: "var(--danger-bg)" }}>
 					<h3 className="text-base font-semibold mb-1" style={{ color: "var(--danger)" }}>
 						Danger Zone
 					</h3>

@@ -1,15 +1,16 @@
 import { DeleteOutlined, EditOutlined, PlusOutlined, UploadOutlined } from "@ant-design/icons";
-import { Button, Form, Input, Modal, Popconfirm, Radio, Space, Table, message, Tabs } from "antd";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Button, Form, Input, Modal, message, Popconfirm, Radio, Space, Table, Tabs } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createGallery, deleteGallery, getGallery, updateGallery } from "@/api/gallery.api";
 import { ImageUpload } from "@/components/admin/ImageUpload";
-import { MultiImageUpload, type UploadingFile } from "@/components/admin/MultiImageUpload";
 import { MetronicPage } from "@/components/admin/MetronicPage";
+import { MultiImageUpload, type UploadingFile } from "@/components/admin/MultiImageUpload";
+import { TableEmptyState, TableErrorState } from "@/components/admin/QueryState";
+import { useThemeStore } from "@/store/themeStore";
 import type { BranchGallery } from "@/types/database.types";
 import { resolveImageUrl, sanitizeUrl } from "@/utils/format";
-import { useThemeStore } from "@/store/themeStore";
 
 type ImageSourceType = "upload" | "url";
 
@@ -46,7 +47,13 @@ export default function GaleriAdminPage() {
 	const queryClient = useQueryClient();
 	const safePreviewUrl = sanitizeUrl(imageUrl);
 
-	const { data: gallery = [], isLoading } = useQuery({
+	const {
+		data: gallery = [],
+		isLoading,
+		isError,
+		error,
+		refetch,
+	} = useQuery({
 		queryKey: ["admin-gallery"],
 		queryFn: () => getGallery(),
 	});
@@ -217,13 +224,25 @@ export default function GaleriAdminPage() {
 		>
 			<div className="card">
 				<div className="table-container">
-					<Table
-						rowKey="id"
-						loading={isLoading}
-						columns={columns}
-						dataSource={gallery}
-						pagination={{ pageSize: 10, showSizeChanger: false }}
-					/>
+					{isError ? (
+						<TableErrorState title="Gagal memuat galeri" error={error} onRetry={() => void refetch()} />
+					) : (
+						<Table
+							rowKey="id"
+							loading={isLoading}
+							columns={columns}
+							dataSource={gallery}
+							pagination={{ pageSize: 10, showSizeChanger: false }}
+							locale={{
+								emptyText: (
+									<TableEmptyState
+										title="Belum ada foto galeri."
+										hint="Unggah foto supaya halaman galeri publik terisi."
+									/>
+								),
+							}}
+						/>
+					)}
 				</div>
 			</div>
 
@@ -358,7 +377,11 @@ function MultipleUploadForm({ form, uploadingFiles, setUploadingFiles }: Multipl
 			</Form.Item>
 
 			<Form.Item label="Caption Dasar" name="caption">
-				<Input.TextArea rows={2} placeholder="Contoh: 'Foto Laundry' akan menjadi 'Foto Laundry 1', dst" className="form-input" />
+				<Input.TextArea
+					rows={2}
+					placeholder="Contoh: 'Foto Laundry' akan menjadi 'Foto Laundry 1', dst"
+					className="form-input"
+				/>
 			</Form.Item>
 		</Form>
 	);

@@ -1,4 +1,4 @@
-import { createRecord, deleteRecord, escapeFilterValue, listRecords, updateRecord } from "@/api/pocketbase";
+import { createRecord, deleteRecord, escapeFilterValue, listRecords, updateRecord } from "@/api/client";
 import type { PageContent } from "@/types/database.types";
 
 export const getPageContents = async (group?: string): Promise<PageContent[]> => {
@@ -25,8 +25,8 @@ export const upsertPageContent = async (payload: Partial<PageContent>): Promise<
 		throw new Error("key wajib diisi");
 	}
 
-	// PocketBase rejects empty strings ("") for required text fields.
-	// We dynamically convert empty strings to a single space to pass validation reliably.
+	// Kolom nilai wajib tidak menerima string kosong; simpan satu spasi
+	// supaya validasi tetap lolos.
 	if (payload.value === "") {
 		payload.value = " ";
 	}

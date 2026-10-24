@@ -14,8 +14,9 @@ CREATE TABLE IF NOT EXISTS branches (
   cover_image VARCHAR(255) NULL,
   is_active TINYINT(1) NOT NULL DEFAULT 1,
   status ENUM('buka','tutup','ramai') NOT NULL DEFAULT 'buka',
-  price_wash INT NOT NULL DEFAULT 10000,
-  price_dry INT NOT NULL DEFAULT 10000,
+  coin_value INT NOT NULL DEFAULT 10000,
+  qris_enabled TINYINT(1) NOT NULL DEFAULT 0,
+  cash_enabled TINYINT(1) NOT NULL DEFAULT 1,
   sort_order INT NOT NULL DEFAULT 0,
   created DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -265,10 +266,10 @@ CREATE TABLE IF NOT EXISTS site_settings (
   updated DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-INSERT INTO branches (id, name, slug, address, whatsapp, email, description, is_active, status, price_wash, price_dry, sort_order)
+INSERT INTO branches (id, name, slug, address, whatsapp, email, description, is_active, status, coin_value, qris_enabled, cash_enabled, sort_order)
 VALUES
-('br_bohar001','MBA Laundry Bohar','mba-laundry-bohar','Jl. Bohar Raya, Sidoarjo','6281234567890','bohar@mba-laundry.com','Cabang self-service dengan area tunggu nyaman.',1,'buka',10000,10000,1),
-('br_pages001','MBA Laundry Pagesangan','mba-laundry-pagesangan','Jl. Pagesangan, Surabaya','6281234567890','pagesangan@mba-laundry.com','Cabang modern dekat area kos dan kampus.',1,'buka',10000,10000,2)
+('br_bohar001','MBA Laundry Bohar','mba-laundry-bohar','Jl. Bohar Raya, Sidoarjo','6281234567890','bohar@mba-laundry.com','Cabang self-service dengan area tunggu nyaman.',1,'buka',10000,0,1,1),
+('br_pages001','MBA Laundry Pagesangan','mba-laundry-pagesangan','Jl. Pagesangan, Surabaya','6281234567890','pagesangan@mba-laundry.com','Cabang modern dekat area kos dan kampus.',1,'buka',10000,0,1,2)
 ON DUPLICATE KEY UPDATE name=VALUES(name), updated=CURRENT_TIMESTAMP;
 
 INSERT INTO page_contents (id, `key`, `value`, type, label, `group`) VALUES
@@ -295,7 +296,7 @@ INSERT INTO page_contents (id, `key`, `value`, type, label, `group`) VALUES
 ('pc021','how_to_step2_title','Bayar & Mulai','text','How To Step 2 Title','howto'),
 ('pc022','how_to_step2_desc','Scan QRIS atau masukkan koin sesuai tarif','text','How To Step 2 Desc','howto'),
 ('pc023','how_to_step3_title','Tunggu & Ambil','text','How To Step 3 Title','howto'),
-('pc024','how_to_step3_desc','Estimasi 30–40 menit cuci, 20–30 menit kering','text','How To Step 3 Desc','howto')
+('pc024','how_to_step3_desc','Waktu cuci dan kering beda tiap kapasitas mesin','text','How To Step 3 Desc','howto')
 ON DUPLICATE KEY UPDATE `value`=VALUES(`value`), updated=CURRENT_TIMESTAMP;
 
 INSERT INTO site_settings (id, `key`, `value`, description) VALUES

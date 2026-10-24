@@ -1,4 +1,4 @@
-import { X, Sparkles } from "lucide-react";
+import { Sparkles, X } from "lucide-react";
 import { useEffect } from "react";
 import { ARTICLE_TEMPLATES, type ArticleTemplate } from "./BlogEditor";
 
