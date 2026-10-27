@@ -195,6 +195,9 @@ const SCHEMA = {
 		// pelanggan. Hanya boleh dibuat publik, dibaca hanya admin.
 		auth: { read: "admin", create: "public" },
 	},
+	shift_employees: { datetime: ["created", "updated"], order: "+branch_id,+sort_order,+name" },
+	shift_events: { datetime: ["created", "updated"], order: "-created" },
+	shift_assignments: { datetime: ["created", "updated"], order: "+date,+branch_id" },
 	site_settings: { datetime: ["created", "updated"], order: "+key", auth: { read: "public" } },
 	branding_files: { datetime: ["created", "updated"], file: ["file"], order: "-created", auth: { read: "public" } },
 };
@@ -245,6 +248,8 @@ const BOOLEAN_FIELDS = {
 	is_redeemed: true,
 	qris_enabled: true,
 	cash_enabled: true,
+	can_night: true,
+	backup_available: true,
 };
 
 // ---------------------------------------------------------------------------
@@ -855,6 +860,85 @@ async function ensureContactColumns() {
 	await ensureColumn("contact_messages", "branch_id", "VARCHAR(15) NULL");
 	await ensureColumn("contact_messages", "incident_date", "DATE NULL");
 	await ensureColumn("contact_messages", "machine_code", "VARCHAR(32) NULL");
+}
+
+// ---------------------------------------------------------------------------
+// Jadwal shift karyawan (Smart Laundry Shift Scheduler)
+// ---------------------------------------------------------------------------
+async function ensureShiftTables() {
+	await pool.query(`
+		CREATE TABLE IF NOT EXISTS \`shift_employees\` (
+			\`id\`           VARCHAR(15)  NOT NULL,
+			\`branch_id\`    VARCHAR(15)  NOT NULL,
+			\`name\`         VARCHAR(120) NOT NULL,
+			\`phone\`        VARCHAR(32)  NULL,
+			\`role\`         VARCHAR(32)  NOT NULL DEFAULT 'crew',
+			\`status\`       VARCHAR(16)  NOT NULL DEFAULT 'active',
+			\`can_night\`    TINYINT(1)   NOT NULL DEFAULT 1,
+			\`sort_order\`   INT          NOT NULL DEFAULT 0,
+			\`created\`      DATETIME     NULL,
+			\`updated\`      DATETIME     NULL,
+			PRIMARY KEY (\`id\`),
+			KEY \`idx_shift_emp_branch\` (\`branch_id\`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+	`);
+
+	await pool.query(`
+		CREATE TABLE IF NOT EXISTS \`shift_events\` (
+			\`id\`               VARCHAR(15)  NOT NULL,
+			\`employee_id\`      VARCHAR(15)  NOT NULL,
+			\`branch_id\`        VARCHAR(15)  NOT NULL,
+			\`date\`             DATE         NOT NULL,
+			\`end_date\`         DATE         NULL,
+			\`type\`             VARCHAR(16)  NOT NULL,
+			\`note\`             VARCHAR(255) NULL,
+			\`backup_available\` TINYINT(1)   NOT NULL DEFAULT 1,
+			\`created\`          DATETIME     NULL,
+			\`updated\`          DATETIME     NULL,
+			PRIMARY KEY (\`id\`),
+			KEY \`idx_shift_event_date\` (\`date\`),
+			KEY \`idx_shift_event_emp\` (\`employee_id\`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+	`);
+
+	await pool.query(`
+		CREATE TABLE IF NOT EXISTS \`shift_assignments\` (
+			\`id\`            VARCHAR(15)  NOT NULL,
+			\`branch_id\`     VARCHAR(15)  NOT NULL,
+			\`date\`          DATE         NOT NULL,
+			\`employee_id\`   VARCHAR(15)  NULL,
+			\`employee_name\` VARCHAR(120) NOT NULL,
+			\`shift\`         VARCHAR(16)  NOT NULL,
+			\`start_time\`    VARCHAR(8)   NOT NULL,
+			\`end_time\`      VARCHAR(8)   NOT NULL,
+			\`hours\`         INT          NOT NULL DEFAULT 8,
+			\`is_backup\`     TINYINT(1)   NOT NULL DEFAULT 0,
+			\`is_emergency\`  TINYINT(1)   NOT NULL DEFAULT 0,
+			\`note\`          VARCHAR(255) NULL,
+			\`created\`       DATETIME     NULL,
+			\`updated\`       DATETIME     NULL,
+			PRIMARY KEY (\`id\`),
+			KEY \`idx_shift_asg_date\` (\`date\`),
+			KEY \`idx_shift_asg_branch\` (\`branch_id\`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+	`);
+
+	// Dua cabang resmi: Bohar dan Pagesangan. Kalau tabel branches kosong,
+	// buat supaya penjadwalan bisa langsung dipakai.
+	const [[{ c }]] = await pool.query("SELECT COUNT(*) AS c FROM \`branches\`");
+	if (Number(c) === 0) {
+		const seeds = [
+			{ id: newRecordId(), name: "MBA Laundry Bohar", slug: "bohar" },
+			{ id: newRecordId(), name: "MBA Laundry Pagesangan", slug: "pagesangan" },
+		];
+		for (const seed of seeds) {
+			await pool.query(
+				"INSERT INTO \`branches\` (\`id\`,\`name\`,\`slug\`,\`address\`,\`is_active\`,\`status\`,\`sort_order\`,\`created\`) VALUES (?,?,?,'-',1,'buka',0,NOW())",
+				[seed.id, seed.name, seed.slug],
+			);
+		}
+		console.log("[api] cabang awal dibuat: Bohar, Pagesangan");
+	}
 }
 
 // ---------------------------------------------------------------------------
@@ -1692,6 +1776,7 @@ await mkdir(UPLOAD_DIR, { recursive: true });
 await ensureAdminTable();
 await ensureTranslationTable();
 await ensureContactColumns();
+await ensureShiftTables();
 
 app.listen(PORT, () => {
 	console.log(`[api] MBA Laundry API jalan di http://localhost:${PORT}`);

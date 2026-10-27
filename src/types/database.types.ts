@@ -241,6 +241,59 @@ export interface SiteSetting extends BaseTable {
 	description?: string;
 }
 
+// ---------------------------------------------------------------------------
+// Jadwal shift karyawan (Smart Laundry Shift Scheduler)
+// ---------------------------------------------------------------------------
+
+/** Tipe shift standar 8 jam + shift darurat 12 jam. */
+export type ShiftKind = "pagi" | "siang" | "malam" | "pagi12" | "sore12";
+
+/** Karyawan bisa ditandai izin / sakit / libur / resign per tanggal. */
+export type ShiftEventType = "izin" | "sakit" | "libur" | "resign";
+
+export type ShiftEmployeeRole = "crew" | "backup";
+
+export interface ShiftEmployee extends BaseTable {
+	branch_id: string;
+	name: string;
+	phone?: string | null;
+	/** `crew` = karyawan reguler, `backup` = Mbak Koperasi / anak magang. */
+	role: ShiftEmployeeRole;
+	status: "active" | "resigned";
+	/** false = hanya boleh Pagi & Siang (tidak pernah dapat shift Malam). */
+	can_night: boolean;
+	sort_order: number;
+}
+
+export interface ShiftEvent extends BaseTable {
+	employee_id: string;
+	branch_id: string;
+	/** Tanggal mulai (YYYY-MM-DD). */
+	date: string;
+	/** Tanggal selesai untuk izin/sakit beberapa hari (opsional). */
+	end_date?: string | null;
+	type: ShiftEventType;
+	note?: string | null;
+	/** Apakah Mbak Koperasi / magang siap menggantikan di tanggal itu. */
+	backup_available: boolean;
+}
+
+export interface ShiftAssignment extends BaseTable {
+	branch_id: string;
+	/** Tanggal kerja (YYYY-MM-DD). */
+	date: string;
+	/** null kalau slot diisi nama bebas (mis. backup dari luar). */
+	employee_id?: string | null;
+	employee_name: string;
+	shift: ShiftKind;
+	start_time: string;
+	end_time: string;
+	hours: number;
+	is_backup: boolean;
+	is_emergency: boolean;
+	note?: string | null;
+}
+
 // File branding: logo, favicon, gambar & thumbnail artikel.
 export interface BrandingFile extends BaseTable {
 	type: string;
@@ -265,6 +318,9 @@ export type CollectionRecordMap = {
 	loyalty_transactions: LoyaltyTransaction;
 	partnerships: Partnership;
 	contact_messages: ContactMessage;
+	shift_employees: ShiftEmployee;
+	shift_events: ShiftEvent;
+	shift_assignments: ShiftAssignment;
 	site_settings: SiteSetting;
 	branding_files: BrandingFile;
 };

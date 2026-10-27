@@ -3,6 +3,7 @@ import type { MenuProps } from "antd";
 import { Avatar, Dropdown } from "antd";
 import {
 	BarChart3,
+	CalendarClock,
 	GitBranch,
 	Image,
 	LucideBookOpen,
@@ -51,6 +52,7 @@ const dashboardMenuEntry: AdminMenuEntry = {
 
 const menuEntries: AdminMenuEntry[] = [
 	{ key: "/admin/cabang", label: "Cabang", group: "group-operasional" },
+	{ key: "/admin/jadwal", label: "Jadwal Shift", group: "group-operasional" },
 	{ key: "/admin/loker", label: "Lowongan Kerja", group: "group-operasional" },
 	{ key: "/admin/promo", label: "Promo", group: "group-konten" },
 	{ key: "/admin/blog", label: "Blog", group: "group-konten" },
@@ -206,6 +208,8 @@ function getMenuIcon(key: string): React.ReactNode {
 	switch (key) {
 		case "/admin/cabang":
 			return <GitBranch size={18} />;
+		case "/admin/jadwal":
+			return <CalendarClock size={18} />;
 		case "/admin/loker":
 			return <Users size={18} />;
 		case "/admin/promo":

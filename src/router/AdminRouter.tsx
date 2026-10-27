@@ -8,6 +8,7 @@ const AdminLayout = lazy(() => import("@/pages/admin/AdminLayout"));
 const LoginPage = lazy(() => import("@/pages/admin/LoginPage"));
 const DashboardPage = lazy(() => import("@/pages/admin/DashboardPage"));
 const CabangPage = lazy(() => import("@/pages/admin/cabang"));
+const JadwalShiftPage = lazy(() => import("@/pages/admin/jadwal"));
 const CabangKelolaPage = lazy(() => import("@/pages/admin/cabang/KelolaPage"));
 const CabangJamPage = lazy(() => import("@/pages/admin/cabang/JamPage"));
 const CabangFasilitasPage = lazy(() => import("@/pages/admin/cabang/FasilitasPage"));
@@ -63,6 +64,7 @@ export const adminRoutes: RouteObject = {
 					children: [
 						{ path: "dashboard", element: <DashboardPage /> },
 						{ path: "cabang", element: <CabangPage /> },
+						{ path: "jadwal", element: <JadwalShiftPage /> },
 						{ path: "cabang/:id", element: <CabangKelolaPage /> },
 						{ path: "cabang/:id/jam", element: <CabangJamPage /> },
 						{ path: "cabang/:id/fasilitas", element: <CabangFasilitasPage /> },
