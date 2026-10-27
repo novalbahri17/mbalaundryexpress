@@ -8,6 +8,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { Badge, Button, List, Popover, Tag, theme } from "antd";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { getPromos } from "@/api/promos.api";
 import { getContactMessages, getPartnerships } from "@/api/settings.api";
 import { formatDateTime } from "@/utils/format";
@@ -26,6 +27,7 @@ export interface NotificationItem {
 function NotificationCenter() {
 	const [open, setOpen] = useState(false);
 	const { token } = theme.useToken();
+	const navigate = useNavigate();
 
 	const { data: messages = [], isLoading: messagesLoading } = useQuery({
 		queryKey: ["notification-messages"],
@@ -126,8 +128,13 @@ function NotificationCenter() {
 
 	const notificationContent = (
 		<div className="w-96">
-			<div className="flex items-center justify-between border-b px-4 py-3">
-				<h4 className="m-0 text-base font-bold">Notifikasi</h4>
+			<div
+				className="flex items-center justify-between border-b px-4 py-3"
+				style={{ borderColor: token.colorBorderSecondary }}
+			>
+				<h4 className="m-0 text-base font-bold" style={{ color: token.colorText }}>
+					Notifikasi
+				</h4>
 				<div className="flex items-center gap-2">
 					<Button type="text" size="small" icon={<CheckCircleOutlined />}>
 						Tandai semua terbaca
@@ -142,25 +149,33 @@ function NotificationCenter() {
 					loading={messagesLoading || promosLoading}
 					renderItem={(item) => (
 						<List.Item
-							className={`cursor-pointer px-4 py-3 hover:bg-gray-50 ${!item.read ? "bg-blue-50" : ""}`}
+							className="notif-row cursor-pointer px-4 py-3"
+							style={{
+								borderBlockEndColor: token.colorBorderSecondary,
+								background: item.read ? "transparent" : token.colorPrimaryBg,
+							}}
 							onClick={() => {
-								if (item.actionUrl) {
-									window.location.href = item.actionUrl;
-								}
+								if (item.actionUrl) navigate(item.actionUrl);
 							}}
 						>
 							<List.Item.Meta
 								avatar={getNotificationIcon(item.type)}
 								title={
-									<div className="flex items-center justify-between">
-										<span className="font-semibold">{item.title}</span>
+									<div className="flex items-center justify-between gap-3">
+										<span className="font-semibold" style={{ color: token.colorText }}>
+											{item.title}
+										</span>
 										{getPriorityTag(item.priority)}
 									</div>
 								}
 								description={
 									<div>
-										<p className="m-0 text-sm">{item.description}</p>
-										<p className="m-0 mt-1 text-xs text-gray-500">{item.time}</p>
+										<p className="m-0 text-sm" style={{ color: token.colorTextSecondary }}>
+											{item.description}
+										</p>
+										<p className="m-0 mt-1 text-xs" style={{ color: token.colorTextTertiary }}>
+											{item.time}
+										</p>
 									</div>
 								}
 							/>
@@ -169,8 +184,8 @@ function NotificationCenter() {
 					locale={{ emptyText: "Tidak ada notifikasi baru" }}
 				/>
 			</div>
-			<div className="border-t p-3 text-center">
-				<Button type="link" onClick={() => (window.location.href = "/admin/pesan")}>
+			<div className="border-t p-3 text-center" style={{ borderColor: token.colorBorderSecondary }}>
+				<Button type="link" onClick={() => navigate("/admin/pesan")}>
 					Lihat semua notifikasi
 				</Button>
 			</div>
