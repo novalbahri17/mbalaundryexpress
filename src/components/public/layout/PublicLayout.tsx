@@ -1,19 +1,20 @@
+import { AnimatePresence, motion } from "framer-motion";
 import type { CSSProperties } from "react";
 import { useEffect, useMemo, useRef } from "react";
-import { AnimatePresence, motion } from "framer-motion";
 import { Outlet, useLocation } from "react-router-dom";
 import { AutoTranslate } from "@/components/public/layout/AutoTranslate";
 import { BottomNav } from "@/components/public/layout/BottomNav";
+import { DynamicFavicon } from "@/components/public/layout/DynamicFavicon";
 import { FloatingWA } from "@/components/public/layout/FloatingWA";
 import { Footer } from "@/components/public/layout/Footer";
 import { Navbar } from "@/components/public/layout/Navbar";
 import { PublicSeo } from "@/components/public/layout/PublicSeo";
-import { DynamicFavicon } from "@/components/public/layout/DynamicFavicon";
+import { ToastContainer } from "@/design-system";
 import { usePageContentMap } from "@/hooks/usePageContent";
 import { usePublicText } from "@/hooks/usePublicText";
 import { useSiteSettingsMap } from "@/hooks/useSiteSettings";
+import { useLocaleStore } from "@/store/localeStore";
 import { normalizeHexColor } from "@/utils/validation";
-import { ToastContainer } from "@/design-system";
 
 function ScrollProgress() {
 	const progressRef = useRef<HTMLDivElement>(null);
@@ -38,6 +39,9 @@ function ScrollProgress() {
 export function PublicLayout() {
 	const { data: content = {} } = usePageContentMap();
 	const { data: siteSettings = {} } = useSiteSettingsMap();
+	// Saat bahasa diganti, seluruh pohon halaman di-mount ulang supaya tidak ada
+	// sisa teks lama (Indonesia) yang tertinggal di DOM.
+	const locale = useLocaleStore((state) => state.locale);
 	const location = useLocation();
 	const text = usePublicText();
 
@@ -59,9 +63,13 @@ export function PublicLayout() {
 		[landingBgDark, landingBgLight],
 	);
 
+	// Sengaja bergantung pada `location.pathname`: tiap pindah halaman kita
+	// ingin halaman kembali ke atas. Dipakai lewat `void` agar biome mengerti.
+	const pathname = location.pathname;
 	useEffect(() => {
+		void pathname;
 		window.scrollTo({ top: 0, behavior: "auto" });
-	}, [location.pathname]);
+	}, [pathname]);
 
 	return (
 		<div
@@ -88,7 +96,7 @@ export function PublicLayout() {
 						exit={{ opacity: 0, y: -8 }}
 						transition={{ duration: 0.22, ease: "easeOut" }}
 					>
-						<Outlet />
+						<Outlet key={locale} />
 					</motion.div>
 				</AnimatePresence>
 			</main>

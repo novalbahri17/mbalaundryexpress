@@ -2,54 +2,55 @@ import { Coins, TimerReset, WashingMachine } from "lucide-react";
 import { Link } from "react-router-dom";
 import { GradientText } from "@/components/public/shared/GradientText";
 import { ScrollReveal } from "@/components/public/shared/ScrollReveal";
-import { usePageContentMap } from "@/hooks/usePageContent";
+import { useLandingText } from "@/hooks/useLandingText";
 import { usePublicText } from "@/hooks/usePublicText";
-import { useLocaleStore } from "@/store/localeStore";
 
 export function CaraPakaiSection() {
 	const text = usePublicText();
-	const t = text.home.caraPakai;
-	const locale = useLocaleStore((state) => state.locale);
-	const { data: content = {} } = usePageContentMap();
-
-	// Konten dari database bisa punya versi Inggris (suffix `_en`). Kalau tidak
-	// ada, pakai kamus bawaan supaya tidak ada teks Indonesia yang bocor di mode EN.
-	const pick = (base: string, fallback: string) => {
-		const localized = content[`${base}_en`];
-		if (locale === "en" && localized) return localized;
-		return content[base] ?? fallback;
-	};
+	const t = text.home.howItWorks;
+	// Teks dari admin (menu "Teks Landing") + versi Inggrisnya.
+	// Kunci lama `how_to_step*` tetap dipakai supaya isian admin yang sudah ada
+	// tidak hilang.
+	const { values: landing } = useLandingText();
 
 	const steps = [
 		{
-			title: pick("how_to_step1_title", t.step1Title),
-			desc: pick("how_to_step1_desc", t.step1Desc),
+			title: landing.landing_how_step1_title || t.step1Title,
+			desc: landing.landing_how_step1_desc || t.step1Desc,
 			icon: WashingMachine,
 			accent: "text-ruby-600 dark:text-ruby-300",
 			bg: "bg-ruby-100/90 dark:bg-ruby-500/18",
 		},
 		{
-			title: pick("how_to_step2_title", t.step2Title),
-			desc: pick("how_to_step2_desc", t.step2Desc),
+			title: landing.landing_how_step2_title || t.step2Title,
+			desc: landing.landing_how_step2_desc || t.step2Desc,
 			icon: Coins,
 			accent: "text-sapphire-600 dark:text-sapphire-300",
 			bg: "bg-sapphire-100/90 dark:bg-sapphire-500/18",
 		},
 		{
-			title: pick("how_to_step3_title", t.step3Title),
-			desc: pick("how_to_step3_desc", t.step3Desc),
+			title: landing.landing_how_step3_title || t.step3Title,
+			desc: landing.landing_how_step3_desc || t.step3Desc,
 			icon: TimerReset,
 			accent: "text-teal-600 dark:text-teal-300",
 			bg: "bg-teal-100/90 dark:bg-teal-500/18",
 		},
 	];
 
+	// Judul bagian: pakai teks landing yang bisa diedit admin, dipecah supaya
+	// bagian akhirnya diberi gradien.
+	const heading = (landing.landing_how_title || t.title).trim();
+	const highlightAt = heading.lastIndexOf(" ");
+	const headingLead = highlightAt > 0 ? heading.slice(0, highlightAt + 1) : "";
+	const headingHighlight = highlightAt > 0 ? heading.slice(highlightAt + 1) : heading;
+
 	return (
 		<section className="section-wrap mt-24" id="cara-pakai">
 			<ScrollReveal className="mb-10 text-center">
-				<p className="section-kicker">{t.kicker}</p>
+				<p className="section-kicker">{landing.landing_how_kicker}</p>
 				<h2 className="section-title">
-					{t.title} <GradientText>{t.titleHighlight}</GradientText>
+					{headingLead}
+					<GradientText>{headingHighlight}</GradientText>
 				</h2>
 			</ScrollReveal>
 

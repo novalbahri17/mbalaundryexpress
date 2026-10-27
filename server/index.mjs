@@ -1093,9 +1093,9 @@ function enforceAccess(req, res, collection, action) {
 // Hasil terjemahan disimpan permanen, jadi biaya/latensi hanya muncul sekali
 // per teks. Kalau layanan penerjemah tidak bisa dihubungi, endpoint tetap
 // membalas 200 dengan teks asli supaya halaman tidak rusak.
-const TRANSLATION_PROVIDER =
-	"https://translate.googleapis.com/translate_a/single?client=gtx&sl=id&tl=en&dt=t&q=";
+const TRANSLATION_PROVIDER = "https://clients5.google.com/translate_a/t?client=dict-chrome-ex";
 const TRANSLATE_BATCH_LIMIT = 60;
+const TRANSLATE_WAVE = 25;
 const TRANSLATE_TEXT_LIMIT = 1500;
 // Jangan buang kuota penerjemah untuk teks yang tidak perlu diterjemahkan.
 const TRANSLATE_SKIP_RE = /^[\s\d\p{P}\p{S}]*$/u;
@@ -1154,37 +1154,76 @@ async function writeTranslationCache(pairs, target) {
 	);
 }
 
+const TRANSLATION_HEADERS = {
+	// Tanpa header ini Google kadang membalas 403.
+	"User-Agent":
+		"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+	Accept: "application/json,text/plain,*/*",
+};
+
+/** Satu teks per panggilan (dipakai sebagai cadangan / untuk teks panjang). */
 /**
- * Terjemahkan lewat Google Translate (endpoint publik `client=gtx`).
- * Mengembalikan null kalau gagal, supaya pemanggil bisa memakai teks asli.
+ * Terjemahkan satu atau banyak teks dalam SATU request.
+ *
+ * Endpoint `clients5` menerima parameter `q` berulang dan membalas array JSON
+ * ("a", "b", "c") yang urutannya sama dengan urutan `q`. Kalau hanya satu `q`
+ * yang dikirim, balasannya berupa array berisi satu string.
+ *
+ * Mengembalikan array sepanjang `texts`; item bernilai null kalau gagal.
  */
-async function translateViaGoogle(text, target) {
-	const url = `${TRANSLATION_PROVIDER.replace("tl=en", `tl=${encodeURIComponent(target)}`)}${encodeURIComponent(text)}`;
+async function translateMany(texts, target) {
+	if (texts.length === 0) return [];
+	const params = new URLSearchParams();
+	params.set("sl", "id");
+	params.set("tl", target);
+	for (const text of texts) params.append("q", text);
+	const url = `${TRANSLATION_PROVIDER}&${params.toString()}`;
 	const controller = new AbortController();
-	const timer = setTimeout(() => controller.abort(), 8000);
+	const timer = setTimeout(() => controller.abort(), 12_000);
 	try {
-		const response = await fetch(url, {
-			signal: controller.signal,
-			headers: {
-				// Tanpa header ini Google kadang membalas 403.
-				"User-Agent":
-					"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
-				Accept: "application/json,text/plain,*/*",
-			},
-		});
-		if (!response.ok) return null;
+		const response = await fetch(url, { signal: controller.signal, headers: TRANSLATION_HEADERS });
+		if (!response.ok) {
+			logError("translate http", new Error(`status ${response.status}`));
+			return texts.map(() => null);
+		}
 		const payload = await response.json();
-		const chunks = Array.isArray(payload?.[0]) ? payload[0] : [];
-		const joined = chunks
-			.map((chunk) => (Array.isArray(chunk) ? String(chunk[0] ?? "") : ""))
-			.join("")
-			.trim();
-		return joined || null;
-	} catch {
-		return null;
+		const list = Array.isArray(payload) ? payload : [payload];
+		// Balasan bisa diratakan (semua teks dalam satu array) — cocokkan per urutan.
+		const flat = list.flat().map((item) => (typeof item === "string" ? item.trim() : null));
+		return texts.map((_text, index) => flat[index] || null);
+	} catch (error) {
+		logError("translate fetch", error);
+		return texts.map(() => null);
 	} finally {
 		clearTimeout(timer);
 	}
+}
+
+/** Satu teks saja (dipakai untuk teks panjang / cadangan). */
+async function translateOne(text, target) {
+	const [result] = await translateMany([text], target);
+	return result;
+}
+
+/**
+ * Terjemahkan kumpulan teks. Dipecah per gelombang supaya URL tidak terlalu
+ * panjang; tiap gelombang hanya perlu satu request.
+ */
+async function translateBatch(texts, target) {
+	const results = new Array(texts.length).fill(null);
+	for (let index = 0; index < texts.length; index += TRANSLATE_WAVE) {
+		const slice = texts.slice(index, index + TRANSLATE_WAVE);
+		const translated = await translateMany(slice, target);
+		translated.forEach((value, offset) => {
+			results[index + offset] = value;
+		});
+	}
+	return results;
+}
+
+async function translateViaGoogle(text, target) {
+	const [result] = await translateBatch([text], target);
+	return result ?? null;
 }
 
 async function handleTranslate(req, res) {
@@ -1221,7 +1260,7 @@ async function handleTranslate(req, res) {
 	for (const [source, translated] of cached) translations[source] = translated;
 
 	if (missing.length > 0) {
-		const fetched = await Promise.all(missing.map((text) => translateViaGoogle(text, target)));
+		const fetched = await translateBatch(missing, target);
 		const fresh = [];
 		missing.forEach((text, index) => {
 			const translated = fetched[index];
