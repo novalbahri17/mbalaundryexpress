@@ -19,7 +19,7 @@ export function TemplatePicker({ onSelect, onClose }: TemplatePickerProps) {
 
 	return (
 		<div className="template-picker-overlay" onClick={onClose}>
-			<div className="template-picker" onClick={(e) => e.stopPropagation()}>
+			<div className="template-picker" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()} role="dialog" aria-modal="true" aria-label="Pilih template artikel">
 				<div className="template-picker-header">
 					<div className="template-picker-title-wrap">
 						<span className="template-picker-icon">
