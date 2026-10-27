@@ -120,6 +120,7 @@ export default function CabangMesinPage() {
 		{
 			title: "Jenis",
 			dataIndex: "kind",
+			width: 95,
 			render: (kind: string) => (
 				<Tag color={kind === "wash" ? "volcano" : "blue"}>{kind === "wash" ? "Cuci" : "Kering"}</Tag>
 			),
@@ -127,21 +128,30 @@ export default function CabangMesinPage() {
 		{
 			title: "Kapasitas",
 			key: "capacity",
+			width: 105,
 			render: (_, r) =>
-				r.capacity_min === r.capacity_max ? `${r.capacity_min}kg` : `${r.capacity_min}-${r.capacity_max}kg`,
+				r.capacity_min === r.capacity_max ? `${r.capacity_min} kg` : `${r.capacity_min}-${r.capacity_max} kg`,
 		},
 		{
 			title: "Durasi",
 			key: "duration",
+			width: 118,
 			render: (_, r) => {
 				if (!r.duration_max || r.duration_min === r.duration_max) return `${r.duration_min} menit`;
 				return `${r.duration_min}-${r.duration_max} menit`;
 			},
 		},
-		{ title: "Coin", dataIndex: "coins" },
+		{
+			title: "Coin",
+			dataIndex: "coins",
+			width: 76,
+			align: "center",
+			render: (coins: number) => <span className="font-semibold">{coins}</span>,
+		},
 		{
 			title: "Harga Tunai",
 			key: "price",
+			width: 128,
 			render: (_, r) => {
 				const text = `Rp ${(r.coins * coinValue).toLocaleString("id-ID")}`;
 				return cashEnabled ? (
@@ -154,6 +164,7 @@ export default function CabangMesinPage() {
 		{
 			title: "Harga QRIS",
 			key: "qris",
+			width: 128,
 			render: (_, r) => {
 				if (!r.qris_price) return <span className="text-neutral-400">-</span>;
 				return (
@@ -166,14 +177,17 @@ export default function CabangMesinPage() {
 		{
 			title: "Aktif",
 			dataIndex: "is_active",
-			render: (v: boolean) => (v ? "Ya" : "Tidak"),
+			width: 86,
+			align: "center",
+			render: (v: boolean) => (v ? <Tag color="success">Ya</Tag> : <Tag color="default">Tidak</Tag>),
 		},
 		{
 			title: "Aksi",
 			key: "action",
-			width: 140,
+			width: 104,
+			align: "center",
 			render: (_, record) => (
-				<Space>
+				<Space size={4}>
 					<Button icon={<EditOutlined />} onClick={() => handleEdit(record)} />
 					<Popconfirm title="Hapus mesin ini?" onConfirm={() => handleDelete(record)}>
 						<Button danger icon={<DeleteOutlined />} />
@@ -187,22 +201,46 @@ export default function CabangMesinPage() {
 		<MetronicPage title="Mesin & Tarif" subtitle="Atur kapasitas, durasi, jumlah coin, dan harga QRIS tiap mesin.">
 			<BranchContextHeader branchId={id} activeTab="mesin" />
 
-			<div className="mt-5 mb-4 flex flex-wrap items-center gap-x-4 gap-y-2">
-				<p className="text-sm text-neutral-600 dark:text-neutral-400">
-					1 coin = <strong>Rp {coinValue.toLocaleString("id-ID")}</strong> (diatur di data cabang)
-				</p>
-				<p className={`text-sm ${cashEnabled ? "text-emerald-600" : "text-neutral-500"}`}>
-					Pembayaran tunai: <strong>{cashEnabled ? "diterima" : "tidak diterima"}</strong>
-				</p>
-				<p className={`text-sm ${qrisEnabled ? "text-emerald-600" : "text-neutral-500"}`}>
-					Pembayaran QRIS: <strong>{qrisEnabled ? "aktif" : "tidak aktif"}</strong>
-				</p>
+			{/* Ringkasan tarif: satu kartu dengan tiga blok terpisah supaya tiap
+			    nilai tidak berdempetan seperti sebelumnya. */}
+			<div className="card mt-5">
+				<div className="grid grid-cols-1 divide-y divide-neutral-200 sm:grid-cols-3 sm:divide-x sm:divide-y-0 dark:divide-neutral-700">
+					<div className="px-5 py-4">
+						<p className="m-0 text-[11px] font-bold uppercase tracking-[0.12em] text-neutral-400">Nilai 1 Coin</p>
+						<p className="m-0 mt-1 text-sm font-bold text-neutral-800 dark:text-neutral-100">
+							Rp {coinValue.toLocaleString("id-ID")}
+						</p>
+						<p className="m-0 mt-1 text-xs text-neutral-500 dark:text-neutral-400">Diatur di data cabang</p>
+					</div>
+					<div className="px-5 py-4">
+						<p className="m-0 text-[11px] font-bold uppercase tracking-[0.12em] text-neutral-400">Pembayaran Tunai</p>
+						<p className={`m-0 mt-1 text-sm font-bold ${cashEnabled ? "text-emerald-600" : "text-neutral-500"}`}>
+							{cashEnabled ? "Diterima" : "Tidak diterima"}
+						</p>
+						<p className="m-0 mt-1 text-xs text-neutral-500 dark:text-neutral-400">Harga tunai mengikuti coin</p>
+					</div>
+					<div className="px-5 py-4">
+						<p className="m-0 text-[11px] font-bold uppercase tracking-[0.12em] text-neutral-400">Pembayaran QRIS</p>
+						<p className={`m-0 mt-1 text-sm font-bold ${qrisEnabled ? "text-emerald-600" : "text-neutral-500"}`}>
+							{qrisEnabled ? "Aktif" : "Tidak aktif"}
+						</p>
+						<p className="m-0 mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+							{qrisEnabled ? "Bisa dibayar pakai QRIS" : "Hanya coin / tunai"}
+						</p>
+					</div>
+				</div>
 			</div>
 
 			<div className="card mb-6">
-				<div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-					<p className="text-sm font-semibold">Mesin Cuci</p>
+				<div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200 px-5 py-4 dark:border-neutral-700">
+					<div className="flex items-center gap-2">
+						<p className="m-0 text-sm font-bold text-neutral-800 dark:text-neutral-100">Mesin Cuci</p>
+						<Tag color="volcano" className="m-0">
+							{washMachines.length} mesin
+						</Tag>
+					</div>
 					<Button
+						className="admin-soft-btn"
 						icon={<PlusOutlined />}
 						onClick={() => {
 							openCreate("wash");
@@ -211,33 +249,42 @@ export default function CabangMesinPage() {
 						Tambah Mesin Cuci
 					</Button>
 				</div>
-				<div className="table-container">
-					{isError ? (
-						<TableErrorState title="Gagal memuat mesin" error={error} onRetry={() => void refetch()} />
-					) : (
-						<Table<BranchMachine>
-							rowKey="id"
-							loading={isLoading}
-							dataSource={washMachines}
-							columns={columns}
-							pagination={false}
-							locale={{
-								emptyText: (
-									<TableEmptyState
-										title="Belum ada mesin cuci."
-										hint="Tambahkan mesin cuci beserta jumlah coin per sekali pakai."
-									/>
-								),
-							}}
-						/>
-					)}
+				<div className="p-5">
+					<div className="table-container admin-data-table">
+						{isError ? (
+							<TableErrorState title="Gagal memuat mesin" error={error} onRetry={() => void refetch()} />
+						) : (
+							<Table<BranchMachine>
+								rowKey="id"
+								loading={isLoading}
+								dataSource={washMachines}
+								columns={columns}
+								pagination={false}
+								scroll={{ x: 840 }}
+								locale={{
+									emptyText: (
+										<TableEmptyState
+											title="Belum ada mesin cuci."
+											hint="Tambahkan mesin cuci beserta jumlah coin per sekali pakai."
+										/>
+									),
+								}}
+							/>
+						)}
+					</div>
 				</div>
 			</div>
 
 			<div className="card">
-				<div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-					<p className="text-sm font-semibold">Pengering</p>
+				<div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200 px-5 py-4 dark:border-neutral-700">
+					<div className="flex items-center gap-2">
+						<p className="m-0 text-sm font-bold text-neutral-800 dark:text-neutral-100">Pengering</p>
+						<Tag color="blue" className="m-0">
+							{dryMachines.length} mesin
+						</Tag>
+					</div>
 					<Button
+						className="admin-soft-btn"
 						icon={<PlusOutlined />}
 						onClick={() => {
 							openCreate("dry");
@@ -246,26 +293,29 @@ export default function CabangMesinPage() {
 						Tambah Pengering
 					</Button>
 				</div>
-				<div className="table-container">
-					{isError ? (
-						<TableErrorState title="Gagal memuat mesin" error={error} onRetry={() => void refetch()} />
-					) : (
-						<Table<BranchMachine>
-							rowKey="id"
-							loading={isLoading}
-							dataSource={dryMachines}
-							columns={columns}
-							pagination={false}
-							locale={{
-								emptyText: (
-									<TableEmptyState
-										title="Belum ada pengering."
-										hint="Tambahkan pengering supaya pelanggan tahu tarif keringnya."
-									/>
-								),
-							}}
-						/>
-					)}
+				<div className="p-5">
+					<div className="table-container admin-data-table">
+						{isError ? (
+							<TableErrorState title="Gagal memuat mesin" error={error} onRetry={() => void refetch()} />
+						) : (
+							<Table<BranchMachine>
+								rowKey="id"
+								loading={isLoading}
+								dataSource={dryMachines}
+								columns={columns}
+								pagination={false}
+								scroll={{ x: 840 }}
+								locale={{
+									emptyText: (
+										<TableEmptyState
+											title="Belum ada pengering."
+											hint="Tambahkan pengering supaya pelanggan tahu tarif keringnya."
+										/>
+									),
+								}}
+							/>
+						)}
+					</div>
 				</div>
 			</div>
 
@@ -280,6 +330,8 @@ export default function CabangMesinPage() {
 				okText="Simpan"
 				cancelText="Batal"
 				destroyOnClose
+				className="admin-modal"
+				width={560}
 			>
 				<Form form={form} layout="vertical">
 					<Form.Item label="Jenis Mesin" name="kind" rules={[{ required: true }]}>
