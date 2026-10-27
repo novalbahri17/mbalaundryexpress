@@ -113,8 +113,6 @@ function SidebarMenu({
 	collapsed: boolean;
 	onSelect: (key: string) => void;
 }) {
-	const location = useLocation();
-
 	const items = useMemo<MenuProps["items"]>(() => {
 		const dashboardItem = {
 			key: dashboardMenuEntry.key,
@@ -123,6 +121,10 @@ function SidebarMenu({
 			className: selectedKey === dashboardMenuEntry.key ? "menu-item-active" : "",
 		};
 
+		// Bandingkan dengan `selectedKey` (hasil pencocokan path terpanjang),
+		// bukan `startsWith`. Dengan `startsWith`, halaman
+		// /admin/pengaturan/branding juga cocok dengan "/admin/pengaturan"
+		// sehingga dua menu tersorot sekaligus.
 		if (collapsed) {
 			return [
 				dashboardItem,
@@ -130,7 +132,7 @@ function SidebarMenu({
 					key: entry.key,
 					label: entry.label,
 					icon: getMenuIcon(entry.key),
-					className: location.pathname.startsWith(entry.key) ? "menu-item-active" : "",
+					className: selectedKey === entry.key ? "menu-item-active" : "",
 				})),
 			];
 		}
@@ -145,12 +147,12 @@ function SidebarMenu({
 					key: entry.key,
 					label: entry.label,
 					icon: getMenuIcon(entry.key),
-					className: location.pathname.startsWith(entry.key) ? "menu-item-active" : "",
+					className: selectedKey === entry.key ? "menu-item-active" : "",
 				})),
 		}));
 
 		return [dashboardItem, ...groups];
-	}, [collapsed, location.pathname, selectedKey]);
+	}, [collapsed, selectedKey]);
 
 	const onClick: MenuProps["onClick"] = ({ key }) => {
 		onSelect(key);
