@@ -59,13 +59,13 @@ export default function FaqPage() {
 										<button
 											type="button"
 											onClick={() => setOpenId((prev) => (prev === item.id ? null : item.id))}
-											className="flex w-full items-center justify-between gap-4 px-4 py-3 text-left text-sm font-semibold"
+											className="flex w-full items-center justify-between gap-4 px-4 py-3 text-left text-sm font-semibold text-neutral-900 dark:text-neutral-50"
 										>
 											<span>{item.question}</span>
-											<span>{open ? "-" : "+"}</span>
+											<span className="text-neutral-500 dark:text-neutral-300">{open ? "-" : "+"}</span>
 										</button>
 										{open ? (
-											<div className="border-t border-slate-200 px-4 py-3 text-sm text-[var(--text-muted)] dark:border-slate-700">
+											<div className="border-t border-slate-200 px-4 py-3 text-sm text-[var(--text-muted)] dark:border-neutral-700">
 												{item.answer}
 											</div>
 										) : null}

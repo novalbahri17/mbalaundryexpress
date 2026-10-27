@@ -2,12 +2,14 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowRightIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { getArticles } from "@/api/articles.api";
+import { useLandingText } from "@/hooks/useLandingText";
 import { usePublicText } from "@/hooks/usePublicText";
 import { formatDate } from "@/utils/format";
 
 export function BlogSection() {
 	const text = usePublicText();
 	const t = text.home.blog;
+	const { values: landing } = useLandingText();
 	const { data: articles = [], isLoading } = useQuery({
 		queryKey: ["home-article-preview"],
 		queryFn: () => getArticles({ publishedOnly: true, limit: 3 }),
@@ -19,9 +21,9 @@ export function BlogSection() {
 		<section className="section-block bg-neutral-50 dark:bg-neutral-900">
 			<div className="section-inner flex flex-col items-center">
 				{/* HEADER */}
-				<p className="section-kicker">{t.kicker}</p>
-				<h2 className="section-title text-center">{t.title}</h2>
-				<p className="section-subtitle text-center">{t.subtitle}</p>
+				<p className="section-kicker">{landing.landing_blog_kicker}</p>
+				<h2 className="section-title text-center">{landing.landing_blog_title}</h2>
+				<p className="section-subtitle text-center">{landing.landing_blog_subtitle}</p>
 
 				{/* CONTENT GRID */}
 				<div className="mt-14 grid w-full grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 lg:gap-8">

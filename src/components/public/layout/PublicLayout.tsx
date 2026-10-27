@@ -2,6 +2,7 @@ import type { CSSProperties } from "react";
 import { useEffect, useMemo, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Outlet, useLocation } from "react-router-dom";
+import { AutoTranslate } from "@/components/public/layout/AutoTranslate";
 import { BottomNav } from "@/components/public/layout/BottomNav";
 import { FloatingWA } from "@/components/public/layout/FloatingWA";
 import { Footer } from "@/components/public/layout/Footer";
@@ -67,6 +68,7 @@ export function PublicLayout() {
 			style={publicStyle}
 			className="relative min-h-screen overflow-x-hidden bg-[var(--landing-bg-light)] text-[var(--text-main)] dark:bg-[var(--landing-bg-dark)]"
 		>
+			<AutoTranslate />
 			<PublicSeo />
 			<DynamicFavicon />
 			<a

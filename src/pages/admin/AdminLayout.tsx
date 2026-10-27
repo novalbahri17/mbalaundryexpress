@@ -11,6 +11,7 @@ import {
 	Settings2,
 	ShieldCheck,
 	Star,
+	Type,
 	Users,
 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -62,6 +63,7 @@ const menuEntries: AdminMenuEntry[] = [
 	// Harus di atas "/admin/pengaturan" supaya pencocokan path terpanjang
 	// memilih menu Branding saat halaman /admin/pengaturan/branding dibuka.
 	{ key: "/admin/pengaturan/branding", label: "Logo & Branding", group: "group-komunikasi" },
+	{ key: "/admin/pengaturan/teks-landing", label: "Teks Landing", group: "group-komunikasi" },
 	{ key: "/admin/pengaturan", label: "Pengaturan", group: "group-komunikasi" },
 ];
 
@@ -226,6 +228,8 @@ function getMenuIcon(key: string): React.ReactNode {
 			return <Settings2 size={18} />;
 		case "/admin/pengaturan/branding":
 			return <Image size={18} />;
+		case "/admin/pengaturan/teks-landing":
+			return <Type size={18} />;
 		default:
 			return <SettingOutlined />;
 	}

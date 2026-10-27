@@ -2,34 +2,36 @@ import { motion } from "framer-motion";
 import { ArrowRight, CircleDollarSign, Clock, LayoutGrid } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ScrollReveal, StaggerContainer, StaggerItem } from "@/components/public/shared/ScrollReveal";
+import { useLandingText } from "@/hooks/useLandingText";
 import { usePublicText } from "@/hooks/usePublicText";
 import { cn } from "@/utils";
 
 export function HowItWorksSection() {
 	const text = usePublicText();
 	const t = text.home.howItWorks;
+	const { values: landing } = useLandingText();
 
 	const steps = [
 		{
 			number: "1",
-			title: t.step1Title,
-			description: t.step1Desc,
+			title: landing.landing_how_step1_title,
+			description: landing.landing_how_step1_desc,
 			icon: LayoutGrid,
 			bgClass: "bg-ruby-100 dark:bg-ruby-900/30",
 			iconClass: "text-ruby-600 dark:text-ruby-400",
 		},
 		{
 			number: "2",
-			title: t.step2Title,
-			description: t.step2Desc,
+			title: landing.landing_how_step2_title,
+			description: landing.landing_how_step2_desc,
 			icon: CircleDollarSign,
 			bgClass: "bg-sapphire-100 dark:bg-sapphire-900/30",
 			iconClass: "text-sapphire-600 dark:text-sapphire-400",
 		},
 		{
 			number: "3",
-			title: t.step3Title,
-			description: t.step3Desc,
+			title: landing.landing_how_step3_title,
+			description: landing.landing_how_step3_desc,
 			icon: Clock,
 			bgClass: "bg-teal-100 dark:bg-teal-900/30",
 			iconClass: "text-teal-600 dark:text-teal-400",
@@ -52,16 +54,16 @@ export function HowItWorksSection() {
 			<div className="section-inner relative flex flex-col items-center">
 				{/* HEADER */}
 				<ScrollReveal>
-					<p className="section-kicker">{t.kicker}</p>
+					<p className="section-kicker">{landing.landing_how_kicker}</p>
 				</ScrollReveal>
 
 				<ScrollReveal delay={0.1}>
-					<h2 className="section-title text-center">{t.title}</h2>
+					<h2 className="section-title text-center">{landing.landing_how_title}</h2>
 				</ScrollReveal>
 
 				<ScrollReveal delay={0.2}>
 					<p className="mt-4 text-center text-[18px] leading-[1.5] text-neutral-600 dark:text-neutral-300">
-						{t.subtitle}
+						{landing.landing_how_subtitle}
 					</p>
 				</ScrollReveal>
 

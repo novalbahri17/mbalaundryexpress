@@ -981,6 +981,13 @@ app.get("/api/health", (_req, res) => {
 	res.json({ code: 200, message: "API is healthy.", data: {} });
 });
 
+// --- translate -----------------------------------------------------------
+app.get(
+	"/api/translate",
+	rateLimitMiddleware({ name: "translate", limit: 240, windowMs: 60_000 }),
+	handleTranslate,
+);
+
 // --- auth -----------------------------------------------------------------
 app.post(
 	"/api/collections/_superusers/auth-with-password",
@@ -1071,6 +1078,250 @@ function enforceAccess(req, res, collection, action) {
 	return false;
 }
 
+// ---------------------------------------------------------------------------
+// Auto-translate
+// ---------------------------------------------------------------------------
+// Konten publik di MySQL ditulis admin dalam bahasa Indonesia. Saat pengunjung
+// memilih bahasa Inggris, teks dari database perlu diterjemahkan otomatis.
+//
+// Alur:
+//   GET /api/translate?target=en&q=<teks>&q=<teks>...
+//     -> ambil dari tabel `translations` (cache permanen di MySQL)
+//     -> yang belum ada, terjemahkan lewat Google Translate (tanpa API key),
+//        lalu simpan ke tabel supaya tidak pernah diterjemahkan dua kali.
+//
+// Hasil terjemahan disimpan permanen, jadi biaya/latensi hanya muncul sekali
+// per teks. Kalau layanan penerjemah tidak bisa dihubungi, endpoint tetap
+// membalas 200 dengan teks asli supaya halaman tidak rusak.
+const TRANSLATION_PROVIDER =
+	"https://translate.googleapis.com/translate_a/single?client=gtx&sl=id&tl=en&dt=t&q=";
+const TRANSLATE_BATCH_LIMIT = 60;
+const TRANSLATE_TEXT_LIMIT = 1500;
+// Jangan buang kuota penerjemah untuk teks yang tidak perlu diterjemahkan.
+const TRANSLATE_SKIP_RE = /^[\s\d\p{P}\p{S}]*$/u;
+
+async function ensureTranslationTable() {
+	await pool.query(`
+		CREATE TABLE IF NOT EXISTS \`translations\` (
+			\`source_hash\` CHAR(40)     NOT NULL,
+			\`source_lang\` VARCHAR(8)   NOT NULL DEFAULT 'id',
+			\`target_lang\` VARCHAR(8)   NOT NULL DEFAULT 'en',
+			\`source_text\` TEXT         NOT NULL,
+			\`translated\`  TEXT         NOT NULL,
+			\`created\`     DATETIME     NULL,
+			\`updated\`     DATETIME     NULL,
+			PRIMARY KEY (\`source_hash\`,\`target_lang\`),
+			KEY \`idx_translations_target\` (\`target_lang\`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+	`);
+	columnCache.delete("translations");
+}
+
+const translationHash = (text, target) => createHash("sha1").update(`${target}\u0000${text}`).digest("hex");
+
+/**
+ * Ambil terjemahan dari cache MySQL untuk sekumpulan teks.
+ * Mengembalikan Map<teks asli, terjemahan>.
+ */
+async function readTranslationCache(texts, target) {
+	if (texts.length === 0) return new Map();
+	const hashes = texts.map((text) => translationHash(text, target));
+	const [rows] = await pool.query(
+		"SELECT `source_hash`, `translated` FROM `translations` WHERE `target_lang` = ? AND `source_hash` IN (?)",
+		[target, hashes],
+	);
+	const byHash = new Map(rows.map((row) => [row.source_hash, row.translated]));
+	const out = new Map();
+	for (const text of texts) {
+		const hit = byHash.get(translationHash(text, target));
+		if (hit) out.set(text, hit);
+	}
+	return out;
+}
+
+async function writeTranslationCache(pairs, target) {
+	if (pairs.length === 0) return;
+	const values = pairs.map(([source, translated]) => [
+		translationHash(source, target),
+		"id",
+		target,
+		source,
+		translated,
+	]);
+	await pool.query(
+		"INSERT INTO `translations` (`source_hash`,`source_lang`,`target_lang`,`source_text`,`translated`,`created`,`updated`) VALUES ? ON DUPLICATE KEY UPDATE `translated`=VALUES(`translated`), `updated`=NOW()",
+		[values],
+	);
+}
+
+/**
+ * Terjemahkan lewat Google Translate (endpoint publik `client=gtx`).
+ * Mengembalikan null kalau gagal, supaya pemanggil bisa memakai teks asli.
+ */
+async function translateViaGoogle(text, target) {
+	const url = `${TRANSLATION_PROVIDER.replace("tl=en", `tl=${encodeURIComponent(target)}`)}${encodeURIComponent(text)}`;
+	const controller = new AbortController();
+	const timer = setTimeout(() => controller.abort(), 8000);
+	try {
+		const response = await fetch(url, {
+			signal: controller.signal,
+			headers: {
+				// Tanpa header ini Google kadang membalas 403.
+				"User-Agent":
+					"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
+				Accept: "application/json,text/plain,*/*",
+			},
+		});
+		if (!response.ok) return null;
+		const payload = await response.json();
+		const chunks = Array.isArray(payload?.[0]) ? payload[0] : [];
+		const joined = chunks
+			.map((chunk) => (Array.isArray(chunk) ? String(chunk[0] ?? "") : ""))
+			.join("")
+			.trim();
+		return joined || null;
+	} catch {
+		return null;
+	} finally {
+		clearTimeout(timer);
+	}
+}
+
+async function handleTranslate(req, res) {
+	const rawTarget = String(req.query.target ?? "en").toLowerCase();
+	const target = /^[a-z]{2}(-[a-z]{2})?$/.test(rawTarget) ? rawTarget : "en";
+	const sourceLang = String(req.query.source ?? "id").toLowerCase();
+	const rawTexts = Array.isArray(req.query.q) ? req.query.q : [req.query.q];
+	const texts = [];
+	const seen = new Set();
+	for (const item of rawTexts) {
+		const text = String(item ?? "").trim();
+		if (!text || text.length > TRANSLATE_TEXT_LIMIT) continue;
+		if (TRANSLATE_SKIP_RE.test(text)) continue;
+		if (seen.has(text)) continue;
+		seen.add(text);
+		texts.push(text);
+		if (texts.length >= TRANSLATE_BATCH_LIMIT) break;
+	}
+
+	// Tidak ada yang perlu diterjemahkan -> balas kosong, bukan error.
+	if (texts.length === 0) {
+		return res.json({ translations: {}, failed: false, pending: 0 });
+	}
+
+	let cached = new Map();
+	try {
+		cached = await readTranslationCache(texts, target);
+	} catch (error) {
+		logError("translate cache read", error);
+	}
+
+	const missing = texts.filter((text) => !cached.has(text));
+	const translations = {};
+	for (const [source, translated] of cached) translations[source] = translated;
+
+	if (missing.length > 0) {
+		const fetched = await Promise.all(missing.map((text) => translateViaGoogle(text, target)));
+		const fresh = [];
+		missing.forEach((text, index) => {
+			const translated = fetched[index];
+			if (translated) {
+				translations[text] = translated;
+				fresh.push([text, translated]);
+			}
+		});
+		if (fresh.length > 0) {
+			try {
+				await writeTranslationCache(fresh, target);
+			} catch (error) {
+				logError("translate cache write", error);
+			}
+		}
+		if (IS_PRODUCTION && fresh.length === 0) {
+			console.warn(`[api] translate: ${missing.length} teks gagal diterjemahkan (layanan tidak merespons)`);
+		}
+	}
+
+	res.json({
+		translations,
+		failed: missing.some((text) => translations[text] === undefined),
+		pending: missing.filter((text) => translations[text] === undefined).length,
+		source: sourceLang,
+		target,
+	});
+}
+
+// Kolom teknis yang tidak pernah perlu diterjemahkan.
+const TRANSLATE_EXCLUDED_COLUMNS = new Set([
+	"id",
+	"created",
+	"updated",
+	"slug",
+	"key",
+	"email",
+	"phone",
+	"whatsapp",
+	"category",
+	"status",
+	"type",
+	"topic",
+	"group",
+	"source",
+	"code",
+	"color",
+	"icon",
+	"url",
+	"link",
+	"image",
+	"photo",
+	"file",
+	"thumbnail",
+	"cover_image",
+	"map_url",
+	"machine_code",
+	"branch_id",
+	"tags",
+	"content",
+]);
+
+/** Teks (bukan HTML/kode) yang layak diterjemahkan? */
+const isTranslatableValue = (key, value) => {
+	if (typeof value !== "string") return false;
+	if (!value.trim()) return false;
+	if (TRANSLATE_EXCLUDED_COLUMNS.has(key)) return false;
+	if (key.endsWith("_url") || key.endsWith("_id") || key.endsWith("_at")) return false;
+	// HTML, URL, dan path file tidak boleh diterjemahkan.
+	if (/[<>]/.test(value)) return false;
+	if (/^(https?:|data:|blob:|\/)/.test(value)) return false;
+	if (/^[\w.-]+@[\w.-]+$/.test(value)) return false;
+	return !TRANSLATE_SKIP_RE.test(value);
+};
+
+/**
+	 * Tambahkan pasangan `<kolom>__en` berisi terjemahan untuk setiap kolom teks
+	 * yang bisa dibaca manusia. Hanya membaca cache; tidak memanggil penerjemah.
+	 * Baris yang belum punya terjemahan tetap dikirim apa adanya.
+	 */
+async function localizeRecords(_collection, items, target) {
+	const texts = [];
+	for (const item of items) {
+		for (const [key, value] of Object.entries(item)) {
+			if (isTranslatableValue(key, value)) texts.push(value);
+		}
+	}
+	if (texts.length === 0) return items;
+	const cache = await readTranslationCache([...new Set(texts)], target).catch(() => new Map());
+	return items.map((item) => {
+		const localized = { ...item };
+		for (const [key, value] of Object.entries(item)) {
+			if (!isTranslatableValue(key, value)) continue;
+			const hit = cache.get(value);
+			if (hit) localized[`${key}__en`] = hit;
+		}
+		return localized;
+	});
+}
+
 // --- files ----------------------------------------------------------------
 // Semua file sekarang tersimpan di folder UPLOAD_DIR. Tidak ada sumber lain.
 app.get("/api/files/:collection/:recordId/:filename", async (req, res) => {
@@ -1129,12 +1380,24 @@ app.get("/api/collections/:collection/records", async (req, res) => {
 			[...values, perPage, (page - 1) * perPage],
 		);
 
+		let items = rows.map((row) => fromDb(collection, row));
+		// ?lang=en -> setiap kolom teks mendapat pasangan `<kolom>__en` berisi
+		// terjemahan dari cache `translations`. Frontend memilih versi Inggris
+		// lewat helper `pickText()`. Tanpa parameternya, respons tidak berubah.
+		if (isPublicReader && String(req.query.lang ?? "").toLowerCase().startsWith("en")) {
+			try {
+				items = await localizeRecords(collection, items, "en");
+			} catch (error) {
+				logError(`translate ${collection}`, error);
+			}
+		}
+
 		res.json({
 			page,
 			perPage,
 			totalItems: Number(total),
 			totalPages: Math.max(1, Math.ceil(Number(total) / perPage)),
-			items: rows.map((row) => fromDb(collection, row)),
+			items,
 		});
 	} catch (error) {
 		logError(`list ${collection}`, error);
@@ -1388,6 +1651,7 @@ await mkdir(UPLOAD_DIR, { recursive: true });
 // Pastikan tabel _admins ada lalu isi akun admin dari API_ADMIN_EMAIL /
 // API_ADMIN_PASSWORD kalau tabelnya masih kosong.
 await ensureAdminTable();
+await ensureTranslationTable();
 await ensureContactColumns();
 
 app.listen(PORT, () => {

@@ -13,8 +13,9 @@ import {
 	isQrisEnabled,
 	useBranchMachines,
 } from "@/hooks/useBranchMachines";
+import { useLandingText } from "@/hooks/useLandingText";
+import { type PublicText, usePublicText } from "@/hooks/usePublicText";
 import { formatRupiah } from "@/utils/format";
-import { usePublicText, type PublicText } from "@/hooks/usePublicText";
 
 type MachineRows = ReturnType<typeof groupMachines>;
 
@@ -42,6 +43,7 @@ function machineFeatures(kind: "wash" | "dry", machines: MachineRows, text: Publ
 export function PricingSection() {
 	const text = usePublicText();
 	const t = text.home.pricing;
+	const { values: landing } = useLandingText();
 	const [branchId, setBranchId] = useState("");
 	const { data: branches = [] } = useBranches({ activeOnly: true });
 
@@ -122,18 +124,19 @@ export function PricingSection() {
 				{/* HEADER */}
 				<ScrollReveal>
 					<div className="flex items-center gap-2">
-						<p className="section-kicker">{t.kicker}</p>
+						<p className="section-kicker">{landing.landing_pricing_kicker}</p>
 					</div>
 				</ScrollReveal>
 
 				<ScrollReveal delay={0.1}>
 					<h2 className="section-title text-center">
-						{t.title} <span className="text-[var(--brand)]">{t.titleHighlight}</span>
+						{landing.landing_pricing_title}{" "}
+						<span className="text-[var(--brand)]">{landing.landing_pricing_title_highlight}</span>
 					</h2>
 				</ScrollReveal>
 
 				<ScrollReveal delay={0.2}>
-					<p className="section-subtitle text-center">{t.subtitle}</p>
+					<p className="section-subtitle text-center">{landing.landing_pricing_subtitle}</p>
 				</ScrollReveal>
 
 				{picker ? (
@@ -289,7 +292,9 @@ export function PricingSection() {
 							<div className="flex h-10 w-10 items-center justify-center rounded-full bg-ruby-100">
 								<Calculator className="h-5 w-5 text-ruby-600" />
 							</div>
-							<h3 className="text-[20px] font-bold text-neutral-900 dark:text-white">{t.calculatorTitle}</h3>
+							<h3 className="text-[20px] font-bold text-neutral-900 dark:text-white">
+								{landing.landing_pricing_calc_title}
+							</h3>
 						</div>
 
 						<div className="mt-8 flex flex-col items-center justify-between gap-8 lg:flex-row">
@@ -373,7 +378,7 @@ export function PricingSection() {
 							to="/cabang"
 							className="group mt-8 flex w-full items-center justify-center gap-2 rounded-xl bg-ruby-700 py-4 text-[16px] font-semibold text-white transition-colors hover:bg-ruby-800"
 						>
-							{t.cta}
+							{landing.landing_pricing_cta}
 							<ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
 						</Link>
 					</motion.div>

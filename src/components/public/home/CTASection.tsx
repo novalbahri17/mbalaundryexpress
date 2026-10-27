@@ -1,13 +1,12 @@
-import { Clock, MapPin } from "lucide-react";
 import { motion } from "framer-motion";
-import { useBranches } from "@/hooks/useBranches";
-import { usePublicText } from "@/hooks/usePublicText";
-import { useSiteSettingsMap } from "@/hooks/useSiteSettings";
+import { Clock, MapPin } from "lucide-react";
 import { Button } from "@/design-system";
+import { useBranches } from "@/hooks/useBranches";
+import { useLandingText } from "@/hooks/useLandingText";
+import { useSiteSettingsMap } from "@/hooks/useSiteSettings";
 
 export function CTASection() {
-	const text = usePublicText();
-	const t = text.home.cta;
+	const { values: landing } = useLandingText();
 	const { data: branches = [] } = useBranches({ activeOnly: true });
 	const { data: settings = {} } = useSiteSettingsMap();
 
@@ -19,10 +18,10 @@ export function CTASection() {
 			<div className="section-inner relative !max-w-[800px] text-center">
 				<motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
 					<h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl md:text-5xl lg:text-6xl">
-						{t.title}
+						{landing.landing_cta_title}
 					</h2>
 					<p className="mx-auto mt-4 max-w-md text-base leading-relaxed text-neutral-300 sm:mt-6 sm:text-lg md:text-xl">
-						{t.description}
+						{landing.landing_cta_description}
 					</p>
 
 					<motion.div
@@ -48,7 +47,7 @@ export function CTASection() {
 									</svg>
 								}
 							>
-								{t.button}
+								{landing.landing_cta_button}
 							</Button>
 						</a>
 					</motion.div>
@@ -64,12 +63,12 @@ export function CTASection() {
 						<div className="flex items-center gap-2.5 text-white">
 							<MapPin className="h-5 w-5 text-teal-400" aria-hidden />
 							<span className="text-sm font-medium sm:text-base">
-								{branchCount} {t.branchCount}
+								{branchCount} {landing.landing_cta_branch_count}
 							</span>
 						</div>
 						<div className="flex items-center gap-2.5 text-white">
 							<Clock className="h-5 w-5 text-ruby-400" aria-hidden />
-							<span className="text-sm font-medium sm:text-base">{t.openHours}</span>
+							<span className="text-sm font-medium sm:text-base">{landing.landing_cta_open_hours}</span>
 						</div>
 					</motion.div>
 				</motion.div>

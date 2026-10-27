@@ -5,7 +5,7 @@ import type { CollectionName, CollectionRecord, PaginatedResponse } from "@/type
 // (lihat server/index.mjs).
 // ============================================================================
 
-const baseUrl = import.meta.env.VITE_API_BASE_PATH || "/api";
+export const baseUrl = import.meta.env.VITE_API_BASE_PATH || "/api";
 
 const apiUrl = (path: string): string => `${baseUrl.replace(/\/+$/, "")}${path}`;
 
@@ -148,6 +148,11 @@ export interface ListParams {
 	filter?: string;
 	sort?: string;
 	expand?: string;
+	/**
+	 * Bahasa yang diminta. `"en"` membuat server menambahkan kolom
+	 * `<nama>__en` berisi terjemahan otomatis pada setiap record.
+	 */
+	lang?: "id" | "en";
 }
 
 export const toBoolean = (value: string | boolean | undefined): boolean => {
@@ -206,22 +211,73 @@ async function request<T>(path: string, init: RequestInit = {}, expectJson = tru
 // ---------------------------------------------------------------------------
 // CRUD koleksi
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Terjemahan otomatis
+// ---------------------------------------------------------------------------
+// Konten dari database ditulis admin dalam Bahasa Indonesia. Saat pengunjung
+// memilih Bahasa Inggris, server mengirim tambahan kolom `<nama>__en` (lihat
+// /api/translate di server/index.mjs). Helper di bawah menukar nilai aslinya
+// dengan versi Inggris, jadi komponen tidak perlu tahu soal terjemahan.
+
+/** Locale yang dipilih pengunjung, dibaca dari localStorage Zustand. */
+const readVisitorLocale = (): string => {
+	try {
+		const raw = localStorage.getItem("mba-locale");
+		if (!raw) return "id";
+		const parsed = JSON.parse(raw) as { state?: { locale?: string } };
+		return parsed?.state?.locale === "en" ? "en" : "id";
+	} catch {
+		return "id";
+	}
+};
+
+/**
+ * Panel admin TIDAK boleh ikut diterjemahkan: kalau form admin terisi teks
+ * Inggris, admin bisa tanpa sengaja menimpa konten Indonesia saat menyimpan.
+ */
+const isAdminArea = (): boolean =>
+	typeof window !== "undefined" && window.location.pathname.startsWith("/admin");
+
+/** Bahasa yang harus diminta ke server untuk request saat ini. */
+const activeLang = (): "id" | "en" => (!isAdminArea() && readVisitorLocale() === "en" ? "en" : "id");
+
+/** Tukar `<kolom>` dengan `<kolom>__en` kalau terjemahannya tersedia. */
+const applyEnglishFields = <T>(record: T): T => {
+	if (!record || typeof record !== "object") return record;
+	const source = record as Record<string, unknown>;
+	const out: Record<string, unknown> = { ...source };
+	for (const [key, value] of Object.entries(source)) {
+		if (!key.endsWith("__en")) continue;
+		const base = key.slice(0, -"__en".length);
+		if (typeof value !== "string" || !value.trim()) continue;
+		if (typeof source[base] !== "string") continue;
+		out[base] = value;
+	}
+	return out as T;
+};
 export const listRecords = async <T extends CollectionName>(
 	collection: T,
 	params?: ListParams,
 ): Promise<PaginatedResponse<CollectionRecord<T>>> => {
+	const lang = params?.lang ?? activeLang();
 	const search = new URLSearchParams();
 	search.set("page", String(params?.page ?? 1));
 	search.set("perPage", String(params?.perPage ?? 20));
 	if (params?.filter) search.set("filter", params.filter);
 	if (params?.sort) search.set("sort", params.sort);
 	if (params?.expand) search.set("expand", params.expand);
+	if (lang === "en") search.set("lang", "en");
 
 	const res = await request<PaginatedResponse<CollectionRecord<T>>>(
 		`/collections/${collection}/records?${search.toString()}`,
 	);
+	const localize = lang === "en";
 	return {
-		items: res.items.map((item) => normalizeRecord<CollectionRecord<T>>(item)),
+		items: res.items.map((item) =>
+			localize
+				? normalizeRecord<CollectionRecord<T>>(applyEnglishFields(item))
+				: normalizeRecord<CollectionRecord<T>>(item),
+		),
 		page: res.page,
 		perPage: res.perPage,
 		totalItems: res.totalItems,

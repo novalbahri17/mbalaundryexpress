@@ -1,11 +1,12 @@
-import { ArrowRight, CheckCircle2, MapPin, Wallet } from "lucide-react";
-import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
+import { ArrowRight, CheckCircle2, MapPin, Wallet } from "lucide-react";
 import { useMemo } from "react";
+import { Link } from "react-router-dom";
 
 import { Button } from "@/design-system";
 import { useBranches } from "@/hooks/useBranches";
 import { effectivePrice, groupMachines, isQrisEnabled, useAllBranchMachines } from "@/hooks/useBranchMachines";
+import { useLandingText } from "@/hooks/useLandingText";
 import { usePublicText } from "@/hooks/usePublicText";
 import { HeroImageGrid } from "./HeroImageGrid";
 
@@ -17,6 +18,8 @@ const fadeUp = {
 export function HeroSection() {
 	const text = usePublicText();
 	const t = text.home.hero;
+	// Teks yang bisa diubah admin dari menu "Teks Landing".
+	const { values: landing } = useLandingText();
 	const { data: branches = [] } = useBranches({ activeOnly: true });
 	const { data: allMachines = [] } = useAllBranchMachines();
 	const activeBranchCount = branches.length;
@@ -54,8 +57,11 @@ export function HeroSection() {
 	// Fakta nyata dari API. Tidak ada angka karangan.
 	const facts = [
 		{ icon: Wallet, text: priceLabel },
-		{ icon: MapPin, text: activeBranchCount > 0 ? `${activeBranchCount} ${t.activeBranches}` : t.branchFallback },
-		{ icon: CheckCircle2, text: t.openHours },
+		{
+			icon: MapPin,
+			text: activeBranchCount > 0 ? `${activeBranchCount} ${t.activeBranches}` : landing.landing_hero_branch_fallback,
+		},
+		{ icon: CheckCircle2, text: landing.landing_hero_open_hours },
 	];
 
 	return (
@@ -65,7 +71,7 @@ export function HeroSection() {
 					{/* Left content */}
 					<div className="flex flex-col items-center text-center lg:items-start lg:text-left">
 						<motion.p {...fadeUp} transition={{ duration: 0.5 }} className="section-kicker">
-							{t.kicker}
+							{landing.landing_hero_kicker}
 						</motion.p>
 
 						<motion.h1
@@ -73,11 +79,11 @@ export function HeroSection() {
 							transition={{ duration: 0.5, delay: 0.08 }}
 							className="mt-5 text-[clamp(2rem,7vw,3.4rem)] font-extrabold leading-[1.08] tracking-[-0.03em] text-[var(--text-primary)]"
 						>
-							{t.titleLine1}
+							{landing.landing_hero_title_line1}
 							<br className="hidden sm:block" />
-							<span className="text-[var(--brand)]">{t.titleHighlight}</span>,
+							<span className="text-[var(--brand)]">{landing.landing_hero_title_highlight}</span>,
 							<br className="hidden sm:block" />
-							{t.titleLine3}
+							{landing.landing_hero_title_line3}
 						</motion.h1>
 
 						<motion.p
@@ -85,7 +91,7 @@ export function HeroSection() {
 							transition={{ duration: 0.5, delay: 0.16 }}
 							className="mt-5 max-w-md text-base leading-relaxed text-[var(--text-secondary)] sm:text-lg lg:max-w-xl"
 						>
-							{t.description}
+							{landing.landing_hero_description}
 						</motion.p>
 
 						<motion.div
@@ -100,12 +106,12 @@ export function HeroSection() {
 									rightIcon={<ArrowRight className="h-5 w-5" />}
 									className="w-full"
 								>
-									{t.ctaBranches}
+									{landing.landing_hero_cta_branches}
 								</Button>
 							</Link>
 							<Link to="/harga" className="w-full sm:w-auto">
 								<Button variant="outline" size="lg" className="w-full">
-									{t.ctaPricing}
+									{landing.landing_hero_cta_pricing}
 								</Button>
 							</Link>
 						</motion.div>

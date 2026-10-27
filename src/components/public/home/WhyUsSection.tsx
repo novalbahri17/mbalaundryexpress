@@ -1,16 +1,15 @@
 import { Clock, Droplet, MapPin, Tag } from "lucide-react";
-import { usePublicText } from "@/hooks/usePublicText";
+import { useLandingText } from "@/hooks/useLandingText";
 import { cn } from "@/utils";
 
 export function WhyUsSection() {
-	const text = usePublicText();
-	const t = text.home.whyUs;
+	const { values: landing } = useLandingText();
 
 	const features = [
 		{
 			key: "price",
-			title: t.priceTitle,
-			desc: t.priceDesc,
+			title: landing.landing_why_price_title,
+			desc: landing.landing_why_price_desc,
 			icon: Tag,
 			bgClass: "bg-ruby-100 dark:bg-ruby-900/30",
 			iconClass: "text-ruby-500 dark:text-ruby-400",
@@ -18,8 +17,8 @@ export function WhyUsSection() {
 		},
 		{
 			key: "clean",
-			title: t.cleanTitle,
-			desc: t.cleanDesc,
+			title: landing.landing_why_clean_title,
+			desc: landing.landing_why_clean_desc,
 			icon: Droplet,
 			bgClass: "bg-sapphire-100 dark:bg-sapphire-900/30",
 			iconClass: "text-sapphire-500 dark:text-sapphire-400",
@@ -27,8 +26,8 @@ export function WhyUsSection() {
 		},
 		{
 			key: "fast",
-			title: t.fastTitle,
-			desc: t.fastDesc,
+			title: landing.landing_why_fast_title,
+			desc: landing.landing_why_fast_desc,
 			icon: Clock,
 			bgClass: "bg-amber-100 dark:bg-amber-900/30",
 			iconClass: "text-amber-500 dark:text-amber-400",
@@ -36,8 +35,8 @@ export function WhyUsSection() {
 		},
 		{
 			key: "location",
-			title: t.locationTitle,
-			desc: t.locationDesc,
+			title: landing.landing_why_location_title,
+			desc: landing.landing_why_location_desc,
 			icon: MapPin,
 			bgClass: "bg-teal-100 dark:bg-teal-900/30",
 			iconClass: "text-teal-500 dark:text-teal-400",
@@ -49,8 +48,8 @@ export function WhyUsSection() {
 		<section className="section-block bg-neutral-50 dark:bg-neutral-900">
 			<div className="section-inner flex flex-col items-center">
 				{/* HEADER */}
-				<p className="section-kicker">{t.kicker}</p>
-				<h2 className="section-title text-center">{t.title}</h2>
+				<p className="section-kicker">{landing.landing_why_kicker}</p>
+				<h2 className="section-title text-center">{landing.landing_why_title}</h2>
 
 				{/* CONTENT */}
 				<div className="mt-14 grid w-full grid-cols-1 gap-6 md:grid-cols-3">

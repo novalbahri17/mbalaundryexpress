@@ -1,15 +1,17 @@
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, ArrowRight, Quote, Star, MessageCircle } from "lucide-react";
+import { motion } from "framer-motion";
+import { ArrowLeft, ArrowRight, MessageCircle, Quote, Star } from "lucide-react";
 import { useRef } from "react";
 import { Link } from "react-router-dom";
-import { motion } from "framer-motion";
 import { getTestimonials } from "@/api/testimonials.api";
-import { usePublicText } from "@/hooks/usePublicText";
 import { Button, Card } from "@/design-system";
+import { useLandingText } from "@/hooks/useLandingText";
+import { usePublicText } from "@/hooks/usePublicText";
 
 export function TestimonialsSection() {
 	const text = usePublicText();
 	const t = text.home.testimonials;
+	const { values: landing } = useLandingText();
 	const scrollRef = useRef<HTMLDivElement>(null);
 
 	const { data: testimonials = [], isLoading } = useQuery({
@@ -41,9 +43,9 @@ export function TestimonialsSection() {
 					viewport={{ once: true }}
 					className="text-center"
 				>
-					<p className="section-kicker">{t.kicker}</p>
-					<h2 className="section-title text-center">{t.title}</h2>
-					<p className="section-subtitle mx-auto !max-w-lg text-center">{t.subtitle}</p>
+					<p className="section-kicker">{landing.landing_testi_kicker}</p>
+					<h2 className="section-title text-center">{landing.landing_testi_title}</h2>
+					<p className="section-subtitle mx-auto !max-w-lg text-center">{landing.landing_testi_subtitle}</p>
 				</motion.div>
 
 				{/* Carousel */}
@@ -138,7 +140,7 @@ export function TestimonialsSection() {
 				>
 					<Link to="/testimoni">
 						<Button variant="ghost" rightIcon={<ArrowRight className="h-4 w-4" />}>
-							{t.viewAll}
+							{landing.landing_testi_view_all}
 						</Button>
 					</Link>
 				</motion.div>

@@ -2,11 +2,12 @@ import { PictureOutlined } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { getGallery } from "@/api/gallery.api";
 import { ScrollReveal } from "@/components/public/shared/ScrollReveal";
+import { useLandingText } from "@/hooks/useLandingText";
 import { usePublicText } from "@/hooks/usePublicText";
-import { useState } from "react";
 
 const SKELETON_COUNT = 6;
 const SKELETON_IDS = Array.from({ length: SKELETON_COUNT }, (_, i) => `gallery-skeleton-${i + 1}`);
@@ -42,6 +43,7 @@ function GalleryImage({ src, alt }: { src?: string; alt: string }) {
 export function GallerySection() {
 	const text = usePublicText();
 	const t = text.home.gallery;
+	const { values: landing } = useLandingText();
 	const { data, isLoading, error } = useQuery({
 		queryKey: ["home-gallery"],
 		queryFn: () => getGallery(),
@@ -58,15 +60,15 @@ export function GallerySection() {
 
 			<div className="section-inner relative flex flex-col items-center">
 				<ScrollReveal>
-					<p className="section-kicker">{t.kicker}</p>
+					<p className="section-kicker">{landing.landing_gallery_kicker}</p>
 				</ScrollReveal>
 
 				<ScrollReveal delay={0.1}>
-					<h2 className="section-title text-center">{t.title}</h2>
+					<h2 className="section-title text-center">{landing.landing_gallery_title}</h2>
 				</ScrollReveal>
 
 				<ScrollReveal delay={0.2}>
-					<p className="section-subtitle text-center">{t.subtitle}</p>
+					<p className="section-subtitle text-center">{landing.landing_gallery_subtitle}</p>
 				</ScrollReveal>
 
 				<div className="mt-16 grid w-full grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -147,7 +149,7 @@ export function GallerySection() {
 						to="/galeri"
 						className="mt-12 inline-flex items-center gap-2 rounded-full border-2 border-ruby-600 px-6 py-3 text-[14px] font-bold text-ruby-600 transition-all hover:bg-ruby-600 hover:text-white"
 					>
-						{t.viewAll} <ArrowRight className="h-4 w-4" />
+						{landing.landing_gallery_view_all} <ArrowRight className="h-4 w-4" />
 					</Link>
 				</ScrollReveal>
 			</div>
