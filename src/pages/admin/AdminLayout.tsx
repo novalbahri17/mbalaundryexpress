@@ -657,6 +657,31 @@ const metronicAdminStyles = `
 		flex: 0 0 auto;
 	}
 
+	/* Tombol ikon di header (notifikasi) */
+	.header-icon-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 38px;
+		height: 38px;
+		border: none;
+		border-radius: 10px;
+		background: transparent;
+		color: var(--text-secondary);
+		cursor: pointer;
+		transition: background 0.2s, color 0.2s;
+	}
+
+	.header-icon-btn:hover {
+		background: var(--bg-surface);
+		color: var(--text-primary);
+	}
+
+	.header-icon-btn .ant-badge {
+		display: inline-flex;
+		line-height: 1;
+	}
+
 	/* User Dropdown */
 	.user-dropdown-trigger {
 		display: flex;

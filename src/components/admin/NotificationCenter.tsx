@@ -6,8 +6,7 @@ import {
 	MessageOutlined,
 } from "@ant-design/icons";
 import { useQuery } from "@tanstack/react-query";
-import type { MenuProps } from "antd";
-import { Badge, Button, Dropdown, List, Popover, Tag, theme } from "antd";
+import { Badge, Button, List, Popover, Tag, theme } from "antd";
 import { useState } from "react";
 import { getPromos } from "@/api/promos.api";
 import { getContactMessages, getPartnerships } from "@/api/settings.api";
@@ -178,66 +177,22 @@ function NotificationCenter() {
 		</div>
 	);
 
-	const notificationItems: MenuProps["items"] = [
-		{
-			key: "1",
-			label: "Tandai semua terbaca",
-			icon: <CheckCircleOutlined />,
-		},
-		{
-			key: "2",
-			label: "Pengaturan notifikasi",
-			icon: <BellOutlined />,
-		},
-		{
-			type: "divider",
-		},
-		{
-			key: "3",
-			label: "Pesan baru",
-			icon: <MessageOutlined />,
-			onClick: () => (window.location.href = "/admin/pesan"),
-		},
-		{
-			key: "4",
-			label: "Promo berakhir",
-			icon: <ExclamationCircleOutlined />,
-			onClick: () => (window.location.href = "/admin/promo"),
-		},
-	];
-
 	return (
-		<>
-			<Dropdown menu={{ items: notificationItems }} trigger={["click"]} placement="bottomRight">
-				<Button
-					type="text"
-					icon={
-						<Badge count={unreadCount} size="small">
-							<BellOutlined style={{ fontSize: "18px" }} />
-						</Badge>
-					}
-					className="h-10 w-10 rounded-full"
-				/>
-			</Dropdown>
-			<Popover
-				content={notificationContent}
-				title={null}
-				trigger="click"
-				open={open}
-				onOpenChange={setOpen}
-				placement="bottomRight"
-			>
-				<Button
-					type="text"
-					icon={
-						<Badge count={unreadCount} size="small">
-							<BellOutlined style={{ fontSize: "18px" }} />
-						</Badge>
-					}
-					className="h-10 w-10 rounded-full"
-				/>
-			</Popover>
-		</>
+		<Popover
+			content={notificationContent}
+			title={null}
+			trigger="click"
+			open={open}
+			onOpenChange={setOpen}
+			placement="bottomRight"
+			arrow={false}
+		>
+			<button type="button" className="header-icon-btn" aria-label="Notifikasi">
+				<Badge count={unreadCount} size="small" offset={[-2, 2]}>
+					<BellOutlined style={{ fontSize: 18 }} />
+				</Badge>
+			</button>
+		</Popover>
 	);
 }
 
