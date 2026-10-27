@@ -1,4 +1,5 @@
 import type { ColumnsType } from "antd/es/table";
+import { useQueryClient } from "@tanstack/react-query";
 import { Tag } from "antd";
 import {
 	createContactMessage,
@@ -84,6 +85,12 @@ const columns: ColumnsType<ContactMessage> = [
 ];
 
 export default function PesanAdminPage() {
+	const queryClient = useQueryClient();
+
+	// Perubahan status laporan harus ikut memperbarui badge notifikasi di header.
+	const syncNotifications = (): Promise<unknown> =>
+		queryClient.invalidateQueries({ queryKey: ["notification-messages"] });
+
 	return (
 		<MetronicPage title="Laporan Bantuan" subtitle="Kehilangan barang, kritik, dan saran dari pelanggan">
 			<CrudManager<ContactMessage>
@@ -93,6 +100,7 @@ export default function PesanAdminPage() {
 				createItem={createContactMessage}
 				updateItem={updateContactMessage}
 				deleteItem={deleteContactMessage}
+				onMutate={syncNotifications}
 				columns={columns}
 				fields={[
 					{ name: "name", label: "Nama", type: "text", required: true },

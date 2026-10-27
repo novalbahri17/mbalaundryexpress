@@ -41,6 +41,8 @@ type CrudManagerProps<T extends { id: string }> = {
 	deleteItem: (id: string) => Promise<void>;
 	columns: ColumnsType<T>;
 	fields: CrudField[];
+	/** Dipanggil setelah create/update/delete berhasil, mis. untuk refresh badge notifikasi. */
+	onMutate?: () => Promise<unknown> | unknown;
 };
 
 function titleToSubtitle(title: string): string {
@@ -71,6 +73,7 @@ export function CrudManager<T extends { id: string }>({
 	deleteItem,
 	columns,
 	fields,
+	onMutate,
 }: CrudManagerProps<T>) {
 	const [form] = Form.useForm();
 	const [open, setOpen] = useState(false);
@@ -122,6 +125,7 @@ export function CrudManager<T extends { id: string }>({
 							onConfirm={async () => {
 								await deleteItem(record.id);
 								await queryClient.invalidateQueries({ queryKey: [queryKey] });
+								if (onMutate) await onMutate();
 								message.success("Data berhasil dihapus");
 							}}
 						>
@@ -131,7 +135,7 @@ export function CrudManager<T extends { id: string }>({
 				),
 			},
 		],
-		[columns, deleteItem, queryClient, queryKey],
+		[columns, deleteItem, queryClient, queryKey, onMutate],
 	);
 
 	const onSubmit = async (): Promise<void> => {
@@ -147,6 +151,7 @@ export function CrudManager<T extends { id: string }>({
 		setEditing(null);
 		form.resetFields();
 		await queryClient.invalidateQueries({ queryKey: [queryKey] });
+		if (onMutate) await onMutate();
 	};
 
 	return (
