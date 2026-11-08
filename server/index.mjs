@@ -1808,6 +1808,38 @@ app.get("/api/files/:collection/:recordId/:filename", async (req, res) => {
 });
 
 // Route akses file langsung (/uploads/:filename dan /upload/:filename)
+const serveUploadFile = (req, res) => {
+	const filename = req.params.filename || req.params[0];
+	if (!filename || !/^[A-Za-z0-9._-]+$/.test(filename)) {
+		return res.sendStatus(400);
+	}
+
+	const candidateRoots = [
+		resolve(UPLOAD_DIR),
+		resolve(process.cwd(), "uploads"),
+		resolve(process.cwd(), "upload"),
+		"/app/uploads",
+		"/app/upload",
+	].filter((dir, idx, arr) => arr.indexOf(dir) === idx && existsSync(dir));
+
+	for (const root of candidateRoots) {
+		const local = resolve(root, filename);
+		if (existsSync(local)) {
+			res.setHeader("Cache-Control", "public, max-age=86400, immutable");
+			if (extname(local).toLowerCase() === ".svg") {
+				res.setHeader("Content-Type", "image/svg+xml");
+				res.setHeader("Content-Disposition", "inline");
+				res.setHeader("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; sandbox");
+			}
+			return res.sendFile(local);
+		}
+	}
+
+	res.status(404).send("File gambar tidak ditemukan di server.");
+};
+
+app.get("/uploads/:filename", serveUploadFile);
+app.get("/upload/:filename", serveUploadFile);
 app.use("/uploads", express.static(UPLOAD_DIR));
 app.use("/upload", express.static(UPLOAD_DIR));
 if (existsSync("/app/upload")) {
@@ -2296,8 +2328,8 @@ if (SERVE_SPA) {
 		}),
 	);
 
-	// SPA fallback: semua path selain /api dikembalikan ke index.html.
-	app.get(/^\/(?!api\/).*/, (_req, res) => {
+	// SPA fallback: semua path selain /api, /uploads, /upload dikembalikan ke index.html.
+	app.get(/^(?!\/(api|uploads|upload)\/).*/, (_req, res) => {
 		res.setHeader("Cache-Control", "no-cache, must-revalidate");
 		res.sendFile(SPA_INDEX);
 	});
