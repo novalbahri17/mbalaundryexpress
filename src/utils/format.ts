@@ -94,6 +94,15 @@ export const sanitizeUrl = (value?: string): string | undefined => {
 	if (!trimmed) return undefined;
 	const lower = trimmed.toLowerCase();
 	if (blockedUrlProtocols.some((prefix) => lower.startsWith(prefix))) return undefined;
+
+	// Jika URL berupa format lama /api/files/collection/id/filename -> ubah langsung ke /uploads/filename
+	if (trimmed.includes("/api/files/")) {
+		const filename = trimmed.split("/").pop();
+		if (filename && /^[A-Za-z0-9._-]+\.(jpeg|jpg|png|webp|gif|svg|avif|ico)$/i.test(filename)) {
+			return `/uploads/${filename}`;
+		}
+	}
+
 	if (trimmed.startsWith("/")) return trimmed;
 	if (trimmed.startsWith("data:image/")) return trimmed;
 	if (trimmed.startsWith("blob:")) return trimmed;
@@ -106,6 +115,11 @@ export const sanitizeUrl = (value?: string): string | undefined => {
 	try {
 		const url = new URL(trimmed);
 		if (url.protocol === "http:" || url.protocol === "https:") {
+			// Jika domain sendiri memanggil /api/files/.. ubah juga ke /uploads/..
+			if (url.pathname.includes("/api/files/")) {
+				const filename = url.pathname.split("/").pop();
+				if (filename) return `/uploads/${filename}`;
+			}
 			return url.toString();
 		}
 		return undefined;
