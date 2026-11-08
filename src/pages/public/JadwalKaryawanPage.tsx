@@ -284,12 +284,7 @@ export default function JadwalKaryawanPage() {
 	};
 
 	if (isLoading) {
-		return (
-			<div className="flex min-h-screen flex-col items-center justify-center p-6 bg-slate-50 dark:bg-slate-950">
-				<Spin size="large" />
-				<p className="mt-4 text-[14px] font-bold text-slate-700 dark:text-slate-300">Memuat Jadwal Shift Karyawan...</p>
-			</div>
-		);
+		return null;
 	}
 
 	if (error || !data) {

@@ -1857,7 +1857,12 @@ app.get("/api/collections/:collection/records", async (req, res) => {
 	const table = SCHEMA[collection];
 	if (!table) return jsonError(res, 404, `Collection "${collection}" tidak dikenal.`);
 	if (!enforceAccess(req, res, collection, "read")) return;
-	const isPublicReader = isPublicAction(collection, "read");
+
+	// Cek apakah request dari admin (membawa token valid)
+	const authHeader = bearerToken(req);
+	const isAdmin = Boolean(authHeader && verifyToken(authHeader));
+
+	const isPublicReader = !isAdmin && isPublicAction(collection, "read");
 	const selectCols = selectColumnsFor(collection, isPublicReader);
 
 	try {
@@ -1910,7 +1915,11 @@ app.get("/api/collections/:collection/records/:id", async (req, res) => {
 	const { collection, id } = req.params;
 	if (!SCHEMA[collection]) return jsonError(res, 404, `Collection "${collection}" tidak dikenal.`);
 	if (!enforceAccess(req, res, collection, "read")) return;
-	const isPublicReader = isPublicAction(collection, "read");
+
+	const authHeader = bearerToken(req);
+	const isAdmin = Boolean(authHeader && verifyToken(authHeader));
+
+	const isPublicReader = !isAdmin && isPublicAction(collection, "read");
 	const selectCols = selectColumnsFor(collection, isPublicReader);
 	// Testimoni yang belum di-approve tidak boleh terlihat tanpa login.
 	const forced = isPublicReader && collection === "testimonials" ? " AND `is_approved` = 1" : "";
@@ -2114,6 +2123,19 @@ app.delete("/api/collections/:collection/records/:id", async (req, res) => {
 		res.sendStatus(204);
 	} catch (error) {
 		logError(`delete ${collection}`, error);
+		jsonError(res, 500, error.message);
+	}
+});
+
+// Route untuk mengambil link rahasia jadwal cabang (khusus admin)
+app.get("/api/admin/branch-schedule-tokens", async (req, res) => {
+	const auth = verifyToken(bearerToken(req));
+	if (!auth) return jsonError(res, 401, "Unauthorized");
+	try {
+		const [rows] = await pool.query("SELECT `id`, `name`, `slug`, `schedule_token` FROM `branches`");
+		res.json({ items: rows });
+	} catch (error) {
+		logError("get branch-schedule-tokens", error);
 		jsonError(res, 500, error.message);
 	}
 });

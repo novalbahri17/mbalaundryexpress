@@ -293,6 +293,17 @@ export default function JadwalShiftPage() {
 		enabled: Boolean(effectiveBranchId),
 	});
 
+	// Ambil token jadwal cabang untuk link rahasia karyawan
+	const { data: branchTokens = [] } = useQuery({
+		queryKey: ["branch-schedule-tokens"],
+		queryFn: async () => {
+			const res = await request<{ items: { id: string; slug: string; schedule_token?: string }[] }>(
+				"/admin/branch-schedule-tokens",
+			);
+			return res.items;
+		},
+	});
+
 	const invalidateAll = () => {
 		queryClient.invalidateQueries({ queryKey: ["shift-employees"] });
 		queryClient.invalidateQueries({ queryKey: ["shift-events"] });
@@ -643,9 +654,10 @@ export default function JadwalShiftPage() {
 	const publicEmployeeLink = useMemo(() => {
 		if (!activeBranch) return "";
 		const origin = typeof window !== "undefined" ? window.location.origin : "https://mbalaundryexpress.com";
-		const token = activeBranch.schedule_token || "auth";
+		const foundToken = branchTokens.find((t) => t.id === activeBranch.id || t.slug === activeBranch.slug);
+		const token = foundToken?.schedule_token || activeBranch.schedule_token || "b4f6a54cd1";
 		return `${origin}/jadwal-karyawan/${activeBranch.slug}/${token}`;
-	}, [activeBranch]);
+	}, [activeBranch, branchTokens]);
 
 	const handleSave = async () => {
 		if (!schedule || !effectiveBranchId) return;
