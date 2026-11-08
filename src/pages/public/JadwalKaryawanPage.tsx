@@ -49,7 +49,17 @@ export default function JadwalKaryawanPage() {
 	const todayKey = data?.todayKey || new Date().toISOString().slice(0, 10);
 	const isWeekend = data?.isWeekend ?? false;
 
+	// Urutan shift standar operasional: Pagi -> Sore -> Malam
+	const SHIFT_SORT_ORDER: Record<string, number> = {
+		pagi: 1,
+		pagi12: 1.5,
+		siang: 2,
+		sore12: 2.5,
+		malam: 3,
+	};
+
 	// Build map slot per tanggal (mendukung format 'YYYY-MM-DD' maupun 'YYYY-MM-DDTHH:mm:ss.sssZ')
+	// dan diurutkan selalu: Pagi -> Sore -> Malam
 	const assignmentsByDate = useMemo(() => {
 		const map = new Map<string, PublicScheduleSlot[]>();
 		for (const asg of data?.assignments || []) {
@@ -57,6 +67,13 @@ export default function JadwalKaryawanPage() {
 			const list = map.get(cleanDate) ?? [];
 			list.push(asg);
 			map.set(cleanDate, list);
+		}
+		for (const [date, list] of map.entries()) {
+			list.sort((a, b) => {
+				const oa = SHIFT_SORT_ORDER[a.shift] ?? 99;
+				const ob = SHIFT_SORT_ORDER[b.shift] ?? 99;
+				return oa - ob;
+			});
 		}
 		return map;
 	}, [data?.assignments]);
@@ -203,7 +220,7 @@ export default function JadwalKaryawanPage() {
 												>
 													{shiftTitle}
 												</span>
-												{slot.is_backup && (
+												{Boolean(slot.is_backup) && (
 													<span className="rounded bg-purple-100 px-1.5 py-0.2 text-[9px] font-bold text-purple-700 dark:bg-purple-900 dark:text-purple-200">
 														BACKUP
 													</span>
