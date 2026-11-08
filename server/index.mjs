@@ -50,7 +50,26 @@ loadEnv();
 // PORT dari platform (Dokploy/Nixpacks/HF Spaces) menang supaya health-check
 // platform menemukan app-nya. API_PORT hanya untuk pemakaian lokal.
 const PORT = Number(process.env.PORT || process.env.API_PORT || 3002);
-const UPLOAD_DIR = resolve(process.cwd(), process.env.UPLOAD_DIR || "uploads");
+
+// Deteksi cerdas UPLOAD_DIR (mendukung /app/upload maupun /app/uploads dari mount volume Dokploy)
+const resolveUploadDir = () => {
+	const configured = process.env.UPLOAD_DIR;
+	if (configured) {
+		if (existsSync(configured)) return resolve(configured);
+		if (configured.endsWith("uploads") && existsSync(configured.slice(0, -1))) {
+			return resolve(configured.slice(0, -1));
+		}
+		if (configured.endsWith("upload") && existsSync(`${configured}s`)) {
+			return resolve(`${configured}s`);
+		}
+		return resolve(configured);
+	}
+	if (existsSync("/app/upload")) return "/app/upload";
+	if (existsSync("/app/uploads")) return "/app/uploads";
+	return resolve(process.cwd(), "uploads");
+};
+
+const UPLOAD_DIR = resolveUploadDir();
 const IS_PRODUCTION = process.env.NODE_ENV === "production";
 
 // Nilai contoh yang ada di .env.example — jangan pernah dipakai di produksi.
@@ -105,21 +124,44 @@ const ALLOWED_ORIGINS = new Set(
 // ---------------------------------------------------------------------------
 // Koneksi MySQL
 // ---------------------------------------------------------------------------
-const pool = mysql.createPool({
-	host: process.env.MYSQL_HOST || "127.0.0.1",
-	port: Number(process.env.MYSQL_PORT || 3306),
-	database: process.env.MYSQL_DATABASE,
-	user: process.env.MYSQL_USER,
-	password: process.env.MYSQL_PASSWORD ?? "",
-	connectionLimit: 10,
-	charset: "utf8mb4",
-	timezone: "Z",
-	enableKeepAlive: true,
-	keepAliveInitialDelay: 30000,
-	connectTimeout: 20000,
-	maxIdle: 10,
-	idleTimeout: 60000,
-});
+const createDbPool = (host) =>
+	mysql.createPool({
+		host: host || process.env.MYSQL_HOST || "127.0.0.1",
+		port: Number(process.env.MYSQL_PORT || 3306),
+		database: process.env.MYSQL_DATABASE,
+		user: process.env.MYSQL_USER,
+		password: process.env.MYSQL_PASSWORD ?? "",
+		connectionLimit: 10,
+		charset: "utf8mb4",
+		timezone: "Z",
+		enableKeepAlive: true,
+		keepAliveInitialDelay: 30000,
+		connectTimeout: 8000,
+		maxIdle: 10,
+		idleTimeout: 60000,
+	});
+
+let pool = createDbPool(process.env.MYSQL_HOST);
+
+async function initDatabaseConnection() {
+	try {
+		await pool.query("SELECT 1");
+		console.log(`[api] MySQL terhubung ke host: ${process.env.MYSQL_HOST}`);
+	} catch (err) {
+		console.warn(`[api] Gagal koneksi ke MySQL host (${process.env.MYSQL_HOST}):`, err.message);
+		if (process.env.MYSQL_HOST !== "43.156.144.127") {
+			console.log("[api] Mencoba fallback otomatis ke host 43.156.144.127...");
+			const fallback = createDbPool("43.156.144.127");
+			try {
+				await fallback.query("SELECT 1");
+				pool = fallback;
+				console.log("[api] Fallback ke MySQL 43.156.144.127 BERHASIL!");
+			} catch (fbErr) {
+				console.error("[api] Fallback MySQL juga gagal:", fbErr.message);
+			}
+		}
+	}
+}
 
 
 // ---------------------------------------------------------------------------
@@ -1734,32 +1776,47 @@ async function localizeRecords(_collection, items, target) {
 }
 
 // --- files ----------------------------------------------------------------
-// Semua file sekarang tersimpan di folder UPLOAD_DIR. Tidak ada sumber lain.
+// Cari file di UPLOAD_DIR dan folder mount volume alternatif (/app/upload maupun /app/uploads).
 app.get("/api/files/:collection/:recordId/:filename", async (req, res) => {
 	const { filename } = req.params;
 	if (!/^[A-Za-z0-9._-]+$/.test(filename)) return res.sendStatus(400);
 
-	// Cari file hanya di dalam UPLOAD_DIR, jangan biarkan keluar lewat ../
-	const root = resolve(UPLOAD_DIR);
-	const local = resolve(root, filename);
-	if (!local.startsWith(root + sep)) {
-		return res.sendStatus(400);
-	}
+	const candidateRoots = [
+		resolve(UPLOAD_DIR),
+		resolve(process.cwd(), "uploads"),
+		resolve(process.cwd(), "upload"),
+		"/app/uploads",
+		"/app/upload",
+	].filter((dir, idx, arr) => arr.indexOf(dir) === idx && existsSync(dir));
 
-	if (existsSync(local)) {
-		res.setHeader("Cache-Control", "public, max-age=86400, immutable");
-		// SVG bisa berisi script. Saat dibuka langsung, script itu tidak boleh
-		// jalan. (Di <img> script SVG memang tidak pernah dieksekusi.)
-		if (extname(local).toLowerCase() === ".svg") {
-			res.setHeader("Content-Type", "image/svg+xml");
-			res.setHeader("Content-Disposition", "inline");
-			res.setHeader("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; sandbox");
+	for (const root of candidateRoots) {
+		const local = resolve(root, filename);
+		if (local.startsWith(root + sep) && existsSync(local)) {
+			res.setHeader("Cache-Control", "public, max-age=86400, immutable");
+			// SVG bisa berisi script. Saat dibuka langsung, script itu tidak boleh jalan.
+			if (extname(local).toLowerCase() === ".svg") {
+				res.setHeader("Content-Type", "image/svg+xml");
+				res.setHeader("Content-Disposition", "inline");
+				res.setHeader("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; sandbox");
+			}
+			return res.sendFile(local);
 		}
-		return res.sendFile(local);
 	}
 
 	res.sendStatus(404);
 });
+
+// Route akses file langsung (/uploads/:filename dan /upload/:filename)
+app.use("/uploads", express.static(UPLOAD_DIR));
+app.use("/upload", express.static(UPLOAD_DIR));
+if (existsSync("/app/upload")) {
+	app.use("/uploads", express.static("/app/upload"));
+	app.use("/upload", express.static("/app/upload"));
+}
+if (existsSync("/app/uploads")) {
+	app.use("/uploads", express.static("/app/uploads"));
+	app.use("/upload", express.static("/app/uploads"));
+}
 
 // --- generic collection CRUD ---------------------------------------------
 app.get("/api/collections/:collection/records", async (req, res) => {
@@ -2265,6 +2322,9 @@ app.use((error, _req, res, _next) => {
 // Start
 // ---------------------------------------------------------------------------
 await mkdir(UPLOAD_DIR, { recursive: true });
+
+// Pastikan koneksi database siap (termasuk fallback jika host awal gagal)
+await initDatabaseConnection();
 
 // Pastikan tabel _admins ada lalu isi akun admin dari API_ADMIN_EMAIL /
 // API_ADMIN_PASSWORD kalau tabelnya masih kosong.
