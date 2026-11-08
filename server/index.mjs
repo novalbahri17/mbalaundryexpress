@@ -1791,7 +1791,7 @@ app.get("/api/files/:collection/:recordId/:filename", async (req, res) => {
 
 	for (const root of candidateRoots) {
 		const local = resolve(root, filename);
-		if (local.startsWith(root + sep) && existsSync(local)) {
+		if (existsSync(local)) {
 			res.setHeader("Cache-Control", "public, max-age=86400, immutable");
 			// SVG bisa berisi script. Saat dibuka langsung, script itu tidak boleh jalan.
 			if (extname(local).toLowerCase() === ".svg") {
@@ -1803,7 +1803,8 @@ app.get("/api/files/:collection/:recordId/:filename", async (req, res) => {
 		}
 	}
 
-	res.sendStatus(404);
+	// Jika belum ditemukan di disk lokal container, redirect ke endpoint /uploads/:filename
+	return res.redirect(302, `/uploads/${filename}`);
 });
 
 // Route akses file langsung (/uploads/:filename dan /upload/:filename)
