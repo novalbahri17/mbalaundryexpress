@@ -338,7 +338,8 @@ export const fileUrl = (collection: CollectionName, record: { id: string }, file
 	if (!filename) return undefined;
 	const safeFileName = sanitizeFileSegment(filename);
 	if (!safeFileName) return undefined;
-	return apiUrl(`/files/${collection}/${record.id}/${safeFileName}`);
+	// Di production Nginx & Express melayani /uploads/filename langsung dari volume persistent
+	return `/uploads/${safeFileName}`;
 };
 
 // ---------------------------------------------------------------------------
