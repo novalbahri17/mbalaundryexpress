@@ -98,6 +98,11 @@ export const sanitizeUrl = (value?: string): string | undefined => {
 	if (trimmed.startsWith("data:image/")) return trimmed;
 	if (trimmed.startsWith("blob:")) return trimmed;
 
+	// Jika hanya berupa nama file gambar murni (mis. abc123def.jpeg / file.png), arahkan ke /uploads/
+	if (/^[A-Za-z0-9._-]+\.(jpeg|jpg|png|webp|gif|svg|avif|ico)$/i.test(trimmed)) {
+		return `/uploads/${trimmed}`;
+	}
+
 	try {
 		const url = new URL(trimmed);
 		if (url.protocol === "http:" || url.protocol === "https:") {
