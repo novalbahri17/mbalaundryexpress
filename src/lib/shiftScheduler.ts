@@ -835,23 +835,23 @@ export function generateSchedule(input: ScheduleInput): ScheduleResult {
 					}
 
 					const prevShift = weekState.get(emp.id)?.shift;
-					// 4. Penalti jika tidak berganti shift dari pekan lalu (harus ganti tiap 1 minggu)
+					// 4. Penalti jika tidak berganti shift dari pekan lalu (wajib ganti tiap 1 minggu!)
 					if (prevShift && s === prevShift && !isNewHireMorningPeriod(emp, weekStart)) {
-						score += 40;
+						score += 500;
 					}
 
 					// 5. Bonus jika mengikuti siklus rotasi alami Pagi -> Malam -> Siang -> Pagi
 					if (prevShift && ROTATE_NEXT[prevShift as "pagi" | "siang" | "malam"] === s) {
-						score -= 10;
+						score -= 50;
 					}
 
 					// 6. Keadilan beban shift malam (Equity Penalty)
 					if (s === "malam") {
-						score += used(emp.id, "malam") * 35;
+						score += used(emp.id, "malam") * 10;
 					}
 
 					// 7. Keadilan total jam kerja kumulatif
-					score += totalUsed(emp.id) * 2;
+					score += totalUsed(emp.id) * 1;
 				}
 
 				if (valid && score < bestScore) {
