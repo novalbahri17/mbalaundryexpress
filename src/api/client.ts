@@ -187,7 +187,7 @@ export class ApiError extends Error {
 	}
 }
 
-async function request<T>(path: string, init: RequestInit = {}, expectJson = true): Promise<T> {
+export async function request<T>(path: string, init: RequestInit = {}, expectJson = true): Promise<T> {
 	const headers = new Headers(init.headers);
 	if (session.token) headers.set("Authorization", `Bearer ${session.token}`);
 	if (init.body && !(init.body instanceof FormData)) headers.set("Content-Type", "application/json");
@@ -235,8 +235,7 @@ const readVisitorLocale = (): string => {
  * Panel admin TIDAK boleh ikut diterjemahkan: kalau form admin terisi teks
  * Inggris, admin bisa tanpa sengaja menimpa konten Indonesia saat menyimpan.
  */
-const isAdminArea = (): boolean =>
-	typeof window !== "undefined" && window.location.pathname.startsWith("/admin");
+const isAdminArea = (): boolean => typeof window !== "undefined" && window.location.pathname.startsWith("/admin");
 
 /** Bahasa yang harus diminta ke server untuk request saat ini. */
 const activeLang = (): "id" | "en" => (!isAdminArea() && readVisitorLocale() === "en" ? "en" : "id");

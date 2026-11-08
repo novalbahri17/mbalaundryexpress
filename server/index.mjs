@@ -195,11 +195,17 @@ const SCHEMA = {
 		// pelanggan. Hanya boleh dibuat publik, dibaca hanya admin.
 		auth: { read: "admin", create: "public" },
 	},
-	shift_employees: { datetime: ["created", "updated"], order: "+branch_id,+sort_order,+name" },
+	shift_employees: {
+		datetime: ["created", "updated"],
+		json: ["allowed_shifts"],
+		order: "+branch_id,+sort_order,+name",
+	},
 	shift_events: { datetime: ["created", "updated"], order: "-created" },
 	shift_assignments: { datetime: ["created", "updated"], order: "+date,+branch_id" },
 	site_settings: { datetime: ["created", "updated"], order: "+key", auth: { read: "public" } },
 	branding_files: { datetime: ["created", "updated"], file: ["file"], order: "-created", auth: { read: "public" } },
+	admin_login_logs: { datetime: ["created"], order: "-created" },
+	admin_activity_logs: { datetime: ["created"], order: "-created" },
 };
 
 const AUTH_DEFAULT = { read: "admin", create: "admin", update: "admin", delete: "admin" };
@@ -207,8 +213,29 @@ const AUTH_DEFAULT = { read: "admin", create: "admin", update: "admin", delete: 
 // Kolom yang boleh dilihat pengunjung tanpa login, untuk koleksi yang
 // read-nya "public" tapi punya data internal. Koleksi lain: semua kolom.
 // testimonials dibaca publik, tapi source (asal testimoni) hanya untuk admin.
+// branches dibaca publik, tapi schedule_token (link internal karyawan) hanya untuk admin.
 const PUBLIC_READ_COLUMNS = {
 	testimonials: ["id", "customer_name", "branch_id", "rating", "comment", "photo", "is_approved", "created", "updated"],
+	branches: [
+		"id",
+		"name",
+		"slug",
+		"address",
+		"maps_url",
+		"maps_embed",
+		"whatsapp",
+		"email",
+		"description",
+		"cover_image",
+		"is_active",
+		"status",
+		"coin_value",
+		"qris_enabled",
+		"cash_enabled",
+		"sort_order",
+		"created",
+		"updated",
+	],
 };
 
 /** Ekspresi SELECT yang aman untuk pembaca publik. */
@@ -229,6 +256,8 @@ const isPublicAction = (collection, action) => accessRule(collection, action) ==
 // bergeser gara-gara konversi zona waktu.
 const DATE_FIELDS_BY_COLLECTION = {
 	contact_messages: ["incident_date"],
+	shift_events: ["date", "end_date"],
+	shift_assignments: ["date"],
 };
 
 // Boolean disimpan TINYINT(1) di MySQL, tapi frontend mengharapkan true/false.
@@ -394,11 +423,170 @@ setInterval(
 	60_000,
 ).unref?.();
 
+/**
+ * Deteksi IP klien asli (mendukung Cloudflare, X-Real-IP, X-Forwarded-For, dll.)
+ */
 const clientIp = (req) => {
+	const cf = req.headers["cf-connecting-ip"];
+	if (cf) return String(cf).trim().slice(0, 64);
+
+	const real = req.headers["x-real-ip"];
+	if (real) return String(real).trim().slice(0, 64);
+
 	const forwarded = req.headers["x-forwarded-for"];
-	const first = Array.isArray(forwarded) ? forwarded[0] : String(forwarded ?? "").split(",")[0];
-	return (first || req.socket?.remoteAddress || "unknown").trim().slice(0, 64);
+	if (forwarded) {
+		const raw = Array.isArray(forwarded) ? forwarded[0] : String(forwarded);
+		const list = raw.split(",").map((s) => s.trim());
+		for (const ip of list) {
+			if (
+				ip &&
+				!ip.startsWith("10.") &&
+				!ip.startsWith("192.168.") &&
+				!ip.startsWith("172.16.") &&
+				ip !== "127.0.0.1" &&
+				ip !== "::1"
+			) {
+				return ip.slice(0, 64);
+			}
+		}
+		if (list[0]) return list[0].slice(0, 64);
+	}
+
+	const trueClient = req.headers["true-client-ip"];
+	if (trueClient) return String(trueClient).trim().slice(0, 64);
+
+	let remote = req.socket?.remoteAddress || req.connection?.remoteAddress || "";
+	if (remote.startsWith("::ffff:")) remote = remote.replace("::ffff:", "");
+	if (remote === "::1" || remote === "127.0.0.1") return "127.0.0.1 (Localhost)";
+	return (remote || "127.0.0.1").trim().slice(0, 64);
 };
+
+/**
+ * Jam Real-Time Indonesia (WIB / Asia/Jakarta, UTC+7)
+ */
+function getIndoRealTime() {
+	const now = new Date();
+	const formatted = now.toLocaleString("id-ID", {
+		timeZone: "Asia/Jakarta",
+		year: "numeric",
+		month: "short",
+		day: "2-digit",
+		hour: "2-digit",
+		minute: "2-digit",
+		second: "2-digit",
+		hour12: false,
+	});
+	return `${formatted} WIB`;
+}
+
+/**
+ * Deteksi Perangkat & Browser dari User-Agent
+ */
+function parseDevice(uaString) {
+	const ua = String(uaString ?? "").toLowerCase();
+	let deviceType = "Desktop PC";
+	let os = "Windows";
+	let browser = "Google Chrome";
+
+	// Device & OS
+	if (ua.includes("iphone")) {
+		deviceType = "iPhone";
+		os = "iOS";
+	} else if (ua.includes("ipad")) {
+		deviceType = "iPad";
+		os = "iPadOS";
+	} else if (ua.includes("android")) {
+		deviceType = ua.includes("mobile") ? "HP Android" : "Tablet Android";
+		os = "Android";
+	} else if (ua.includes("macintosh") || ua.includes("mac os x")) {
+		deviceType = "Mac / MacBook";
+		os = "macOS";
+	} else if (ua.includes("windows")) {
+		deviceType = "Windows PC / Laptop";
+		if (ua.includes("windows nt 10.0")) os = "Windows 10/11";
+		else os = "Windows";
+	} else if (ua.includes("linux")) {
+		deviceType = "Linux PC";
+		os = "Linux";
+	}
+
+	// Browser
+	if (ua.includes("edg/")) browser = "Microsoft Edge";
+	else if (ua.includes("chrome/") && !ua.includes("edg/") && !ua.includes("opr/")) browser = "Google Chrome";
+	else if (ua.includes("firefox/")) browser = "Mozilla Firefox";
+	else if (ua.includes("safari/") && !ua.includes("chrome/")) browser = "Apple Safari";
+	else if (ua.includes("opr/") || ua.includes("opera/")) browser = "Opera";
+	else if (ua.includes("samsungbrowser")) browser = "Samsung Internet";
+
+	return `${deviceType} • ${browser} (${os})`;
+}
+
+async function recordLoginLog({ email, ip, device, ua, status, reason }) {
+	try {
+		await pool.query(
+			"INSERT INTO `admin_login_logs` (`id`,`admin_email`,`ip_address`,`device`,`user_agent`,`status`,`fail_reason`,`created_wib`,`created`) VALUES (?,?,?,?,?,?,?,?,NOW())",
+			[newRecordId(), email, ip, device, ua ? String(ua).slice(0, 500) : null, status, reason, getIndoRealTime()],
+		);
+	} catch (err) {
+		logError("recordLoginLog", err);
+	}
+}
+
+async function recordActivityLog({ email, action, collection, targetId, summary, details, ip, device }) {
+	try {
+		await pool.query(
+			"INSERT INTO `admin_activity_logs` (`id`,`admin_email`,`action`,`collection`,`target_id`,`summary`,`details`,`ip_address`,`device`,`created_wib`,`created`) VALUES (?,?,?,?,?,?,?,?,?,?,NOW())",
+			[
+				newRecordId(),
+				email || "admin",
+				action || "update",
+				collection || "system",
+				targetId || null,
+				summary || "Perubahan data",
+				details ? String(details).slice(0, 3000) : null,
+				ip,
+				device,
+				getIndoRealTime(),
+			],
+		);
+	} catch (err) {
+		logError("recordActivityLog", err);
+	}
+}
+
+function generateActivitySummary(collection, mode, payload, id) {
+	if (collection === "shift_assignments") {
+		return mode === "create" ? "Menyimpan slot jadwal shift" : "Mengubah slot jadwal shift";
+	}
+	if (collection === "shift_employees") {
+		return `${mode === "create" ? "Menambah karyawan baru" : "Mengubah data karyawan"}: ${payload?.name || id}`;
+	}
+	if (collection === "shift_events") {
+		return `Mencatat event absensi/izin (${payload?.type || "izin"}) tanggal ${payload?.date || ""}`;
+	}
+	if (collection === "branches") {
+		return `${mode === "create" ? "Menambah cabang" : "Mengubah data cabang"}: ${payload?.name || id}`;
+	}
+	if (collection === "branch_machines") {
+		return `${mode === "create" ? "Menambah mesin laundry" : "Mengubah data mesin laundry"}`;
+	}
+	if (collection === "branch_hours") {
+		return `Mengubah jam operasional cabang hari ${payload?.day || ""}`;
+	}
+	if (collection === "promos") {
+		return `${mode === "create" ? "Membuat promo baru" : "Mengubah promo"}: ${payload?.title || id}`;
+	}
+	if (collection === "articles") {
+		return `${mode === "create" ? "Menerbitkan artikel baru" : "Mengubah artikel"}: ${payload?.title || id}`;
+	}
+	if (collection === "faqs") {
+		return `${mode === "create" ? "Menambah FAQ" : "Mengubah FAQ"}: ${payload?.question || id}`;
+	}
+	if (collection === "site_settings") {
+		return `Mengubah pengaturan situs (${payload?.key || id})`;
+	}
+	return `${mode === "create" ? "Menambah" : "Mengubah"} data pada ${collection}`;
+}
 
 /**
  * Middleware pembatas request.
@@ -875,6 +1063,7 @@ async function ensureShiftTables() {
 			\`role\`         VARCHAR(32)  NOT NULL DEFAULT 'crew',
 			\`status\`       VARCHAR(16)  NOT NULL DEFAULT 'active',
 			\`can_night\`    TINYINT(1)   NOT NULL DEFAULT 1,
+			\`allowed_shifts\` TEXT      NULL,
 			\`sort_order\`   INT          NOT NULL DEFAULT 0,
 			\`created\`      DATETIME     NULL,
 			\`updated\`      DATETIME     NULL,
@@ -922,6 +1111,64 @@ async function ensureShiftTables() {
 			KEY \`idx_shift_asg_branch\` (\`branch_id\`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 	`);
+
+	await pool.query(`
+		CREATE TABLE IF NOT EXISTS \`admin_login_logs\` (
+			\`id\`          VARCHAR(15)  NOT NULL,
+			\`admin_email\` VARCHAR(191) NOT NULL,
+			\`ip_address\`  VARCHAR(64)  NOT NULL,
+			\`device\`      VARCHAR(120) NOT NULL,
+			\`user_agent\`  TEXT         NULL,
+			\`status\`      VARCHAR(24)  NOT NULL,
+			\`fail_reason\` VARCHAR(255) NULL,
+			\`created_wib\` VARCHAR(64)  NOT NULL,
+			\`created\`     DATETIME     NOT NULL,
+			PRIMARY KEY (\`id\`),
+			KEY \`idx_login_logs_created\` (\`created\`),
+			KEY \`idx_login_logs_email\` (\`admin_email\`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+	`);
+
+	await pool.query(`
+		CREATE TABLE IF NOT EXISTS \`admin_activity_logs\` (
+			\`id\`          VARCHAR(15)  NOT NULL,
+			\`admin_email\` VARCHAR(191) NOT NULL,
+			\`action\`      VARCHAR(32)  NOT NULL,
+			\`collection\`  VARCHAR(64)  NOT NULL,
+			\`target_id\`   VARCHAR(64)  NULL,
+			\`summary\`     VARCHAR(255) NOT NULL,
+			\`details\`     TEXT         NULL,
+			\`ip_address\`  VARCHAR(64)  NOT NULL,
+			\`device\`      VARCHAR(120) NOT NULL,
+			\`created_wib\` VARCHAR(64)  NOT NULL,
+			\`created\`     DATETIME     NOT NULL,
+			PRIMARY KEY (\`id\`),
+			KEY \`idx_act_logs_created\` (\`created\`),
+			KEY \`idx_act_logs_email\` (\`admin_email\`),
+			KEY \`idx_act_logs_col\` (\`collection\`)
+		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+	`);
+
+	// Database lama belum punya kolom allowed_shifts — tambahkan tanpa
+	// menghapus data yang sudah ada.
+	await ensureColumn("shift_employees", "allowed_shifts", "TEXT NULL");
+
+	// Kolom kode unik link jadwal internal karyawan per-cabang
+	await ensureColumn("branches", "schedule_token", "VARCHAR(32) NULL");
+	try {
+		const [branchRows] = await pool.query("SELECT `id`, `slug`, `schedule_token` FROM `branches`");
+		for (const b of branchRows) {
+			if (!b.schedule_token) {
+				const uniqueToken = createHash("sha256")
+					.update(b.id + (b.slug || "") + (process.env.API_JWT_SECRET || "mba-secret"))
+					.digest("hex")
+					.slice(0, 10);
+				await pool.query("UPDATE `branches` SET `schedule_token` = ? WHERE `id` = ?", [uniqueToken, b.id]);
+			}
+		}
+	} catch (e) {
+		logError("ensure branch schedule_token", e);
+	}
 
 	// Dua cabang resmi: Bohar dan Pagesangan. Kalau tabel branches kosong,
 	// buat supaya penjadwalan bisa langsung dipakai.
@@ -1076,9 +1323,21 @@ app.get(
 app.post(
 	"/api/collections/_superusers/auth-with-password",
 	async (req, res) => {
+		const ip = clientIp(req);
+		const ua = req.headers["user-agent"];
+		const device = parseDevice(ua);
+
 		const retryAfter = loginBlocked(req);
 		if (retryAfter > 0) {
 			res.setHeader("Retry-After", String(retryAfter));
+			await recordLoginLog({
+				email: String(req.body?.identity ?? req.body?.email ?? "").slice(0, 191),
+				ip,
+				device,
+				ua,
+				status: "locked",
+				reason: `Terkunci limit percobaan. Coba lagi ${Math.ceil(retryAfter / 60)} menit lagi.`,
+			});
 			return jsonError(res, 429, "Terlalu banyak percobaan login. Coba lagi 15 menit lagi.");
 		}
 
@@ -1096,6 +1355,14 @@ app.post(
 				// Yang dihitung hanya percobaan gagal, jadi login yang berhasil
 				// tidak pernah ikut mengunci akun sendiri.
 				registerLoginFailure(req);
+				await recordLoginLog({
+					email: String(identity),
+					ip,
+					device,
+					ua,
+					status: "failed",
+					reason: !admin ? "Email tidak terdaftar" : "Password salah",
+				});
 				// Pesan sengaja sama supaya tidak bisa dipakai menebak email mana
 				// yang terdaftar.
 				return jsonError(res, 400, "Failed to authenticate.");
@@ -1107,6 +1374,27 @@ app.post(
 				type: "superuser",
 				exp: Math.floor(Date.now() / 1000) + TOKEN_TTL_SECONDS,
 			});
+
+			await recordLoginLog({
+				email: admin.email,
+				ip,
+				device,
+				ua,
+				status: "success",
+				reason: null,
+			});
+
+			await recordActivityLog({
+				email: admin.email,
+				action: "login",
+				collection: "_superusers",
+				targetId: admin.id,
+				summary: `Login berhasil ke panel admin`,
+				details: JSON.stringify({ ip, device, wib: getIndoRealTime() }),
+				ip,
+				device,
+			});
+
 			res.json({
 				token,
 				record: { id: admin.id, email: admin.email, collectionName: "_superusers" },
@@ -1626,6 +1914,26 @@ async function writeRecord(req, res, mode) {
 		]);
 		const row = found[0];
 		if (!row) return jsonError(res, 404, "Record tidak ditemukan.");
+
+		// Catat log aktivitas jika aksi dilakukan oleh admin
+		const authHeader = bearerToken(req);
+		const adminAuth = authHeader ? verifyToken(authHeader) : null;
+		if (adminAuth && !isPublicWrite) {
+			const summary = generateActivitySummary(collection, mode, payload, recordId);
+			const ip = clientIp(req);
+			const device = parseDevice(req.headers["user-agent"]);
+			recordActivityLog({
+				email: adminAuth.email || "admin",
+				action: mode,
+				collection,
+				targetId: recordId,
+				summary,
+				details: JSON.stringify(payload).slice(0, 3000),
+				ip,
+				device,
+			}).catch(() => {});
+		}
+
 		res.json(fromDb(collection, row));
 	} catch (error) {
 		logError(`write ${collection}`, error);
@@ -1695,10 +2003,197 @@ app.delete("/api/collections/:collection/records/:id", async (req, res) => {
 			}
 		}
 		await pool.query(`DELETE FROM ${identifier(collection)} WHERE \`id\` = ?`, [id]);
+
+		const authHeader = bearerToken(req);
+		const adminAuth = authHeader ? verifyToken(authHeader) : null;
+		if (adminAuth) {
+			const ip = clientIp(req);
+			const device = parseDevice(req.headers["user-agent"]);
+			recordActivityLog({
+				email: adminAuth.email || "admin",
+				action: "delete",
+				collection,
+				targetId: id,
+				summary: `Menghapus data di ${collection} (ID: ${id})`,
+				details: JSON.stringify(rows[0] ?? {}).slice(0, 3000),
+				ip,
+				device,
+			}).catch(() => {});
+		}
+
 		res.sendStatus(204);
 	} catch (error) {
 		logError(`delete ${collection}`, error);
 		jsonError(res, 500, error.message);
+	}
+});
+
+// --- logs endpoints --------------------------------------------------------
+app.get("/api/admin/login-logs", async (req, res) => {
+	const auth = verifyToken(bearerToken(req));
+	if (!auth) return jsonError(res, 401, "Unauthorized");
+	const limit = Math.min(Number(req.query.limit || 200), 1000);
+	try {
+		const [rows] = await pool.query("SELECT * FROM `admin_login_logs` ORDER BY `created` DESC LIMIT ?", [limit]);
+		res.json({ items: rows });
+	} catch (error) {
+		logError("get login-logs", error);
+		jsonError(res, 500, error.message);
+	}
+});
+
+app.get("/api/admin/activity-logs", async (req, res) => {
+	const auth = verifyToken(bearerToken(req));
+	if (!auth) return jsonError(res, 401, "Unauthorized");
+	const limit = Math.min(Number(req.query.limit || 200), 1000);
+	try {
+		const [rows] = await pool.query("SELECT * FROM `admin_activity_logs` ORDER BY `created` DESC LIMIT ?", [limit]);
+		res.json({ items: rows });
+	} catch (error) {
+		logError("get activity-logs", error);
+		jsonError(res, 500, error.message);
+	}
+});
+
+app.post("/api/admin/log-activity", async (req, res) => {
+	const auth = verifyToken(bearerToken(req));
+	if (!auth) return jsonError(res, 401, "Unauthorized");
+	const { action, collection, targetId, summary, details } = req.body ?? {};
+	const ip = clientIp(req);
+	const device = parseDevice(req.headers["user-agent"]);
+	await recordActivityLog({
+		email: auth.email || "admin",
+		action: action || "custom",
+		collection: collection || "system",
+		targetId: targetId || null,
+		summary: summary || "Aktivitas admin",
+		details: typeof details === "object" ? JSON.stringify(details) : String(details || ""),
+		ip,
+		device,
+	});
+	res.json({ ok: true });
+});
+
+app.delete("/api/admin/logs/clear", async (req, res) => {
+	const auth = verifyToken(bearerToken(req));
+	if (!auth) return jsonError(res, 401, "Unauthorized");
+	const { type } = req.query;
+	try {
+		if (type === "login") {
+			await pool.query("DELETE FROM `admin_login_logs`");
+		} else if (type === "activity") {
+			await pool.query("DELETE FROM `admin_activity_logs`");
+		} else {
+			await pool.query("DELETE FROM `admin_login_logs`");
+			await pool.query("DELETE FROM `admin_activity_logs`");
+		}
+		res.json({ ok: true, message: "Log berhasil dibersihkan." });
+	} catch (error) {
+		logError("clear logs", error);
+		jsonError(res, 500, error.message);
+	}
+});
+
+// --- Public employee schedule endpoint (Protected by branch slug & secret token) ---
+app.get("/api/public/schedule/:slug/:token", async (req, res) => {
+	const { slug, token } = req.params;
+	if (!slug || !token) return jsonError(res, 400, "Parameter tidak lengkap.");
+
+	try {
+		const [branchRows] = await pool.query(
+			"SELECT `id`, `name`, `slug`, `address`, `schedule_token` FROM `branches` WHERE `slug` = ? LIMIT 1",
+			[slug],
+		);
+		const branch = branchRows[0];
+		if (!branch || !branch.schedule_token || branch.schedule_token !== token) {
+			return jsonError(res, 403, "Akses ditolak. Link jadwal tidak valid atau kode rahasia salah.");
+		}
+
+		// Hitung periode minggu ini (Senin - Minggu) dalam zona waktu Indonesia (WIB)
+		const nowWib = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Jakarta" }));
+		const y = nowWib.getFullYear();
+		const m = String(nowWib.getMonth() + 1).padStart(2, "0");
+		const d = String(nowWib.getDate()).padStart(2, "0");
+		const todayKey = `${y}-${m}-${d}`;
+		const dow = nowWib.getDay(); // 0 = Minggu, 1 = Senin, ... 6 = Sabtu
+
+		// Start of current week (Senin)
+		const dKey = new Date(nowWib);
+		dKey.setDate(dKey.getDate() + (dow === 0 ? -6 : 1 - dow));
+		const currentWeekStart = `${dKey.getFullYear()}-${String(dKey.getMonth() + 1).padStart(2, "0")}-${String(dKey.getDate()).padStart(2, "0")}`;
+
+		const endKey = new Date(dKey);
+		endKey.setDate(endKey.getDate() + 6);
+		const currentWeekEnd = `${endKey.getFullYear()}-${String(endKey.getMonth() + 1).padStart(2, "0")}-${String(endKey.getDate()).padStart(2, "0")}`;
+
+		// Apakah hari Sabtu (6) atau Minggu (0)?
+		const isWeekend = dow === 6 || dow === 0;
+
+		const nextDKey = new Date(dKey);
+		nextDKey.setDate(nextDKey.getDate() + 7);
+		const nextWeekStart = `${nextDKey.getFullYear()}-${String(nextDKey.getMonth() + 1).padStart(2, "0")}-${String(nextDKey.getDate()).padStart(2, "0")}`;
+
+		const nextEndKey = new Date(nextDKey);
+		nextEndKey.setDate(nextEndKey.getDate() + 6);
+		const nextWeekEnd = `${nextEndKey.getFullYear()}-${String(nextEndKey.getMonth() + 1).padStart(2, "0")}-${String(nextEndKey.getDate()).padStart(2, "0")}`;
+
+		const queryTo = isWeekend ? nextWeekEnd : currentWeekEnd;
+
+		// Ambil shift_assignments yang tersimpan di database
+		const [assignments] = await pool.query(
+			"SELECT `date`, `employee_id`, `employee_name`, `shift`, `start_time`, `end_time`, `hours`, `is_backup`, `is_emergency`, `note` FROM `shift_assignments` WHERE `branch_id` = ? AND `date` >= ? AND `date` <= ? ORDER BY `date` ASC, `start_time` ASC",
+			[branch.id, currentWeekStart, queryTo],
+		);
+
+		// Ambil daftar karyawan cabang ini
+		const [employees] = await pool.query(
+			"SELECT `id`, `name`, `role`, `status`, `allowed_shifts` FROM `shift_employees` WHERE `branch_id` = ? AND `status` = 'active' ORDER BY `sort_order` ASC, `name` ASC",
+			[branch.id],
+		);
+
+		// Ambil event izin/libur cabang ini
+		const [events] = await pool.query(
+			"SELECT `employee_id`, `date`, `end_date`, `type`, `note` FROM `shift_events` WHERE `branch_id` = ? AND `date` <= ? AND (`end_date` >= ? OR `end_date` IS NULL)",
+			[branch.id, queryTo, currentWeekStart],
+		);
+
+		res.json({
+			branch: {
+				id: branch.id,
+				name: branch.name,
+				slug: branch.slug,
+				address: branch.address,
+			},
+			todayKey,
+			dayOfWeek: dow,
+			isWeekend,
+			currentWeek: {
+				from: currentWeekStart,
+				to: currentWeekEnd,
+			},
+			nextWeek: isWeekend
+				? {
+						from: nextWeekStart,
+						to: nextWeekEnd,
+				  }
+				: null,
+			assignments,
+			employees: employees.map((e) => ({
+				id: e.id,
+				name: e.name,
+				role: e.role,
+				allowed_shifts: e.allowed_shifts
+					? typeof e.allowed_shifts === "string"
+						? JSON.parse(e.allowed_shifts)
+						: e.allowed_shifts
+					: null,
+			})),
+			events,
+			generatedAtWib: getIndoRealTime(),
+		});
+	} catch (error) {
+		logError("public schedule", error);
+		jsonError(res, 500, "Database error.");
 	}
 });
 

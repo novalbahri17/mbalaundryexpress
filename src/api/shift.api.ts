@@ -60,7 +60,7 @@ export const listShiftAssignments = async (params: {
 }): Promise<ShiftAssignment[]> => {
 	const res = await listRecords("shift_assignments", {
 		page: 1,
-		perPage: 1000,
+		perPage: 5000,
 		sort: "+date",
 		filter:
 			`branch_id = "${escapeFilterValue(params.branchId)}" && ` +

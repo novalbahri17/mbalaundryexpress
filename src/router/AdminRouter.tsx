@@ -28,6 +28,7 @@ const PengaturanPage = lazy(() => import("@/pages/admin/pengaturan"));
 const BrandingSettingsPage = lazy(() => import("@/pages/admin/pengaturan/branding"));
 const TeksLandingPage = lazy(() => import("@/pages/admin/pengaturan/teks-landing"));
 const MarketingDashboardPage = lazy(() => import("@/pages/admin/marketing"));
+const LogsPage = lazy(() => import("@/pages/admin/logs"));
 
 function RequireAdminAuth() {
 	const token = useUserToken();
@@ -84,6 +85,7 @@ export const adminRoutes: RouteObject = {
 						{ path: "pengaturan/branding", element: <BrandingSettingsPage /> },
 						{ path: "pengaturan/teks-landing", element: <TeksLandingPage /> },
 						{ path: "marketing", element: <MarketingDashboardPage /> },
+						{ path: "logs", element: <LogsPage /> },
 						{ index: true, element: <Navigate to="dashboard" replace /> },
 					],
 				},

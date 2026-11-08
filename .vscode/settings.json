@@ -35,5 +35,6 @@
   "[jsonc]": {
     "editor.defaultFormatter": "biomejs.biome"
   },
-  "svg.preview.background": "dark-transparent"
+  "svg.preview.background": "dark-transparent",
+  "9router-for-github-copilot.serverUrl": "http://localhost:20128/v1"
 }

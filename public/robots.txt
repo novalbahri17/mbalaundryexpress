@@ -5,6 +5,10 @@ Allow: /
 Disallow: /admin/
 Disallow: /admin/*
 
+# Jadwal internal karyawan (rahasia, tidak boleh diindeks Google)
+Disallow: /jadwal-karyawan/
+Disallow: /jadwal-karyawan/*
+
 # Endpoint API bukan halaman
 Disallow: /api/
 

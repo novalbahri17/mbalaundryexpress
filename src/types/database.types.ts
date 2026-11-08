@@ -41,6 +41,8 @@ export interface Branch extends BaseTable {
 	/** Kalau false, cabang dianggap tidak menerima tunai/coin. */
 	cash_enabled?: boolean;
 	sort_order: number;
+	/** Token rahasia unik untuk link jadwal internal karyawan. */
+	schedule_token?: string;
 }
 
 export type MachineKind = "wash" | "dry";
@@ -248,10 +250,10 @@ export interface SiteSetting extends BaseTable {
 /** Tipe shift standar 8 jam + shift darurat 12 jam. */
 export type ShiftKind = "pagi" | "siang" | "malam" | "pagi12" | "sore12";
 
-/** Karyawan bisa ditandai izin / sakit / libur / resign per tanggal. */
-export type ShiftEventType = "izin" | "sakit" | "libur" | "resign";
+/** Karyawan bisa ditandai izin / sakit / libur / resign / bantuan (BKO antar-cabang) per tanggal. */
+export type ShiftEventType = "izin" | "sakit" | "libur" | "resign" | "bantuan";
 
-export type ShiftEmployeeRole = "crew" | "backup";
+export type ShiftEmployeeRole = "crew" | "backup" | "koperasi" | "magang";
 
 export interface ShiftEmployee extends BaseTable {
 	branch_id: string;
@@ -260,9 +262,21 @@ export interface ShiftEmployee extends BaseTable {
 	/** `crew` = karyawan reguler, `backup` = Mbak Koperasi / anak magang. */
 	role: ShiftEmployeeRole;
 	status: "active" | "resigned";
-	/** false = hanya boleh Pagi & Siang (tidak pernah dapat shift Malam). */
+	/**
+	 * Shift yang boleh diambil karyawan ini: subset dari `["pagi", "siang", "malam"]`.
+	 * Kosong / null = semua shift boleh. Contoh: `["pagi"]` = hanya Pagi,
+	 * `["siang", "malam"]` = tidak bisa Pagi.
+	 */
+	allowed_shifts?: ShiftKind[] | null;
+	/** @deprecated gunakan `allowed_shifts`. Dipertahankan untuk data lama. */
 	can_night: boolean;
 	sort_order: number;
+	/** Tanggal mulai bergabung / orientasi (YYYY-MM-DD). */
+	joined_date?: string | null;
+	/**
+	 * Tandai apakah karyawan masih dalam masa orientasi anak baru (wajib masuk pagi 1 minggu atau lebih).
+	 */
+	is_new?: boolean;
 }
 
 export interface ShiftEvent extends BaseTable {
@@ -300,6 +314,28 @@ export interface BrandingFile extends BaseTable {
 	file: string;
 }
 
+export interface AdminLoginLog extends BaseTable {
+	admin_email: string;
+	ip_address: string;
+	device: string;
+	user_agent?: string | null;
+	status: "success" | "failed" | "locked";
+	fail_reason?: string | null;
+	created_wib: string;
+}
+
+export interface AdminActivityLog extends BaseTable {
+	admin_email: string;
+	action: string;
+	collection: string;
+	target_id?: string | null;
+	summary: string;
+	details?: string | null;
+	ip_address: string;
+	device: string;
+	created_wib: string;
+}
+
 export type CollectionRecordMap = {
 	branches: Branch;
 	branch_hours: BranchHour;
@@ -323,6 +359,8 @@ export type CollectionRecordMap = {
 	shift_assignments: ShiftAssignment;
 	site_settings: SiteSetting;
 	branding_files: BrandingFile;
+	admin_login_logs: AdminLoginLog;
+	admin_activity_logs: AdminActivityLog;
 };
 
 export type CollectionName = keyof CollectionRecordMap;

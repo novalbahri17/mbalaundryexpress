@@ -120,7 +120,7 @@ export default function CabangMesinPage() {
 		{
 			title: "Jenis",
 			dataIndex: "kind",
-			width: 95,
+			width: 110,
 			render: (kind: string) => (
 				<Tag color={kind === "wash" ? "volcano" : "blue"}>{kind === "wash" ? "Cuci" : "Kering"}</Tag>
 			),
@@ -128,7 +128,7 @@ export default function CabangMesinPage() {
 		{
 			title: "Kapasitas",
 			key: "capacity",
-			width: 105,
+			width: 130,
 			render: (_, r) =>
 				r.capacity_min === r.capacity_max ? `${r.capacity_min} kg` : `${r.capacity_min}-${r.capacity_max} kg`,
 		},
@@ -151,7 +151,7 @@ export default function CabangMesinPage() {
 		{
 			title: "Harga Tunai",
 			key: "price",
-			width: 128,
+			width: 150,
 			render: (_, r) => {
 				const text = `Rp ${(r.coins * coinValue).toLocaleString("id-ID")}`;
 				return cashEnabled ? (
@@ -164,7 +164,7 @@ export default function CabangMesinPage() {
 		{
 			title: "Harga QRIS",
 			key: "qris",
-			width: 128,
+			width: 150,
 			render: (_, r) => {
 				if (!r.qris_price) return <span className="text-neutral-400">-</span>;
 				return (
@@ -184,7 +184,8 @@ export default function CabangMesinPage() {
 		{
 			title: "Aksi",
 			key: "action",
-			width: 104,
+			width: 112,
+			fixed: "right",
 			align: "center",
 			render: (_, record) => (
 				<Space size={4}>
@@ -260,7 +261,7 @@ export default function CabangMesinPage() {
 								dataSource={washMachines}
 								columns={columns}
 								pagination={false}
-								scroll={{ x: 840 }}
+								scroll={{ x: 1080 }}
 								locale={{
 									emptyText: (
 										<TableEmptyState
@@ -304,7 +305,7 @@ export default function CabangMesinPage() {
 								dataSource={dryMachines}
 								columns={columns}
 								pagination={false}
-								scroll={{ x: 840 }}
+								scroll={{ x: 1080 }}
 								locale={{
 									emptyText: (
 										<TableEmptyState

@@ -2,6 +2,7 @@ import { DashboardOutlined, LockOutlined, LogoutOutlined, SettingOutlined } from
 import type { MenuProps } from "antd";
 import { Avatar, Dropdown } from "antd";
 import {
+	Activity,
 	BarChart3,
 	CalendarClock,
 	GitBranch,
@@ -67,6 +68,7 @@ const menuEntries: AdminMenuEntry[] = [
 	{ key: "/admin/pengaturan/branding", label: "Logo & Branding", group: "group-komunikasi" },
 	{ key: "/admin/pengaturan/teks-landing", label: "Teks Landing", group: "group-komunikasi" },
 	{ key: "/admin/pengaturan", label: "Pengaturan", group: "group-komunikasi" },
+	{ key: "/admin/logs", label: "Log & Aktivitas", group: "group-komunikasi" },
 ];
 
 const menuByKey = new Map<string, { label: string; group?: MenuGroupKey }>([
@@ -234,6 +236,8 @@ function getMenuIcon(key: string): React.ReactNode {
 			return <Image size={18} />;
 		case "/admin/pengaturan/teks-landing":
 			return <Type size={18} />;
+		case "/admin/logs":
+			return <Activity size={18} />;
 		default:
 			return <SettingOutlined />;
 	}

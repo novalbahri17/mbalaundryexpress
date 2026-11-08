@@ -33,18 +33,34 @@ Aplikasi ini adalah hasil modifikasi `MBA Admin` menjadi:
 - `backup-mba.sh`
 - `scripts/setup-ufw.sh`
 
-## 3. Local Setup
+## 3. Local Setup & Menjalankan Aplikasi
 
+1. Salin konfigurasi environment & install dependensi:
 ```bash
-pnpm install
 cp .env.example .env
-pnpm dev
+pnpm install
 ```
 
-Akses:
+2. Jalankan dua proses di terminal terpisah:
 
+**Terminal 1 — API Server (Express + MySQL, port 3002):**
+```bash
+node server/index.mjs
+# atau: pnpm api
+```
+
+**Terminal 2 — Frontend Dev (Vite, port 3000):**
+```bash
+node node_modules/vite/bin/vite.js
+# atau: pnpm dev
+```
+
+> **Catatan Windows:** Jika `pnpm dev` gagal karena path shim cmd, gunakan perintah langsung `node node_modules/vite/bin/vite.js`.
+
+Akses:
 - Publik: `http://localhost:3000`
 - Admin: `http://localhost:3000/admin/login`
+- Health check API: `http://localhost:3002/api/health`
 
 ## 4. Build Production
 

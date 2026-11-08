@@ -50,9 +50,11 @@ interface CardProps {
 	children: React.ReactNode;
 	className?: string;
 	noPadding?: boolean;
+	/** Kontrol tambahan di kanan judul kartu (mis. switch tampilan, tombol kecil). */
+	action?: React.ReactNode;
 }
 
-export function MetronicCard({ title, icon, children, className = "", noPadding }: CardProps) {
+export function MetronicCard({ title, icon, children, className = "", noPadding, action }: CardProps) {
 	return (
 		<div className={`card ${className}`}>
 			{title && (
@@ -61,6 +63,7 @@ export function MetronicCard({ title, icon, children, className = "", noPadding 
 						{icon && <div className="card-icon">{icon}</div>}
 						<h3 className="card-title">{title}</h3>
 					</div>
+					{action && <div className="card-action">{action}</div>}
 				</div>
 			)}
 			<div className={`card-body ${noPadding ? "no-padding" : ""}`}>{children}</div>
@@ -158,6 +161,13 @@ const metronicPageStyles = `
 		display: flex;
 		align-items: center;
 		gap: 12px;
+	}
+
+	.card-action {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		flex-shrink: 0;
 	}
 
 	.card-icon {
