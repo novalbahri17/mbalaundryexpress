@@ -2253,7 +2253,7 @@ app.get("/api/public/schedule/:slug/:token", async (req, res) => {
 
 		// Ambil shift_assignments yang tersimpan di database
 		const [assignments] = await pool.query(
-			"SELECT `date`, `employee_id`, `employee_name`, `shift`, `start_time`, `end_time`, `hours`, `is_backup`, `is_emergency`, `note` FROM `shift_assignments` WHERE `branch_id` = ? AND `date` >= ? AND `date` <= ? ORDER BY `date` ASC, `start_time` ASC",
+			"SELECT DATE_FORMAT(`date`, '%Y-%m-%d') AS `date`, `employee_id`, `employee_name`, `shift`, `start_time`, `end_time`, `hours`, `is_backup`, `is_emergency`, `note` FROM `shift_assignments` WHERE `branch_id` = ? AND `date` >= ? AND `date` <= ? ORDER BY `date` ASC, `start_time` ASC",
 			[branch.id, currentWeekStart, queryTo],
 		);
 

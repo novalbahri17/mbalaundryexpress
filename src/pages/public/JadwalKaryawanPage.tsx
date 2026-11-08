@@ -37,9 +37,8 @@ import type { ShiftKind } from "@/types/database.types";
 
 export default function JadwalKaryawanPage() {
 	const { branchSlug, secretToken } = useParams<{ branchSlug: string; secretToken: string }>();
-	const [selectedEmployee, setSelectedEmployee] = useState<string | null>(null);
 
-	const { data, isLoading, error, refetch } = useQuery({
+	const { data, isLoading, error } = useQuery({
 		queryKey: ["public-employee-schedule", branchSlug, secretToken],
 		queryFn: () => getPublicSchedule(branchSlug || "", secretToken || ""),
 		enabled: Boolean(branchSlug && secretToken),
@@ -50,19 +49,14 @@ export default function JadwalKaryawanPage() {
 	const todayKey = data?.todayKey || new Date().toISOString().slice(0, 10);
 	const isWeekend = data?.isWeekend ?? false;
 
-	// Karyawan aktif di cabang ini
-	const employeeNames = useMemo(() => {
-		if (!data?.employees) return [];
-		return data.employees.map((e) => e.name);
-	}, [data?.employees]);
-
-	// Build map slot per tanggal
+	// Build map slot per tanggal (mendukung format 'YYYY-MM-DD' maupun 'YYYY-MM-DDTHH:mm:ss.sssZ')
 	const assignmentsByDate = useMemo(() => {
 		const map = new Map<string, PublicScheduleSlot[]>();
 		for (const asg of data?.assignments || []) {
-			const list = map.get(asg.date) ?? [];
+			const cleanDate = (asg.date || "").slice(0, 10);
+			const list = map.get(cleanDate) ?? [];
 			list.push(asg);
-			map.set(asg.date, list);
+			map.set(cleanDate, list);
 		}
 		return map;
 	}, [data?.assignments]);
@@ -113,18 +107,14 @@ export default function JadwalKaryawanPage() {
 		const dayName = formatDayNameOnly(dateStr);
 		const dateFormatted = formatDateShortOnly(dateStr);
 
-		// Cari shift karyawan yang dipilih (jika memilih nama saya)
-		const mySlot = selectedEmployee ? slots.find((s) => s.employee_name === selectedEmployee) : null;
-		const isMyDayOff = selectedEmployee && !mySlot;
-
 		return (
 			<div
 				key={dateStr}
 				className="relative overflow-hidden rounded-2xl border transition-all duration-200"
 				style={{
 					background: isToday ? "color-mix(in srgb, #C62828 8%, var(--bg-card, #ffffff))" : "var(--bg-card, #ffffff)",
-					borderColor: isToday ? "#C62828" : selectedEmployee && mySlot ? "#1565C0" : "var(--border, #E2E8F0)",
-					borderWidth: isToday || (selectedEmployee && mySlot) ? 2 : 1,
+					borderColor: isToday ? "#C62828" : "var(--border, #E2E8F0)",
+					borderWidth: isToday ? 2 : 1,
 					boxShadow: isToday ? "0 4px 20px -2px rgba(198, 40, 40, 0.15)" : "0 2px 6px rgba(0,0,0,0.04)",
 				}}
 			>
@@ -166,32 +156,6 @@ export default function JadwalKaryawanPage() {
 					</div>
 				</div>
 
-				{/* Notifikasi Khusus Karyawan yang Sedang Memilih Namanya */}
-				{selectedEmployee && (
-					<div
-						className="mx-3 mt-3 rounded-xl p-2.5 text-center text-[13px] font-black"
-						style={{
-							background: mySlot ? "#1565C0" : "#059669",
-							color: "#ffffff",
-						}}
-					>
-						{mySlot ? (
-							<div className="flex items-center justify-center gap-1.5">
-								<span>
-									👉 {selectedEmployee.toUpperCase()}: MASUK SHIFT {mySlot.shift.toUpperCase()}
-								</span>
-								<span className="text-[11px] font-normal opacity-90">
-									({mySlot.start_time} - {mySlot.end_time})
-								</span>
-							</div>
-						) : (
-							<div className="flex items-center justify-center gap-1.5">
-								<span>🛌 {selectedEmployee.toUpperCase()}: LIBUR / ISTIRAHAT</span>
-							</div>
-						)}
-					</div>
-				)}
-
 				{/* Daftar Slot Shift Hari Ini */}
 				<div className="space-y-2 p-3.5">
 					{slots.length === 0 ? (
@@ -201,7 +165,6 @@ export default function JadwalKaryawanPage() {
 					) : (
 						slots.map((slot, idx) => {
 							const meta = SHIFT_META[slot.shift] || SHIFT_META.pagi;
-							const isMe = selectedEmployee && slot.employee_name === selectedEmployee;
 
 							// Warna & Style Kartu Shift
 							let bgCard = meta.bg;
@@ -224,11 +187,9 @@ export default function JadwalKaryawanPage() {
 									key={`${slot.shift}-${idx}`}
 									className="flex items-center justify-between rounded-xl p-3 transition-all"
 									style={{
-										background: isMe ? "#1565C0" : bgCard,
-										border: `1.5px solid ${isMe ? "#0D47A1" : borderCard}`,
-										color: isMe ? "#ffffff" : textColor,
-										boxShadow: isMe ? "0 4px 14px rgba(21, 101, 192, 0.3)" : "none",
-										transform: isMe ? "scale(1.02)" : "none",
+										background: bgCard,
+										border: `1.5px solid ${borderCard}`,
+										color: textColor,
 									}}
 								>
 									{/* Info Shift & Jam */}
@@ -238,7 +199,7 @@ export default function JadwalKaryawanPage() {
 											<div className="flex items-center gap-1.5">
 												<span
 													className="text-[13px] font-black uppercase tracking-wide"
-													style={{ color: isMe ? "#ffffff" : textColor }}
+													style={{ color: textColor }}
 												>
 													{shiftTitle}
 												</span>
@@ -250,7 +211,7 @@ export default function JadwalKaryawanPage() {
 											</div>
 											<div
 												className="text-[12px] font-bold"
-												style={{ color: isMe ? "#E0E7FF" : "inherit", opacity: isMe ? 1 : 0.8 }}
+												style={{ color: "inherit", opacity: 0.8 }}
 											>
 												Jam: {slot.start_time} – {slot.end_time} ({slot.hours} Jam)
 											</div>
@@ -261,14 +222,14 @@ export default function JadwalKaryawanPage() {
 									<div className="text-right shrink-0 pl-2">
 										<span
 											className="block text-[15px] font-black tracking-tight"
-											style={{ color: isMe ? "#ffffff" : "#0F172A" }}
+											style={{ color: "#0F172A" }}
 										>
 											{slot.employee_name}
 										</span>
 										{slot.note && (
 											<span
 												className="block text-[10px] font-medium italic"
-												style={{ color: isMe ? "#E0E7FF" : "#64748B" }}
+												style={{ color: "#64748B" }}
 											>
 												{slot.note}
 											</span>
@@ -342,49 +303,6 @@ export default function JadwalKaryawanPage() {
 			</header>
 
 			<main className="mx-auto max-w-4xl space-y-5 px-3.5 pt-4 sm:px-6">
-				{/* ============ PETUNJUK NAMA: SOROT JADWAL SAYA ============ */}
-				<div className="rounded-2xl border border-blue-200 bg-blue-50/80 p-4 shadow-sm dark:border-blue-950 dark:bg-blue-950/40">
-					<div className="flex items-center gap-2 text-blue-900 dark:text-blue-300">
-						<User size={18} className="text-blue-600 shrink-0" />
-						<h2 className="text-[14px] font-black">Siapa nama kamu? Pilih namamu untuk melihat jadwalmu:</h2>
-					</div>
-					<p className="mt-1 text-[12px] text-blue-700 dark:text-blue-300">
-						Klik nama kamu di bawah, maka jadwal kerja dan liburmu akan otomatis disorot terang.
-					</p>
-
-					<div className="mt-3 flex flex-wrap gap-2">
-						{employeeNames.map((name) => {
-							const isChosen = selectedEmployee === name;
-							return (
-								<button
-									type="button"
-									key={name}
-									onClick={() => setSelectedEmployee(isChosen ? null : name)}
-									className="cursor-pointer rounded-xl px-3.5 py-2 text-[13px] font-black transition-all shadow-sm"
-									style={{
-										background: isChosen ? "#1565C0" : "#ffffff",
-										color: isChosen ? "#ffffff" : "#1E293B",
-										border: `2px solid ${isChosen ? "#0D47A1" : "#CBD5E1"}`,
-										transform: isChosen ? "scale(1.04)" : "none",
-									}}
-								>
-									{isChosen ? `✓ Saya ${name}` : `👤 ${name}`}
-								</button>
-							);
-						})}
-
-						{selectedEmployee && (
-							<button
-								type="button"
-								onClick={() => setSelectedEmployee(null)}
-								className="cursor-pointer rounded-xl border border-slate-300 bg-slate-200 px-3 py-2 text-[12px] font-bold text-slate-700 hover:bg-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-							>
-								✕ Tampilkan Semua
-							</button>
-						)}
-					</div>
-				</div>
-
 				{/* ============ JADWAL MINGGU INI ============ */}
 				<section className="space-y-3">
 					<div className="flex flex-wrap items-center justify-between gap-2 border-b pb-2 dark:border-slate-800">
