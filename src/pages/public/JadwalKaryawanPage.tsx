@@ -243,14 +243,17 @@ export default function JadwalKaryawanPage() {
 										>
 											{slot.employee_name}
 										</span>
-										{slot.note && (
-											<span
-												className="block text-[10px] font-medium italic"
-												style={{ color: "#64748B" }}
-											>
-												{slot.note}
-											</span>
-										)}
+										{slot.note &&
+											!slot.note.toLowerCase().includes("manual") &&
+											!slot.note.toLowerCase().includes("input") &&
+											!slot.note.toLowerCase().includes("diedit") && (
+												<span
+													className="block text-[10px] font-medium italic"
+													style={{ color: "#64748B" }}
+												>
+													{slot.note}
+												</span>
+											)}
 									</div>
 								</div>
 							);
