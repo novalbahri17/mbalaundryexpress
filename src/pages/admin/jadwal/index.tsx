@@ -19,7 +19,6 @@ import {
 import dayjs, { type Dayjs } from "dayjs";
 import {
 	AlertTriangle,
-	ArrowLeftRight,
 	CalendarDays,
 	CalendarRange,
 	CheckCircle2,
@@ -28,7 +27,6 @@ import {
 	Copy,
 	Edit3,
 	ExternalLink,
-	History,
 	Info,
 	LayoutGrid,
 	Link2,
@@ -46,6 +44,7 @@ import {
 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
+import { request } from "@/api/client";
 import {
 	createShiftAssignment,
 	deleteShiftAssignment,
@@ -71,7 +70,7 @@ import {
 	startOfWeek,
 	toDateKey,
 } from "@/lib/shiftScheduler";
-import type { DaySchedule, DaySlot, EmployeeSummary, ScheduleWarning, ShiftKind } from "@/lib/shiftScheduler";
+import type { DaySchedule, DaySlot, ScheduleWarning, ShiftKind } from "@/lib/shiftScheduler";
 import type { ShiftEmployee } from "@/types/database.types";
 import { EmployeePanel } from "./EmployeePanel";
 import { EventPanel } from "./EventPanel";
@@ -310,13 +309,21 @@ export default function JadwalShiftPage() {
 		queryClient.invalidateQueries({ queryKey: ["shift-assignments"] });
 	};
 
-	// --- Manual Overrides (Tersimpan & Terisolasi Per-Cabang) -----------------
+	// --- Manual Overrides & Saved DB Sync (Terisolasi Per-Cabang) -------------
 	// Map<branchId, Record<tanggal YYYY-MM-DD, DaySlot[]>>
 	const [manualOverridesByBranch, setManualOverridesByBranch] = useState<Record<string, Record<string, DaySlot[]>>>({});
+	const [forceAutoByBranch, setForceAutoByBranch] = useState<Record<string, boolean>>({});
 
 	const manualOverrides = useMemo(() => {
 		return effectiveBranchId ? (manualOverridesByBranch[effectiveBranchId] ?? {}) : {};
 	}, [effectiveBranchId, manualOverridesByBranch]);
+
+	const forceAuto = effectiveBranchId ? Boolean(forceAutoByBranch[effectiveBranchId]) : false;
+
+	const setForceAuto = (val: boolean) => {
+		if (!effectiveBranchId) return;
+		setForceAutoByBranch((prev) => ({ ...prev, [effectiveBranchId]: val }));
+	};
 
 	const setManualOverrides = (
 		updater: Record<string, DaySlot[]> | ((prev: Record<string, DaySlot[]>) => Record<string, DaySlot[]>),
@@ -329,7 +336,58 @@ export default function JadwalShiftPage() {
 		});
 	};
 
-	// --- Engine Penjadwalan (Otomatis + Menyesuaikan dengan Input Manual) -----
+	// Bangun peta jadwal tersimpan dari database (agar halaman admin tampil identik dengan link karyawan)
+	const savedOverridesMap = useMemo(() => {
+		if (forceAuto || savedAssignments.length === 0) return {};
+
+		const empMap = new Map(allEmployees.map((e) => [e.id, e]));
+		// Kumpulkan event ketidakhadiran per tanggal agar jadwal otomatis menghitung ulang jika ada izin/BKO baru
+		const awaySet = new Set<string>();
+		for (const ev of events) {
+			if (ev.type === "resign") continue;
+			if (ev.branch_id !== effectiveBranchId && ev.type !== "bantuan") continue;
+			for (const d of eachDate(ev.date.slice(0, 10), (ev.end_date || ev.date).slice(0, 10))) {
+				awaySet.add(`${ev.employee_id}|${d}`);
+			}
+		}
+
+		const byDate: Record<string, DaySlot[]> = {};
+		for (const asg of savedAssignments) {
+			const dKey = (asg.date || "").slice(0, 10);
+			if (!dKey) continue;
+			const list = byDate[dKey] ?? [];
+			const meta = SHIFT_META[asg.shift as ShiftKind] ?? SHIFT_META.pagi;
+			const emp = asg.employee_id ? empMap.get(asg.employee_id) : undefined;
+			list.push({
+				shift: asg.shift as ShiftKind,
+				employeeId: asg.employee_id ?? null,
+				employeeName: emp ? emp.name : asg.employee_name,
+				startTime: asg.start_time || meta.start,
+				endTime: asg.end_time || meta.end,
+				hours: asg.hours || meta.hours,
+				isBackup: Boolean(asg.is_backup),
+				isEmergency: Boolean(asg.is_emergency),
+				note: asg.note ?? undefined,
+			});
+			byDate[dKey] = list;
+		}
+
+		// Hapus tanggal dari savedOverridesMap jika ada karyawan di slot tsb yang ternyata punya event izin/BKO baru
+		const cleanMap: Record<string, DaySlot[]> = {};
+		for (const [dKey, slots] of Object.entries(byDate)) {
+			const hasNewConflict = slots.some((s) => s.employeeId && awaySet.has(`${s.employeeId}|${dKey}`));
+			if (!hasNewConflict) {
+				cleanMap[dKey] = slots;
+			}
+		}
+		return cleanMap;
+	}, [forceAuto, savedAssignments, allEmployees, events, effectiveBranchId]);
+
+	const effectiveOverrides = useMemo(() => {
+		return { ...savedOverridesMap, ...manualOverrides };
+	}, [savedOverridesMap, manualOverrides]);
+
+	// --- Engine Penjadwalan (Otomatis + Tersinkronisasi dengan DB & Edit Manual) ---
 	const schedule = useMemo(() => {
 		if (!effectiveBranchId) return null;
 		return generateSchedule({
@@ -338,49 +396,12 @@ export default function JadwalShiftPage() {
 			to,
 			employees: allEmployees,
 			events,
-			previousAssignments: [...previousAssignments, ...savedAssignments],
+			previousAssignments,
 			priorUsage: buildUsage(previousAssignments),
 			backupAvailable,
-			manualOverrides,
+			manualOverrides: effectiveOverrides,
 		});
-	}, [
-		effectiveBranchId,
-		from,
-		to,
-		allEmployees,
-		events,
-		previousAssignments,
-		savedAssignments,
-		backupAvailable,
-		manualOverrides,
-	]);
-
-	// Muat jadwal tersimpan dari database ke mode edit manual
-	const loadFromSavedAssignments = () => {
-		if (savedAssignments.length === 0) {
-			message.info("Belum ada jadwal tersimpan untuk periode ini.");
-			return;
-		}
-		const map: Record<string, DaySlot[]> = {};
-		for (const asg of savedAssignments) {
-			const list = map[asg.date] ?? [];
-			const meta = SHIFT_META[asg.shift as ShiftKind] ?? SHIFT_META.pagi;
-			list.push({
-				shift: asg.shift as ShiftKind,
-				employeeId: asg.employee_id ?? null,
-				employeeName: asg.employee_name,
-				startTime: asg.start_time || meta.start,
-				endTime: asg.end_time || meta.end,
-				hours: asg.hours || meta.hours,
-				isBackup: asg.is_backup,
-				isEmergency: asg.is_emergency,
-				note: asg.note ?? undefined,
-			});
-			map[asg.date] = list;
-		}
-		setManualOverrides(map);
-		message.success(`Berhasil memuat ${savedAssignments.length} slot tersimpan dari database ke mode edit manual.`);
-	};
+	}, [effectiveBranchId, from, to, allEmployees, events, previousAssignments, backupAvailable, effectiveOverrides]);
 
 	// --- State Modal Input Manual (Rentang / Harian) ---
 	const [manualModalOpen, setManualModalOpen] = useState(false);
@@ -638,7 +659,10 @@ export default function JadwalShiftPage() {
 		if (!schedule || savedAssignments.length === 0) return false;
 		if (schedule.assignments.length !== savedAssignments.length) return false;
 		const savedMap = new Set(
-			savedAssignments.map((a) => `${a.date}|${a.shift}|${a.employee_id ?? ""}|${a.start_time}|${a.end_time}`),
+			savedAssignments.map(
+				(a) =>
+					`${(a.date || "").slice(0, 10)}|${a.shift}|${a.employee_id ?? ""}|${a.start_time}|${a.end_time}`,
+			),
 		);
 		return schedule.assignments.every((a) =>
 			savedMap.has(`${a.date}|${a.shift}|${a.employee_id ?? ""}|${a.start_time}|${a.end_time}`),
@@ -679,6 +703,8 @@ export default function JadwalShiftPage() {
 					slotsCount: schedule.assignments.length,
 				},
 			}).catch(() => {});
+			setManualOverrides({});
+			setForceAuto(false);
 			message.success(`Jadwal ${formatDateShort(from)} – ${formatDateShort(to)} tersimpan.`);
 			queryClient.invalidateQueries({ queryKey: ["shift-assignments"] });
 		} catch (err) {
@@ -978,31 +1004,159 @@ export default function JadwalShiftPage() {
 					</div>
 				</div>
 
-				{/* ============ LANGKAH 1 : pengaturan periode & aksi ============ */}
-				<MetronicCard>
-					<div className="flex flex-wrap items-end gap-4">
-						{/* Info Cabang Aktif yang Sedang Dikelola */}
-						<div className="flex items-center gap-2.5 rounded-lg border border-[var(--border)] bg-[var(--bg-surface)] px-3 py-1.5">
-							<span
-								className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white"
-								style={{ background: "var(--brand)" }}
-							>
-								<Store size={16} />
-							</span>
-							<div>
-								<span className="block text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
-									Mengelola Jadwal
+				{/* ============ LANGKAH 1 : pengaturan periode & aksi (TERSTRUKTUR RAPI) ============ */}
+				<MetronicCard noPadding>
+					{/* BARIS 1: Info Cabang Aktif, Rentang Tanggal & Tombol Aksi Utama */}
+					<div className="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] px-4 py-3">
+						{/* Kiri: Cabang Aktif + Rentang + Status */}
+						<div className="flex flex-wrap items-center gap-3">
+							<div className="flex items-center gap-2.5 rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] px-3 py-1.5">
+								<span
+									className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white"
+									style={{ background: "var(--brand)" }}
+								>
+									<Store size={16} />
 								</span>
-								<span className="block text-[13px] font-bold text-[var(--text-primary)]">{activeBranch?.name}</span>
+								<div>
+									<span className="block text-[9px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+										Cabang Aktif
+									</span>
+									<span className="block text-[13px] font-bold text-[var(--text-primary)]">
+										{activeBranch?.name}
+									</span>
+								</div>
+							</div>
+
+							<div className="flex flex-wrap items-center gap-2">
+								<div>
+									<span className="block text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+										Periode Terpilih ({shiftLabel(rangeMode)})
+									</span>
+									<span className="text-[13px] font-bold text-[var(--text-primary)]">
+										{formatDateId(from)} – {formatDateId(to)}
+									</span>
+								</div>
+
+								<div className="flex flex-wrap items-center gap-1.5">
+									{to < todayKey && (
+										<Tag color="cyan" className="!m-0 !text-[10px] font-bold">
+											RIWAYAT MASA LALU
+										</Tag>
+									)}
+									{isAlreadySaved ? (
+										<Tag color="success" className="!m-0 !text-[10px] font-bold">
+											✓ TERSIMPAN ({savedAssignments.length} SLOT)
+										</Tag>
+									) : savedAssignments.length > 0 ? (
+										<Tag color="volcano" className="!m-0 !text-[10px] font-bold">
+											⚡ ADA PERUBAHAN BELUM DISIMPAN
+										</Tag>
+									) : (
+										<Tag color="warning" className="!m-0 !text-[10px] font-bold">
+											DRAF BELUM DISIMPAN
+										</Tag>
+									)}
+								</div>
 							</div>
 						</div>
 
-						<div>
-							<p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-[var(--text-muted)]">
-								Periode Jadwal
+						{/* Kanan: Baris Tombol Aksi Utama */}
+						<div className="flex flex-wrap items-center gap-2">
+							<Button
+								icon={<Edit3 size={14} />}
+								onClick={() => {
+									setManualRange([dayjs(from), dayjs(to)]);
+									setSingleDate(dayjs(from));
+									setManualModalOpen(true);
+								}}
+							>
+								Input Manual
+							</Button>
+
+							{(Object.keys(manualOverrides).length > 0 || forceAuto) && (
+								<Button
+									icon={<RotateCcw size={14} />}
+									danger
+									onClick={() => {
+										setManualOverrides({});
+										setForceAuto(false);
+										message.info("Perubahan dikembalikan ke jadwal sebelumnya.");
+									}}
+								>
+									Batal Perubahan
+								</Button>
+							)}
+
+							{savedAssignments.length > 0 && !forceAuto && Object.keys(manualOverrides).length === 0 && (
+								<Tooltip title="Hitung ulang otomatis menggunakan algoritma rotasi 3 shift untuk mengganti susunan tersimpan">
+									<Button
+										icon={<Sparkles size={14} />}
+										onClick={() => {
+											setForceAuto(true);
+											message.info("Jadwal dihitung ulang otomatis. Klik Simpan Perubahan jika cocok.");
+										}}
+									>
+										Susun Ulang Otomatis
+									</Button>
+								</Tooltip>
+							)}
+
+							<Button icon={<MessageCircle size={14} />} onClick={openWhatsApp} disabled={!schedule}>
+								Export WA
+							</Button>
+
+							<Button
+								icon={<Share2 size={14} className="text-emerald-600" />}
+								onClick={() => setShareModalOpen(true)}
+								className="!font-semibold"
+								title="Buka link rahasia jadwal khusus karyawan cabang ini"
+							>
+								Link Karyawan
+							</Button>
+
+							<Tooltip
+								title={
+									isAlreadySaved
+										? "Jadwal pada periode ini sudah tersimpan dan sinkron dengan database."
+										: savedAssignments.length > 0
+											? "Ada perubahan pada jadwal. Klik untuk menyimpan ke database."
+											: "Draf jadwal baru belum tersimpan. Klik untuk menyimpan ke database."
+								}
+							>
+								<Button
+									type={isAlreadySaved ? "default" : "primary"}
+									icon={isAlreadySaved ? <CheckCircle2 size={14} className="text-[#16A34A]" /> : <Save size={14} />}
+									loading={saving}
+									onClick={handleSave}
+									disabled={!schedule || !hasCrew}
+									style={
+										isAlreadySaved
+											? {
+													borderColor: "color-mix(in srgb, #16A34A 45%, var(--border))",
+													color: "var(--text-primary)",
+													background: "var(--bg-surface)",
+												}
+											: undefined
+									}
+								>
+									{isAlreadySaved
+										? "Sudah Tersimpan"
+										: savedAssignments.length > 0
+											? "Simpan Perubahan"
+											: "Simpan Jadwal"}
+								</Button>
+							</Tooltip>
+						</div>
+					</div>
+
+					{/* BARIS 2: Grid Kontrol Filter (Durasi, Navigasi Tanggal, Mode Backup) */}
+					<div className="grid grid-cols-1 gap-4 bg-[var(--bg-surface)]/40 px-4 py-3 lg:grid-cols-12">
+						{/* Kolom 1: Durasi Periode */}
+						<div className="lg:col-span-5">
+							<p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+								1. Durasi Tampilan
 							</p>
-							<div className="flex flex-wrap items-center gap-1.5">
-								{/* Segmented Preset Utama */}
+							<div className="flex flex-wrap items-center gap-2">
 								<Segmented
 									value={
 										rangeMode === "week" ||
@@ -1024,17 +1178,16 @@ export default function JadwalShiftPage() {
 										}
 									}}
 									options={[
-										{ value: "week", label: "1 Minggu" },
-										{ value: "month", label: "1 Bulan" },
-										{ value: "3month", label: "3 Bulan" },
-										{ value: "6month", label: "6 Bulan" },
-										{ value: "year", label: "1 Tahun" },
+										{ value: "week", label: "1 Mg" },
+										{ value: "month", label: "1 Bln" },
+										{ value: "3month", label: "3 Bln" },
+										{ value: "6month", label: "6 Bln" },
+										{ value: "year", label: "1 Thn" },
 									]}
 								/>
 
-								{/* Dropdown Lengkap Semua Pilihan */}
 								<Select
-									className="!w-[170px]"
+									className="!w-[165px]"
 									value={rangeMode}
 									onChange={(v) => {
 										setRangeMode(v as RangeMode);
@@ -1069,12 +1222,11 @@ export default function JadwalShiftPage() {
 										},
 										{
 											label: "Kustom",
-											options: [{ value: "custom", label: "🎯 Rentang Bebas (Pilih Tanggal)" }],
+											options: [{ value: "custom", label: "🎯 Rentang Bebas" }],
 										},
 									]}
 								/>
 
-								{/* Jika pilih Rentang Bebas (Custom) */}
 								{rangeMode === "custom" && (
 									<DatePicker.RangePicker
 										value={customRange ? [dayjs(customRange[0]), dayjs(customRange[1])] : [dayjs(from), dayjs(to)]}
@@ -1085,15 +1237,16 @@ export default function JadwalShiftPage() {
 										}}
 										format="DD/MM/YYYY"
 										placeholder={["Mulai", "Selesai"]}
-										className="!w-[240px]"
+										className="!w-[225px]"
 									/>
 								)}
 							</div>
 						</div>
 
-						<div>
-							<p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-[var(--text-muted)]">
-								Pilih Tanggal / Geser
+						{/* Kolom 2: Navigasi Tanggal & Riwayat */}
+						<div className="lg:col-span-4">
+							<p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+								2. Navigasi Tanggal & Riwayat
 							</p>
 							<div className="flex flex-wrap items-center gap-1.5">
 								<div className="flex items-center gap-1">
@@ -1110,11 +1263,10 @@ export default function JadwalShiftPage() {
 									<Button onClick={() => stepAnchor(1)}>›</Button>
 								</div>
 
-								{/* Shortcut Riwayat 1-4 Minggu Sebelumnya */}
 								{!isMonthBased && rangeMode !== "custom" && (
 									<Select
-										className="!w-[155px]"
-										placeholder="Pilih Riwayat..."
+										className="!w-[138px]"
+										placeholder="Riwayat..."
 										value={
 											anchor === startOfWeek(toDateKey(new Date()))
 												? "0"
@@ -1134,15 +1286,14 @@ export default function JadwalShiftPage() {
 										}}
 										options={[
 											{ value: "0", label: "📍 Pekan Ini" },
-											{ value: "-1", label: "⏪ 1 Minggu Lalu" },
-											{ value: "-2", label: "⏪ 2 Minggu Lalu" },
-											{ value: "-3", label: "⏪ 3 Minggu Lalu" },
-											{ value: "-4", label: "⏪ 4 Minggu Lalu" },
+											{ value: "-1", label: "⏪ 1 Mg Lalu" },
+											{ value: "-2", label: "⏪ 2 Mg Lalu" },
+											{ value: "-3", label: "⏪ 3 Mg Lalu" },
+											{ value: "-4", label: "⏪ 4 Mg Lalu" },
 										]}
 									/>
 								)}
 
-								{/* Kalender Bebas */}
 								{rangeMode !== "custom" && (
 									<DatePicker
 										value={dayjs(anchor)}
@@ -1155,45 +1306,16 @@ export default function JadwalShiftPage() {
 										}}
 										format={rangeMode === "year" ? "YYYY" : isMonthBased ? "MMMM YYYY" : "DD MMM YYYY"}
 										picker={rangeMode === "year" ? "year" : isMonthBased ? "month" : "date"}
-										className="!w-[140px]"
+										className="!w-[125px]"
 									/>
 								)}
 							</div>
 						</div>
 
-						<div className="min-w-[210px] flex-1">
-							<p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-[var(--text-muted)]">
-								Rentang jadwal
-							</p>
-							<div className="flex flex-wrap items-center gap-2 rounded-md border border-[var(--border)] bg-[var(--bg-surface)] px-3 py-[5px] text-[12px] font-semibold text-[var(--text-primary)]">
-								<span>
-									{formatDateId(from)} – {formatDateId(to)}
-								</span>
-								<span className="font-normal text-[var(--text-muted)]">({shiftLabel(rangeMode)})</span>
-								{to < todayKey && (
-									<Tag color="cyan" className="!m-0 !text-[10px] font-bold">
-										RIWAYAT MASA LALU
-									</Tag>
-								)}
-								{isAlreadySaved ? (
-									<Tag color="success" className="!m-0 !text-[10px] font-bold">
-										✓ TERSIMPAN SINKRON ({savedAssignments.length} SLOT)
-									</Tag>
-								) : savedAssignments.length > 0 ? (
-									<Tag color="volcano" className="!m-0 !text-[10px] font-bold">
-										⚡ ADA PERUBAHAN BARU
-									</Tag>
-								) : (
-									<Tag color="warning" className="!m-0 !text-[10px] font-bold">
-										DRAF BELUM DISIMPAN
-									</Tag>
-								)}
-							</div>
-						</div>
-
-						<div>
-							<p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-[var(--text-muted)]">
-								Mbak Koperasi / Magang
+						{/* Kolom 3: Mbak Koperasi / Magang */}
+						<div className="lg:col-span-3 lg:flex lg:flex-col lg:items-end">
+							<p className="mb-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+								3. Mbak Koperasi / Magang
 							</p>
 							<Segmented
 								value={backupAvailable ? "ada" : "tidak"}
@@ -1203,79 +1325,6 @@ export default function JadwalShiftPage() {
 									{ value: "tidak", label: "✕ Tidak Ada (12 Jam)" },
 								]}
 							/>
-						</div>
-
-						<div className="ml-auto flex flex-wrap gap-2">
-							<Button
-								icon={<Edit3 size={14} />}
-								onClick={() => {
-									setManualRange([dayjs(from), dayjs(to)]);
-									setSingleDate(dayjs(from));
-									setManualModalOpen(true);
-								}}
-							>
-								Input Manual
-							</Button>
-							{Object.keys(manualOverrides).length > 0 && (
-								<Button
-									icon={<RotateCcw size={14} />}
-									danger
-									onClick={() => {
-										setManualOverrides({});
-										message.info("Editan manual telah di-reset ke jadwal otomatis.");
-									}}
-								>
-									Reset Manual ({Object.keys(manualOverrides).length})
-								</Button>
-							)}
-							{savedAssignments.length > 0 && Object.keys(manualOverrides).length === 0 && (
-								<Button icon={<History size={14} />} onClick={loadFromSavedAssignments}>
-									Edit Tersimpan
-								</Button>
-							)}
-							<Button icon={<MessageCircle size={14} />} onClick={openWhatsApp} disabled={!schedule}>
-								Export WA
-							</Button>
-							<Button
-								icon={<Share2 size={14} className="text-emerald-600" />}
-								onClick={() => setShareModalOpen(true)}
-								className="!font-semibold"
-								title="Buka link rahasia jadwal khusus karyawan cabang ini"
-							>
-								Link Karyawan
-							</Button>
-							<Tooltip
-								title={
-									isAlreadySaved
-										? "Jadwal pada periode ini sudah tersimpan dan sinkron dengan database. Klik lagi jika ingin memaksa simpan ulang."
-										: savedAssignments.length > 0
-											? "Ada perubahan baru pada jadwal. Klik untuk menyimpan perubahan ke database."
-											: "Draf jadwal baru belum tersimpan. Klik untuk menyimpan ke database."
-								}
-							>
-								<Button
-									type={isAlreadySaved ? "default" : "primary"}
-									icon={isAlreadySaved ? <CheckCircle2 size={14} className="text-[#16A34A]" /> : <Save size={14} />}
-									loading={saving}
-									onClick={handleSave}
-									disabled={!schedule || !hasCrew}
-									style={
-										isAlreadySaved
-											? {
-													borderColor: "color-mix(in srgb, #16A34A 50%, var(--border))",
-													color: "var(--text-primary)",
-													background: "var(--bg-surface)",
-												}
-											: undefined
-									}
-								>
-									{isAlreadySaved
-										? "Sudah Tersimpan"
-										: savedAssignments.length > 0
-											? "Simpan Perubahan"
-											: "Simpan Jadwal"}
-								</Button>
-							</Tooltip>
 						</div>
 					</div>
 				</MetronicCard>
