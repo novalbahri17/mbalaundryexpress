@@ -44,12 +44,19 @@ const isSlotActiveNow = (slot: PublicScheduleSlot, currentMinutes: number): bool
 	return currentMinutes >= startMin || currentMinutes < endMin;
 };
 
+const getPopupStorageKeys = (popup: SchedulePopupConfig, branchSlug: string) => {
+	const scope = popup.scope === "global" ? "global" : `branch_${branchSlug}`;
+	return {
+		storageKey: `mba_sched_popup_${scope}`,
+		sessionKey: `mba_sched_popup_sess_${scope}`,
+	};
+};
+
 const shouldShowPopup = (popup: SchedulePopupConfig, branchSlug: string, todayKey: string): boolean => {
 	const hasContent = Boolean(popup.title?.trim() || popup.content?.trim() || popup.images?.length);
 	if (!popup.enabled || !hasContent) return false;
 
-	const storageKey = `mba_sched_popup_${branchSlug}`;
-	const sessionKey = `mba_sched_popup_sess_${branchSlug}`;
+	const { storageKey, sessionKey } = getPopupStorageKeys(popup, branchSlug);
 
 	try {
 		if (popup.frequency === "always") return true;
@@ -74,8 +81,7 @@ const shouldShowPopup = (popup: SchedulePopupConfig, branchSlug: string, todayKe
 };
 
 const markPopupSeen = (popup: SchedulePopupConfig, branchSlug: string, todayKey: string): void => {
-	const storageKey = `mba_sched_popup_${branchSlug}`;
-	const sessionKey = `mba_sched_popup_sess_${branchSlug}`;
+	const { storageKey, sessionKey } = getPopupStorageKeys(popup, branchSlug);
 	try {
 		if (popup.frequency === "session") {
 			sessionStorage.setItem(sessionKey, "1");
@@ -109,7 +115,8 @@ export default function JadwalKaryawanPage() {
 
 	const [wibNow, setWibNow] = useState(getWibNow);
 	const [logoFailed, setLogoFailed] = useState(false);
-	const [popupOpen, setPopupOpen] = useState(false);
+	const [popupQueue, setPopupQueue] = useState<SchedulePopupConfig[]>([]);
+	const [popupQueueIndex, setPopupQueueIndex] = useState(0);
 	const popupCheckedRef = useRef<string | null>(null);
 
 	useEffect(() => {
@@ -122,7 +129,13 @@ export default function JadwalKaryawanPage() {
 	const branch = data?.branch;
 	const todayKey = data?.todayKey || wibNow.dateKey;
 	const isWeekend = data?.isWeekend ?? false;
-	const popupConfig = data?.popup ?? null;
+	const activePopups = useMemo(() => {
+		if (Array.isArray(data?.popups) && data.popups.length > 0) return data.popups;
+		return data?.popup ? [data.popup] : [];
+	}, [data?.popups, data?.popup]);
+
+	const currentPopup = popupQueue[popupQueueIndex] ?? null;
+	const popupOpen = Boolean(currentPopup);
 
 	const resolvedLogoUrl =
 		data?.logoUrl && data.logoUrl !== "/logo.png"
@@ -134,22 +147,35 @@ export default function JadwalKaryawanPage() {
 	}, [resolvedLogoUrl]);
 
 	useEffect(() => {
-		if (!data || !popupConfig || !branchSlug) return;
-		const checkKey = `${branchSlug}|${popupConfig.updatedAt}`;
+		if (!data || activePopups.length === 0 || !branchSlug) return;
+		const checkKey = `${branchSlug}|${activePopups.map((p) => `${p.scope}:${p.updatedAt}`).join(",")}`;
 		if (popupCheckedRef.current === checkKey) return;
 		popupCheckedRef.current = checkKey;
 
-		if (shouldShowPopup(popupConfig, branchSlug, todayKey)) {
-			setPopupOpen(true);
+		const duePopups = activePopups.filter((p) => shouldShowPopup(p, branchSlug, todayKey));
+		if (duePopups.length > 0) {
+			setPopupQueue(duePopups);
+			setPopupQueueIndex(0);
 		}
-	}, [data, popupConfig, branchSlug, todayKey]);
+	}, [data, activePopups, branchSlug, todayKey]);
 
 	const handleClosePopup = useCallback(() => {
-		setPopupOpen(false);
-		if (popupConfig && branchSlug) {
-			markPopupSeen(popupConfig, branchSlug, todayKey);
+		if (currentPopup && branchSlug) {
+			markPopupSeen(currentPopup, branchSlug, todayKey);
 		}
-	}, [popupConfig, branchSlug, todayKey]);
+		if (popupQueueIndex + 1 < popupQueue.length) {
+			setPopupQueueIndex((idx) => idx + 1);
+		} else {
+			setPopupQueue([]);
+			setPopupQueueIndex(0);
+		}
+	}, [currentPopup, branchSlug, todayKey, popupQueueIndex, popupQueue.length]);
+
+	const handleReopenAllPopups = useCallback(() => {
+		if (activePopups.length === 0) return;
+		setPopupQueue(activePopups);
+		setPopupQueueIndex(0);
+	}, [activePopups]);
 
 	// Urutan shift standar operasional: Pagi -> Sore -> Malam
 	const SHIFT_SORT_ORDER: Record<string, number> = {
@@ -437,14 +463,14 @@ export default function JadwalKaryawanPage() {
 					</div>
 
 					<div className="flex shrink-0 items-center gap-2 text-right">
-						{popupConfig && !popupOpen && (
+						{activePopups.length > 0 && !popupOpen && (
 							<button
 								type="button"
-								onClick={() => setPopupOpen(true)}
+								onClick={handleReopenAllPopups}
 								className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-[10px] font-black text-red-700 transition hover:bg-red-100 dark:border-red-900 dark:bg-red-950/60 dark:text-red-300"
 							>
 								<Megaphone size={11} />
-								<span>Info</span>
+								<span>Info{activePopups.length > 1 ? ` (${activePopups.length})` : ""}</span>
 							</button>
 						)}
 						<span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-black text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
@@ -552,7 +578,16 @@ export default function JadwalKaryawanPage() {
 			</main>
 
 			{/* ============ POP-UP PENGUMUMAN KARYAWAN ============ */}
-			<ScheduleAnnouncementPopup open={popupOpen} onClose={handleClosePopup} popup={popupConfig} />
+			<ScheduleAnnouncementPopup
+				open={popupOpen}
+				onClose={handleClosePopup}
+				popup={currentPopup}
+				queueStep={
+					popupQueue.length > 1
+						? { current: popupQueueIndex + 1, total: popupQueue.length }
+						: undefined
+				}
+			/>
 		</div>
 	);
 }

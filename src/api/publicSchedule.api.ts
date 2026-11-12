@@ -22,6 +22,7 @@ export interface PublicScheduleEmployee {
 }
 
 export type SchedulePopupFrequency = "always" | "session" | "daily" | "weekly" | "once";
+export type SchedulePopupScope = "branch" | "global";
 
 export interface SchedulePopupImage {
 	id: string;
@@ -30,6 +31,8 @@ export interface SchedulePopupImage {
 
 export interface SchedulePopupConfig {
 	enabled: boolean;
+	scope?: SchedulePopupScope;
+	scopeLabel?: string;
 	title: string;
 	content: string;
 	frequency: SchedulePopupFrequency;
@@ -47,6 +50,7 @@ export interface PublicScheduleResponse {
 	};
 	logoUrl?: string;
 	popup?: SchedulePopupConfig | null;
+	popups?: SchedulePopupConfig[];
 	todayKey: string;
 	dayOfWeek: number;
 	isWeekend: boolean;

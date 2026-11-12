@@ -6,9 +6,10 @@ interface ScheduleAnnouncementPopupProps {
 	open: boolean;
 	onClose: () => void;
 	popup: SchedulePopupConfig | null | undefined;
+	queueStep?: { current: number; total: number };
 }
 
-export function ScheduleAnnouncementPopup({ open, onClose, popup }: ScheduleAnnouncementPopupProps) {
+export function ScheduleAnnouncementPopup({ open, onClose, popup, queueStep }: ScheduleAnnouncementPopupProps) {
 	const [activeIndex, setActiveIndex] = useState(0);
 	const touchStartX = useRef<number | null>(null);
 
@@ -19,7 +20,7 @@ export function ScheduleAnnouncementPopup({ open, onClose, popup }: ScheduleAnno
 		if (open) {
 			setActiveIndex(0);
 		}
-	}, [open, popup?.updatedAt]);
+	}, [open, popup?.updatedAt, popup?.scope]);
 
 	useEffect(() => {
 		if (!open) return;
@@ -76,9 +77,16 @@ export function ScheduleAnnouncementPopup({ open, onClose, popup }: ScheduleAnno
 							<Megaphone size={18} />
 						</span>
 						<div className="min-w-0">
-							<span className="block text-[10px] font-extrabold uppercase tracking-wider text-[#C62828] dark:text-red-400">
-								Info &amp; Pengumuman
-							</span>
+							<div className="flex flex-wrap items-center gap-1.5">
+								<span className="block text-[10px] font-extrabold uppercase tracking-wider text-[#C62828] dark:text-red-400">
+									{popup.scopeLabel || (popup.scope === "global" ? "Info Global (Semua Cabang)" : "Info & Pengumuman")}
+								</span>
+								{queueStep && queueStep.total > 1 && (
+									<span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+										{queueStep.current}/{queueStep.total}
+									</span>
+								)}
+							</div>
 							<h2
 								id="schedule-popup-title"
 								className="truncate text-[15px] font-black text-slate-900 dark:text-white"
@@ -194,7 +202,7 @@ export function ScheduleAnnouncementPopup({ open, onClose, popup }: ScheduleAnno
 						onClick={onClose}
 						className="w-full cursor-pointer rounded-xl bg-[#C62828] px-5 py-2.5 text-[13px] font-bold text-white shadow-sm transition hover:bg-[#B71C1C] active:scale-[0.99] sm:w-auto"
 					>
-						Mengerti &amp; Tutup
+						{queueStep && queueStep.current < queueStep.total ? "Tutup & Lihat Info Berikutnya" : "Mengerti & Tutup"}
 					</button>
 				</div>
 			</div>

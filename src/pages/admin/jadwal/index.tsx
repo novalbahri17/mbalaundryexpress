@@ -74,7 +74,7 @@ import type { DaySchedule, DaySlot, ScheduleWarning, ShiftKind } from "@/lib/shi
 import type { ShiftEmployee } from "@/types/database.types";
 import { EmployeePanel } from "./EmployeePanel";
 import { EventPanel } from "./EventPanel";
-import { SchedulePopupModal, useSchedulePopupConfig } from "./SchedulePopupModal";
+import { SchedulePopupModal, useSchedulePopupStatus } from "./SchedulePopupModal";
 import { ModeBadge, RosterPerson, ShiftLegendRow, WeekDateHeader } from "./ShiftChip";
 
 type RangeMode = "week" | "2week" | "month" | "2month" | "3month" | "4month" | "5month" | "6month" | "year" | "custom";
@@ -676,7 +676,7 @@ export default function JadwalShiftPage() {
 	const [waText, setWaText] = useState("");
 	const [shareModalOpen, setShareModalOpen] = useState(false);
 	const [popupModalOpen, setPopupModalOpen] = useState(false);
-	const { data: popupConfig } = useSchedulePopupConfig();
+	const popupStatus = useSchedulePopupStatus(effectiveBranchId);
 
 	const publicEmployeeLink = useMemo(() => {
 		if (!activeBranch) return "";
@@ -1105,13 +1105,13 @@ export default function JadwalShiftPage() {
 							</Button>
 
 							<Button
-								icon={<Megaphone size={14} className={popupConfig?.enabled ? "text-[#C62828]" : undefined} />}
+								icon={<Megaphone size={14} className={popupStatus.anyEnabled ? "text-[#C62828]" : undefined} />}
 								onClick={() => setPopupModalOpen(true)}
 								className="!font-semibold"
-								title="Atur pop-up pengumuman & gambar di halaman jadwal karyawan"
+								title="Atur pop-up khusus cabang ini atau pop-up global semua cabang"
 							>
 								<span>Pop-up Karyawan</span>
-								{popupConfig?.enabled && (
+								{popupStatus.anyEnabled && (
 									<span className="ml-1 inline-block h-2 w-2 rounded-full bg-emerald-500" />
 								)}
 							</Button>
@@ -2096,6 +2096,7 @@ export default function JadwalShiftPage() {
 				open={popupModalOpen}
 				onClose={() => setPopupModalOpen(false)}
 				branches={branches}
+				activeBranchId={effectiveBranchId}
 			/>
 		</MetronicPage>
 	);

@@ -2543,50 +2543,68 @@ app.get("/api/public/schedule/:slug/:token", async (req, res) => {
 			// gunakan fallback /logo.png
 		}
 
-		// Ambil konfigurasi pop-up karyawan dari site_settings
-		let popup = null;
+		// Ambil konfigurasi pop-up karyawan (Khusus Cabang + Global) dari site_settings
+		const popups = [];
 		try {
+			const branchKey = `schedule_popup_branch_${branch.id}`;
 			const [popupRows] = await pool.query(
-				"SELECT `value` FROM `site_settings` WHERE `key` = 'schedule_popup_config' LIMIT 1",
+				"SELECT `key`, `value` FROM `site_settings` WHERE `key` IN (?, 'schedule_popup_global', 'schedule_popup_config')",
+				[branchKey],
 			);
-			if (popupRows[0]?.value) {
-				const parsed = JSON.parse(popupRows[0].value);
-				const targets = Array.isArray(parsed?.targetBranchIds) ? parsed.targetBranchIds : [];
-				const appliesToBranch = targets.length === 0 || targets.includes(branch.id);
-				if (parsed?.enabled && appliesToBranch) {
+			const settingMap = new Map(popupRows.map((r) => [r.key, r.value]));
+
+			const [fileRows] = await pool.query(
+				"SELECT `id`, `file` FROM `branding_files` WHERE `type` = 'schedule_popup' AND `file` IS NOT NULL",
+			);
+			const fileMap = new Map(fileRows.map((r) => [r.id, `/uploads/${encodeURIComponent(r.file)}`]));
+
+			const parsePopupPayload = (rawJson, scope, scopeLabel) => {
+				if (!rawJson) return null;
+				try {
+					const parsed = JSON.parse(rawJson);
+					if (!parsed?.enabled) return null;
+					const targets = Array.isArray(parsed?.targetBranchIds) ? parsed.targetBranchIds : [];
+					if (scope === "global" && targets.length > 0 && !targets.includes(branch.id)) return null;
+
 					const rawImages = Array.isArray(parsed.images) ? parsed.images : [];
-					let validImages = rawImages
+					const validImages = rawImages
 						.map((img) => ({
 							id: String(img?.id || ""),
-							url: String(img?.url || ""),
+							url: (img?.id && fileMap.get(String(img.id))) || String(img?.url || ""),
 						}))
 						.filter((img) => Boolean(img.url));
-					if (validImages.length > 0) {
-						const [fileRows] = await pool.query(
-							"SELECT `id`, `file` FROM `branding_files` WHERE `type` = 'schedule_popup' AND `file` IS NOT NULL",
-						);
-						const fileMap = new Map(fileRows.map((r) => [r.id, `/uploads/${encodeURIComponent(r.file)}`]));
-						validImages = validImages
-							.map((img) => ({
-								id: img.id,
-								url: (img.id && fileMap.get(img.id)) || img.url,
-							}))
-							.filter((img) => Boolean(img.url));
+
+					if (!parsed.title?.trim() && !parsed.content?.trim() && validImages.length === 0) {
+						return null;
 					}
-					if (parsed.title?.trim() || parsed.content?.trim() || validImages.length > 0) {
-						popup = {
-							enabled: true,
-							title: String(parsed.title || ""),
-							content: String(parsed.content || ""),
-							frequency: parsed.frequency || "daily",
-							images: validImages,
-							updatedAt: String(parsed.updatedAt || ""),
-						};
-					}
+
+					return {
+						enabled: true,
+						scope,
+						scopeLabel,
+						title: String(parsed.title || ""),
+						content: String(parsed.content || ""),
+						frequency: parsed.frequency || "daily",
+						images: validImages,
+						updatedAt: String(parsed.updatedAt || ""),
+					};
+				} catch {
+					return null;
 				}
-			}
+			};
+
+			const branchPopup = parsePopupPayload(
+				settingMap.get(branchKey),
+				"branch",
+				`Info Khusus ${branch.name}`,
+			);
+			if (branchPopup) popups.push(branchPopup);
+
+			const globalRaw = settingMap.get("schedule_popup_global") ?? settingMap.get("schedule_popup_config");
+			const globalPopup = parsePopupPayload(globalRaw, "global", "Info Global (Semua Cabang)");
+			if (globalPopup) popups.push(globalPopup);
 		} catch {
-			popup = null;
+			// abaikan error popup agar jadwal tetap tampil
 		}
 
 		res.json({
@@ -2597,7 +2615,8 @@ app.get("/api/public/schedule/:slug/:token", async (req, res) => {
 				address: branch.address,
 			},
 			logoUrl,
-			popup,
+			popup: popups[0] ?? null,
+			popups,
 			todayKey,
 			dayOfWeek: dow,
 			isWeekend,

@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Alert, Button, Input, Modal, Select, Spin, Switch, Tag, Tooltip, message } from "antd";
-import { ArrowLeft, ArrowRight, Eye, ImagePlus, Megaphone, Trash2, UploadCloud } from "lucide-react";
+import { Alert, Button, Input, Modal, Segmented, Select, Spin, Switch, Tag, Tooltip, message } from "antd";
+import { ArrowLeft, ArrowRight, Eye, Globe, ImagePlus, Megaphone, Store, Trash2, UploadCloud } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { createRecord, deleteRecord, fileUrl, getFirstRecord } from "@/api/client";
 import { logAdminActivity } from "@/api/logs.api";
@@ -8,19 +8,21 @@ import type {
 	SchedulePopupConfig,
 	SchedulePopupFrequency,
 	SchedulePopupImage,
+	SchedulePopupScope,
 } from "@/api/publicSchedule.api";
 import { upsertSiteSetting } from "@/api/settings.api";
 import { ScheduleAnnouncementPopup } from "@/components/public/ScheduleAnnouncementPopup";
 import type { Branch } from "@/types/database.types";
 
-const POPUP_SETTING_KEY = "schedule_popup_config";
+const GLOBAL_POPUP_KEY = "schedule_popup_global";
+const LEGACY_POPUP_KEY = "schedule_popup_config";
+const branchPopupKey = (branchId: string) => `schedule_popup_branch_${branchId}`;
 
 export const DEFAULT_POPUP_CONFIG: SchedulePopupConfig = {
 	enabled: false,
-	title: "Pengumuman Penting Tim MBA",
+	title: "",
 	content: "",
 	frequency: "daily",
-	targetBranchIds: [],
 	images: [],
 	updatedAt: "",
 };
@@ -53,46 +55,86 @@ const FREQUENCY_OPTIONS: Array<{ value: SchedulePopupFrequency; label: string; h
 	},
 ];
 
-export function useSchedulePopupConfig() {
+const parseStoredConfig = (raw?: string | null): SchedulePopupConfig => {
+	if (!raw) return DEFAULT_POPUP_CONFIG;
+	try {
+		const parsed = JSON.parse(raw) as Partial<SchedulePopupConfig>;
+		return {
+			enabled: Boolean(parsed.enabled),
+			title: parsed.title ?? "",
+			content: parsed.content ?? "",
+			frequency: parsed.frequency ?? "daily",
+			images: Array.isArray(parsed.images) ? parsed.images : [],
+			updatedAt: parsed.updatedAt ?? "",
+		};
+	} catch {
+		return DEFAULT_POPUP_CONFIG;
+	}
+};
+
+export function useSchedulePopupConfig(scope: SchedulePopupScope, branchId?: string) {
 	return useQuery({
-		queryKey: ["schedule-popup-config"],
+		queryKey: ["schedule-popup-config", scope, scope === "branch" ? branchId : "global"],
+		enabled: scope === "global" || Boolean(branchId),
 		queryFn: async (): Promise<SchedulePopupConfig> => {
-			try {
-				const rec = await getFirstRecord("site_settings", `key = "${POPUP_SETTING_KEY}"`);
-				if (!rec?.value) return DEFAULT_POPUP_CONFIG;
-				const parsed = JSON.parse(rec.value) as Partial<SchedulePopupConfig>;
-				return {
-					enabled: Boolean(parsed.enabled),
-					title: parsed.title ?? DEFAULT_POPUP_CONFIG.title,
-					content: parsed.content ?? "",
-					frequency: parsed.frequency ?? "daily",
-					targetBranchIds: Array.isArray(parsed.targetBranchIds) ? parsed.targetBranchIds : [],
-					images: Array.isArray(parsed.images) ? parsed.images : [],
-					updatedAt: parsed.updatedAt ?? "",
-				};
-			} catch {
-				return DEFAULT_POPUP_CONFIG;
+			if (scope === "branch") {
+				if (!branchId) return DEFAULT_POPUP_CONFIG;
+				const rec = await getFirstRecord("site_settings", `key = "${branchPopupKey(branchId)}"`).catch(() => null);
+				return parseStoredConfig(rec?.value);
 			}
+			const globalRec = await getFirstRecord("site_settings", `key = "${GLOBAL_POPUP_KEY}"`).catch(() => null);
+			if (globalRec?.value) return parseStoredConfig(globalRec.value);
+			const legacyRec = await getFirstRecord("site_settings", `key = "${LEGACY_POPUP_KEY}"`).catch(() => null);
+			return parseStoredConfig(legacyRec?.value);
 		},
 	});
+}
+
+export function useSchedulePopupStatus(branchId?: string) {
+	const branchQuery = useSchedulePopupConfig("branch", branchId);
+	const globalQuery = useSchedulePopupConfig("global");
+	return {
+		branchEnabled: Boolean(branchQuery.data?.enabled),
+		globalEnabled: Boolean(globalQuery.data?.enabled),
+		anyEnabled: Boolean(branchQuery.data?.enabled || globalQuery.data?.enabled),
+	};
 }
 
 interface SchedulePopupModalProps {
 	open: boolean;
 	onClose: () => void;
 	branches: Branch[];
+	activeBranchId?: string;
 }
 
-export function SchedulePopupModal({ open, onClose, branches }: SchedulePopupModalProps) {
+export function SchedulePopupModal({ open, onClose, branches, activeBranchId }: SchedulePopupModalProps) {
 	const queryClient = useQueryClient();
-	const { data: savedConfig, isLoading } = useSchedulePopupConfig();
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+	const [scope, setScope] = useState<SchedulePopupScope>("branch");
+	const [selectedBranchId, setSelectedBranchId] = useState<string | undefined>(activeBranchId);
+
+	useEffect(() => {
+		if (open) {
+			setScope("branch");
+			setSelectedBranchId(activeBranchId || branches[0]?.id);
+		}
+	}, [open, activeBranchId, branches]);
+
+	const effectiveBranchId = selectedBranchId || activeBranchId || branches[0]?.id;
+	const targetBranch = branches.find((b) => b.id === effectiveBranchId);
+
+	const branchQuery = useSchedulePopupConfig("branch", effectiveBranchId);
+	const globalQuery = useSchedulePopupConfig("global");
+
+	const activeQuery = scope === "branch" ? branchQuery : globalQuery;
+	const savedConfig = activeQuery.data;
+	const isLoading = activeQuery.isLoading;
 
 	const [enabled, setEnabled] = useState(false);
 	const [title, setTitle] = useState("");
 	const [content, setContent] = useState("");
 	const [frequency, setFrequency] = useState<SchedulePopupFrequency>("daily");
-	const [targetBranchIds, setTargetBranchIds] = useState<string[]>([]);
 	const [images, setImages] = useState<SchedulePopupImage[]>([]);
 	const [deletedImageIds, setDeletedImageIds] = useState<string[]>([]);
 	const [uploading, setUploading] = useState(false);
@@ -105,10 +147,9 @@ export function SchedulePopupModal({ open, onClose, branches }: SchedulePopupMod
 		setTitle(savedConfig.title);
 		setContent(savedConfig.content);
 		setFrequency(savedConfig.frequency);
-		setTargetBranchIds(savedConfig.targetBranchIds ?? []);
 		setImages(savedConfig.images ?? []);
 		setDeletedImageIds([]);
-	}, [open, savedConfig]);
+	}, [open, savedConfig, scope, effectiveBranchId]);
 
 	const handleUploadFiles = async (fileList: FileList | null) => {
 		if (!fileList || fileList.length === 0) return;
@@ -170,27 +211,37 @@ export function SchedulePopupModal({ open, onClose, branches }: SchedulePopupMod
 	};
 
 	const handleSave = async () => {
+		if (scope === "branch" && !effectiveBranchId) {
+			message.warning("Pilih cabang terlebih dahulu.");
+			return;
+		}
 		if (enabled && !title.trim() && !content.trim() && images.length === 0) {
 			message.warning("Isi judul, tulisan, atau unggah minimal 1 gambar agar pop-up tidak kosong.");
 			return;
 		}
 
+		const settingKey = scope === "branch" ? branchPopupKey(effectiveBranchId as string) : GLOBAL_POPUP_KEY;
+		const scopeDesc =
+			scope === "branch"
+				? `Khusus Cabang ${targetBranch?.name ?? effectiveBranchId}`
+				: "Global (Semua Cabang)";
+
 		setSaving(true);
 		try {
 			const payload: SchedulePopupConfig = {
 				enabled,
+				scope,
 				title: title.trim(),
 				content: content.trim(),
 				frequency,
-				targetBranchIds,
 				images,
 				updatedAt: new Date().toISOString(),
 			};
 
 			await upsertSiteSetting({
-				key: POPUP_SETTING_KEY,
+				key: settingKey,
 				value: JSON.stringify(payload),
-				description: "Konfigurasi pop-up pengumuman pada halaman jadwal karyawan",
+				description: `Pop-up halaman jadwal karyawan (${scopeDesc})`,
 			});
 
 			// Hapus file gambar lama yang dibuang dari daftar
@@ -201,21 +252,22 @@ export function SchedulePopupModal({ open, onClose, branches }: SchedulePopupMod
 			await logAdminActivity({
 				action: "update",
 				collection: "site_settings",
-				targetId: POPUP_SETTING_KEY,
-				summary: `Mengatur pop-up halaman jadwal karyawan (${enabled ? "Aktif" : "Nonaktif"}, ${frequency})`,
+				targetId: settingKey,
+				summary: `Mengatur pop-up jadwal karyawan [${scopeDesc}] (${enabled ? "Aktif" : "Nonaktif"}, ${frequency})`,
 				details: {
+					scope,
+					branchId: scope === "branch" ? effectiveBranchId : null,
+					branchName: scope === "branch" ? targetBranch?.name : "Semua Cabang",
 					enabled,
 					title: payload.title,
 					frequency,
 					imagesCount: images.length,
-					targetBranchIds,
 				},
 			}).catch(() => {});
 
 			queryClient.invalidateQueries({ queryKey: ["schedule-popup-config"] });
 			queryClient.invalidateQueries({ queryKey: ["public-employee-schedule"] });
-			message.success("Pengaturan pop-up jadwal karyawan berhasil disimpan.");
-			onClose();
+			message.success(`Pop-up ${scopeDesc} berhasil disimpan.`);
 		} catch (err) {
 			message.error((err as Error)?.message || "Gagal menyimpan pengaturan pop-up.");
 		} finally {
@@ -227,10 +279,14 @@ export function SchedulePopupModal({ open, onClose, branches }: SchedulePopupMod
 
 	const previewConfig: SchedulePopupConfig = {
 		enabled: true,
+		scope,
+		scopeLabel:
+			scope === "branch"
+				? `Info Khusus ${targetBranch?.name ?? "Cabang"}`
+				: "Info Global (Semua Cabang)",
 		title: title.trim() || "Pengumuman Karyawan",
 		content: content.trim(),
 		frequency,
-		targetBranchIds,
 		images,
 		updatedAt: "preview",
 	};
@@ -246,7 +302,7 @@ export function SchedulePopupModal({ open, onClose, branches }: SchedulePopupMod
 				}
 				open={open}
 				onCancel={onClose}
-				width={720}
+				width={760}
 				footer={
 					<div className="flex flex-wrap items-center justify-between gap-2">
 						<Button
@@ -257,40 +313,107 @@ export function SchedulePopupModal({ open, onClose, branches }: SchedulePopupMod
 							Pratinjau Pop-up
 						</Button>
 						<div className="flex items-center gap-2">
-							<Button onClick={onClose}>Batal</Button>
+							<Button onClick={onClose}>Tutup</Button>
 							<Button type="primary" loading={saving} onClick={handleSave}>
-								Simpan Pengaturan Pop-up
+								{scope === "branch"
+									? `Simpan Pop-up ${targetBranch?.name ?? "Cabang"}`
+									: "Simpan Pop-up Global"}
 							</Button>
 						</div>
 					</div>
 				}
 			>
-				{isLoading ? (
-					<div className="flex h-40 items-center justify-center">
-						<Spin />
-					</div>
-				) : (
-					<div className="space-y-4 pt-2">
-						{/* Status Aktif/Nonaktif */}
-						<div className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] px-4 py-3">
-							<div>
-								<p className="m-0 text-[13px] font-bold text-[var(--text-primary)]">
-									Tampilkan Pop-up di Link Jadwal Karyawan
-								</p>
-								<p className="m-0 text-[11px] text-[var(--text-muted)]">
-									Jika aktif, karyawan akan melihat pop-up ini saat membuka halaman jadwal mereka.
-								</p>
-							</div>
-							<div className="flex items-center gap-2">
-								<Tag color={enabled ? "success" : "default"} className="!m-0 font-bold">
-									{enabled ? "AKTIF" : "NONAKTIF"}
-								</Tag>
-								<Switch checked={enabled} onChange={setEnabled} />
-							</div>
+				<div className="space-y-4 pt-2">
+					{/* Switcher Scope: Khusus Per Cabang vs Global Semua Cabang */}
+					<div className="rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] p-3 space-y-2.5">
+						<div className="flex flex-wrap items-center justify-between gap-2">
+							<Segmented
+								value={scope}
+								onChange={(v) => setScope(v as SchedulePopupScope)}
+								options={[
+									{
+										value: "branch",
+										label: (
+											<span className="inline-flex items-center gap-1.5 px-1 font-semibold">
+												<Store size={14} />
+												<span>Khusus Per Cabang</span>
+												{branchQuery.data?.enabled && (
+													<span className="h-2 w-2 rounded-full bg-emerald-500" />
+												)}
+											</span>
+										),
+									},
+									{
+										value: "global",
+										label: (
+											<span className="inline-flex items-center gap-1.5 px-1 font-semibold">
+												<Globe size={14} />
+												<span>Pop-up Global (Semua Cabang)</span>
+												{globalQuery.data?.enabled && (
+													<span className="h-2 w-2 rounded-full bg-emerald-500" />
+												)}
+											</span>
+										),
+									},
+								]}
+							/>
+
+							{scope === "branch" && (
+								<Select
+									className="!w-[230px]"
+									value={effectiveBranchId}
+									onChange={(v) => setSelectedBranchId(v)}
+									placeholder="Pilih Cabang"
+									options={branches.map((b) => ({
+										value: b.id,
+										label: b.name,
+									}))}
+								/>
+							)}
 						</div>
 
-						{/* Frekuensi Muncul & Target Cabang */}
-						<div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+						<p className="m-0 text-[11px] text-[var(--text-muted)]">
+							{scope === "branch" ? (
+								<>
+									Pop-up ini <strong>khusus untuk cabang {targetBranch?.name}</strong> dan terpisah dari cabang lain.
+								</>
+							) : (
+								<>
+									Pop-up <strong>Global</strong> tampil di <strong>semua link jadwal cabang</strong>. Jika cabang juga punya pop-up khusus yang aktif, keduanya akan tampil bergantian.
+								</>
+							)}
+						</p>
+					</div>
+
+					{isLoading ? (
+						<div className="flex h-40 items-center justify-center">
+							<Spin />
+						</div>
+					) : (
+						<div className="space-y-4">
+							{/* Status Aktif/Nonaktif */}
+							<div className="flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--bg-surface)] px-4 py-3">
+								<div>
+									<p className="m-0 text-[13px] font-bold text-[var(--text-primary)]">
+										{scope === "branch"
+											? `Aktifkan Pop-up Khusus ${targetBranch?.name ?? "Cabang"}`
+											: "Aktifkan Pop-up Global (Semua Cabang)"}
+									</p>
+									<p className="m-0 text-[11px] text-[var(--text-muted)]">
+										{scope === "branch"
+											? "Hanya muncul untuk karyawan cabang ini."
+											: "Muncul untuk karyawan di seluruh cabang."}
+									</p>
+								</div>
+								<div className="flex items-center gap-2">
+									<Tag color={enabled ? "success" : "default"} className="!m-0 font-bold">
+										{enabled ? "AKTIF" : "NONAKTIF"}
+									</Tag>
+									<Switch checked={enabled} onChange={setEnabled} />
+								</div>
+							</div>
+
+							{/* Frekuensi Muncul */}
 							<div>
 								<label className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-[var(--text-muted)]">
 									Seberapa Sering Muncul?
@@ -309,58 +432,38 @@ export function SchedulePopupModal({ open, onClose, branches }: SchedulePopupMod
 								)}
 							</div>
 
-							<div>
-								<label className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-[var(--text-muted)]">
-									Target Cabang
-								</label>
-								<Select
-									mode="multiple"
-									allowClear
-									className="w-full"
-									placeholder="Semua Cabang (kosongkan = tampil di semua)"
-									value={targetBranchIds}
-									onChange={(vals) => setTargetBranchIds(vals)}
-									options={branches.map((b) => ({
-										value: b.id,
-										label: b.name,
-									}))}
-								/>
-								<p className="mt-1 text-[11px] text-[var(--text-muted)]">
-									{targetBranchIds.length === 0
-										? "Berlaku untuk semua link jadwal cabang."
-										: `Hanya tampil di ${targetBranchIds.length} cabang terpilih.`}
-								</p>
-							</div>
-						</div>
+							{/* Judul & Isi Tulisan */}
+							<div className="space-y-3">
+								<div>
+									<label className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-[var(--text-muted)]">
+										Judul Pop-up
+									</label>
+									<Input
+										value={title}
+										onChange={(e) => setTitle(e.target.value)}
+										placeholder={
+											scope === "branch"
+												? `Contoh: Info Khusus Tim ${targetBranch?.name ?? "Cabang"}`
+												: "Contoh: Pengumuman Resmi Semua Cabang"
+										}
+										maxLength={120}
+									/>
+								</div>
 
-						{/* Judul & Isi Tulisan */}
-						<div className="space-y-3">
-							<div>
-								<label className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-[var(--text-muted)]">
-									Judul Pop-up
-								</label>
-								<Input
-									value={title}
-									onChange={(e) => setTitle(e.target.value)}
-									placeholder="Contoh: Pengumuman Penting / Info Operasional"
-									maxLength={120}
-								/>
+								<div>
+									<label className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-[var(--text-muted)]">
+										Isi Tulisan / Pesan
+									</label>
+									<Input.TextArea
+										rows={4}
+										value={content}
+										onChange={(e) => setContent(e.target.value)}
+										placeholder="Tulis pengumuman, aturan baru, pengingat shift, atau pesan untuk karyawan di sini... (Bisa pakai baris baru & emoji)"
+										maxLength={4000}
+										showCount
+									/>
+								</div>
 							</div>
-
-							<div>
-								<label className="mb-1 block text-[11px] font-bold uppercase tracking-wide text-[var(--text-muted)]">
-									Isi Tulisan / Pesan
-								</label>
-								<Input.TextArea
-									rows={4}
-									value={content}
-									onChange={(e) => setContent(e.target.value)}
-									placeholder="Tulis pengumuman, aturan baru, pengingat shift, atau pesan untuk karyawan di sini... (Bisa pakai baris baru & emoji)"
-									maxLength={4000}
-									showCount
-								/>
-							</div>
-						</div>
 
 						{/* Upload Gambar Banyak */}
 						<div className="space-y-2.5">
@@ -478,7 +581,8 @@ export function SchedulePopupModal({ open, onClose, branches }: SchedulePopupMod
 							/>
 						)}
 					</div>
-				)}
+					)}
+				</div>
 			</Modal>
 
 			{/* Pratinjau Tampilan Pop-up Karyawan */}
