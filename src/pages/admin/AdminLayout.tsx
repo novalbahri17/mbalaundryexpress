@@ -14,6 +14,7 @@ import {
 	ShieldCheck,
 	Star,
 	Type,
+	UserCog,
 	Users,
 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -68,6 +69,7 @@ const menuEntries: AdminMenuEntry[] = [
 	{ key: "/admin/pengaturan/branding", label: "Logo & Branding", group: "group-komunikasi" },
 	{ key: "/admin/pengaturan/teks-landing", label: "Teks Landing", group: "group-komunikasi" },
 	{ key: "/admin/pengaturan", label: "Pengaturan", group: "group-komunikasi" },
+	{ key: "/admin/users", label: "Manajemen User", group: "group-komunikasi" },
 	{ key: "/admin/logs", label: "Log & Aktivitas", group: "group-komunikasi" },
 ];
 
@@ -236,6 +238,8 @@ function getMenuIcon(key: string): React.ReactNode {
 			return <Image size={18} />;
 		case "/admin/pengaturan/teks-landing":
 			return <Type size={18} />;
+		case "/admin/users":
+			return <UserCog size={18} />;
 		case "/admin/logs":
 			return <Activity size={18} />;
 		default:
@@ -277,6 +281,12 @@ export default function AdminLayout() {
 
 	// User dropdown menu
 	const userMenuItems: MenuProps["items"] = [
+		{
+			key: "users",
+			label: "Manajemen User",
+			icon: <UserCog size={14} />,
+			onClick: () => navigate("/admin/users"),
+		},
 		{
 			key: "security",
 			label: "Keamanan",

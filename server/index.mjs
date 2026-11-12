@@ -1013,15 +1013,22 @@ function constantTimeEqual(a, b) {
 async function ensureAdminTable() {
 	await pool.query(`
 		CREATE TABLE IF NOT EXISTS \`_admins\` (
-			\`id\`       VARCHAR(15)  NOT NULL,
-			\`email\`    VARCHAR(191) NOT NULL,
-			\`password\` VARCHAR(191) NOT NULL,
-			\`created\`  DATETIME     NULL,
-			\`updated\`  DATETIME     NULL,
+			\`id\`        VARCHAR(15)  NOT NULL,
+			\`email\`     VARCHAR(191) NOT NULL,
+			\`name\`      VARCHAR(120) NULL,
+			\`role\`      VARCHAR(32)  NOT NULL DEFAULT 'admin',
+			\`is_active\` TINYINT(1)   NOT NULL DEFAULT 1,
+			\`password\`  VARCHAR(191) NOT NULL,
+			\`created\`   DATETIME     NULL,
+			\`updated\`   DATETIME     NULL,
 			PRIMARY KEY (\`id\`),
 			UNIQUE KEY \`uq_admins_email\` (\`email\`)
 		) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
 	`);
+
+	await ensureColumn("_admins", "name", "VARCHAR(120) NULL");
+	await ensureColumn("_admins", "role", "VARCHAR(32) NOT NULL DEFAULT 'admin'");
+	await ensureColumn("_admins", "is_active", "TINYINT(1) NOT NULL DEFAULT 1");
 
 	// File branding (logo, favicon, gambar artikel).
 	// Yang disimpan di MySQL hanya nama filenya; file aslinya di folder uploads/.
@@ -1410,9 +1417,23 @@ app.post(
 				return jsonError(res, 400, "Failed to authenticate.");
 			}
 
+			if (admin.is_active === 0 || admin.is_active === false) {
+				await recordLoginLog({
+					email: admin.email,
+					ip,
+					device,
+					ua,
+					status: "failed",
+					reason: "Akun dinonaktifkan",
+				});
+				return jsonError(res, 403, "Akun Anda telah dinonaktifkan oleh admin.");
+			}
+
 			const token = signToken({
 				id: admin.id,
 				email: admin.email,
+				name: admin.name || null,
+				role: admin.role || "admin",
 				type: "superuser",
 				exp: Math.floor(Date.now() / 1000) + TOKEN_TTL_SECONDS,
 			});
@@ -1439,8 +1460,19 @@ app.post(
 
 			res.json({
 				token,
-				record: { id: admin.id, email: admin.email, collectionName: "_superusers" },
-				admin: { id: admin.id, email: admin.email },
+				record: {
+					id: admin.id,
+					email: admin.email,
+					name: admin.name || null,
+					role: admin.role || "admin",
+					collectionName: "_superusers",
+				},
+				admin: {
+					id: admin.id,
+					email: admin.email,
+					name: admin.name || null,
+					role: admin.role || "admin",
+				},
 			});
 		} catch (error) {
 			logError("login", error);
@@ -2136,6 +2168,220 @@ app.get("/api/admin/branch-schedule-tokens", async (req, res) => {
 		res.json({ items: rows });
 	} catch (error) {
 		logError("get branch-schedule-tokens", error);
+		jsonError(res, 500, error.message);
+	}
+});
+
+// --- Manajemen User Admin (_admins) -----------------------------------------
+app.get("/api/admin/users", async (req, res) => {
+	const auth = verifyToken(bearerToken(req));
+	if (!auth) return jsonError(res, 401, "Unauthorized");
+	try {
+		const [rows] = await pool.query(
+			"SELECT `id`, `email`, `name`, `role`, `is_active`, `created`, `updated` FROM `_admins` ORDER BY `created` ASC, `email` ASC",
+		);
+		res.json({
+			items: rows.map((r) => ({
+				id: r.id,
+				email: r.email,
+				name: r.name || "",
+				role: r.role || "admin",
+				is_active: Boolean(r.is_active === undefined || r.is_active === null ? true : r.is_active),
+				created: r.created,
+				updated: r.updated,
+			})),
+		});
+	} catch (error) {
+		logError("get admin users", error);
+		jsonError(res, 500, error.message);
+	}
+});
+
+app.post("/api/admin/users", async (req, res) => {
+	const auth = verifyToken(bearerToken(req));
+	if (!auth) return jsonError(res, 401, "Unauthorized");
+
+	const { email, name, role, password, is_active } = req.body ?? {};
+	const cleanEmail = String(email ?? "").trim().toLowerCase();
+	const cleanName = String(name ?? "").trim();
+	const cleanRole = ["superadmin", "admin", "operator"].includes(String(role)) ? String(role) : "admin";
+	const rawPassword = String(password ?? "");
+	const activeFlag = is_active === false || is_active === 0 ? 0 : 1;
+
+	if (!cleanEmail || !EMAIL_RE.test(cleanEmail) || cleanEmail.length > 191) {
+		return jsonError(res, 400, "Format email tidak valid.");
+	}
+	if (!rawPassword || rawPassword.length < 4 || rawPassword.length > 200) {
+		return jsonError(res, 400, "Password wajib diisi (minimal 4 karakter).");
+	}
+
+	try {
+		const [dup] = await pool.query("SELECT `id` FROM `_admins` WHERE `email` = ? LIMIT 1", [cleanEmail]);
+		if (dup[0]) {
+			return jsonError(res, 400, "Email sudah terdaftar pada user lain.");
+		}
+
+		const id = newRecordId();
+		await pool.query(
+			"INSERT INTO `_admins` (`id`, `email`, `name`, `role`, `is_active`, `password`, `created`, `updated`) VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())",
+			[id, cleanEmail, cleanName || null, cleanRole, activeFlag, hashPassword(rawPassword)],
+		);
+
+		const [rows] = await pool.query(
+			"SELECT `id`, `email`, `name`, `role`, `is_active`, `created`, `updated` FROM `_admins` WHERE `id` = ? LIMIT 1",
+			[id],
+		);
+		const createdUser = rows[0];
+
+		const ip = clientIp(req);
+		const device = parseDevice(req.headers["user-agent"]);
+		recordActivityLog({
+			email: auth.email || "admin",
+			action: "create",
+			collection: "_admins",
+			targetId: id,
+			summary: `Menambah user admin baru: ${cleanEmail} (${cleanRole})`,
+			details: JSON.stringify({ email: cleanEmail, name: cleanName, role: cleanRole, is_active: Boolean(activeFlag) }),
+			ip,
+			device,
+		}).catch(() => {});
+
+		res.status(201).json({
+			...createdUser,
+			name: createdUser.name || "",
+			is_active: Boolean(createdUser.is_active),
+		});
+	} catch (error) {
+		logError("create admin user", error);
+		jsonError(res, 500, error.message);
+	}
+});
+
+app.patch("/api/admin/users/:id", async (req, res) => {
+	const auth = verifyToken(bearerToken(req));
+	if (!auth) return jsonError(res, 401, "Unauthorized");
+	const { id } = req.params;
+
+	try {
+		const [existingRows] = await pool.query("SELECT * FROM `_admins` WHERE `id` = ? LIMIT 1", [id]);
+		const existing = existingRows[0];
+		if (!existing) return jsonError(res, 404, "User tidak ditemukan.");
+
+		const { email, name, role, password, is_active } = req.body ?? {};
+		const nextEmail = email !== undefined ? String(email).trim().toLowerCase() : existing.email;
+		const nextName = name !== undefined ? String(name).trim() || null : existing.name;
+		const nextRole =
+			role !== undefined && ["superadmin", "admin", "operator"].includes(String(role))
+				? String(role)
+				: existing.role || "admin";
+		const nextActive =
+			is_active !== undefined ? (is_active === false || is_active === 0 ? 0 : 1) : Number(existing.is_active ?? 1);
+
+		if (!nextEmail || !EMAIL_RE.test(nextEmail) || nextEmail.length > 191) {
+			return jsonError(res, 400, "Format email tidak valid.");
+		}
+		if (id === auth.id && nextActive === 0) {
+			return jsonError(res, 400, "Tidak dapat menonaktifkan akun yang sedang dipakai login.");
+		}
+
+		if (nextEmail !== existing.email) {
+			const [dup] = await pool.query("SELECT `id` FROM `_admins` WHERE `email` = ? AND `id` != ? LIMIT 1", [
+				nextEmail,
+				id,
+			]);
+			if (dup[0]) return jsonError(res, 400, "Email sudah dipakai oleh user lain.");
+		}
+
+		let nextPasswordHash = existing.password;
+		let passwordChanged = false;
+		if (password !== undefined && String(password) !== "") {
+			const rawPassword = String(password);
+			if (rawPassword.length < 4 || rawPassword.length > 200) {
+				return jsonError(res, 400, "Password minimal 4 karakter.");
+			}
+			nextPasswordHash = hashPassword(rawPassword);
+			passwordChanged = true;
+		}
+
+		await pool.query(
+			"UPDATE `_admins` SET `email` = ?, `name` = ?, `role` = ?, `is_active` = ?, `password` = ?, `updated` = NOW() WHERE `id` = ?",
+			[nextEmail, nextName, nextRole, nextActive, nextPasswordHash, id],
+		);
+
+		const [updatedRows] = await pool.query(
+			"SELECT `id`, `email`, `name`, `role`, `is_active`, `created`, `updated` FROM `_admins` WHERE `id` = ? LIMIT 1",
+			[id],
+		);
+		const updatedUser = updatedRows[0];
+
+		const ip = clientIp(req);
+		const device = parseDevice(req.headers["user-agent"]);
+		recordActivityLog({
+			email: auth.email || "admin",
+			action: "update",
+			collection: "_admins",
+			targetId: id,
+			summary: passwordChanged
+				? `Mengubah data & password user admin: ${nextEmail}`
+				: `Mengubah data user admin: ${nextEmail}`,
+			details: JSON.stringify({
+				email: nextEmail,
+				name: nextName,
+				role: nextRole,
+				is_active: Boolean(nextActive),
+				passwordChanged,
+			}),
+			ip,
+			device,
+		}).catch(() => {});
+
+		res.json({
+			...updatedUser,
+			name: updatedUser.name || "",
+			is_active: Boolean(updatedUser.is_active),
+		});
+	} catch (error) {
+		logError("update admin user", error);
+		jsonError(res, 500, error.message);
+	}
+});
+
+app.delete("/api/admin/users/:id", async (req, res) => {
+	const auth = verifyToken(bearerToken(req));
+	if (!auth) return jsonError(res, 401, "Unauthorized");
+	const { id } = req.params;
+
+	if (id === auth.id) {
+		return jsonError(res, 400, "Tidak dapat menghapus akun yang sedang Anda gunakan login.");
+	}
+
+	try {
+		const [[{ c }]] = await pool.query("SELECT COUNT(*) AS c FROM `_admins`");
+		if (Number(c) <= 1) {
+			return jsonError(res, 400, "Minimal harus ada 1 user admin yang tersisa.");
+		}
+
+		const [rows] = await pool.query("SELECT `id`, `email` FROM `_admins` WHERE `id` = ? LIMIT 1", [id]);
+		if (!rows[0]) return jsonError(res, 404, "User tidak ditemukan.");
+
+		await pool.query("DELETE FROM `_admins` WHERE `id` = ?", [id]);
+
+		const ip = clientIp(req);
+		const device = parseDevice(req.headers["user-agent"]);
+		recordActivityLog({
+			email: auth.email || "admin",
+			action: "delete",
+			collection: "_admins",
+			targetId: id,
+			summary: `Menghapus user admin: ${rows[0].email}`,
+			details: JSON.stringify({ deletedId: id, email: rows[0].email }),
+			ip,
+			device,
+		}).catch(() => {});
+
+		res.json({ ok: true });
+	} catch (error) {
+		logError("delete admin user", error);
 		jsonError(res, 500, error.message);
 	}
 });

@@ -15,6 +15,8 @@ const apiUrl = (path: string): string => `${baseUrl.replace(/\/+$/, "")}${path}`
 interface SessionModel {
 	id: string;
 	email: string;
+	name?: string | null;
+	role?: string;
 	collectionName?: string;
 }
 
