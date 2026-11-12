@@ -21,6 +21,23 @@ export interface PublicScheduleEmployee {
 	allowed_shifts?: ShiftKind[] | null;
 }
 
+export type SchedulePopupFrequency = "always" | "session" | "daily" | "weekly" | "once";
+
+export interface SchedulePopupImage {
+	id: string;
+	url: string;
+}
+
+export interface SchedulePopupConfig {
+	enabled: boolean;
+	title: string;
+	content: string;
+	frequency: SchedulePopupFrequency;
+	targetBranchIds?: string[];
+	images: SchedulePopupImage[];
+	updatedAt: string;
+}
+
 export interface PublicScheduleResponse {
 	branch: {
 		id: string;
@@ -28,6 +45,8 @@ export interface PublicScheduleResponse {
 		slug: string;
 		address: string;
 	};
+	logoUrl?: string;
+	popup?: SchedulePopupConfig | null;
 	todayKey: string;
 	dayOfWeek: number;
 	isWeekend: boolean;

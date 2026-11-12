@@ -1,42 +1,104 @@
 import { useQuery } from "@tanstack/react-query";
-import { Alert, Badge, Button, Card, Spin, Tag, message } from "antd";
-import {
-	AlertTriangle,
-	Calendar,
-	CheckCircle,
-	ChevronRight,
-	Clock,
-	Copy,
-	Info,
-	Lock,
-	Moon,
-	Share2,
-	Sparkles,
-	Sun,
-	Sunrise,
-	User,
-	Users,
-} from "lucide-react";
-import { useMemo, useState } from "react";
+import { Tag } from "antd";
+import { Calendar, Info, Lock, Megaphone, Sparkles } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { useParams } from "react-router-dom";
-import { getPublicSchedule, type PublicScheduleSlot } from "@/api/publicSchedule.api";
-import {
-	DAY_NAMES,
-	MONTH_NAMES,
-	REGULAR_SHIFTS,
-	SHIFT_META,
-	addDays,
-	eachDate,
-	formatDateId,
-	formatDateShort,
-	generateSchedule,
-	parseDateKey,
-} from "@/lib/shiftScheduler";
-import type { ShiftKind } from "@/types/database.types";
+import { getPublicSchedule, type PublicScheduleSlot, type SchedulePopupConfig } from "@/api/publicSchedule.api";
+import { ScheduleAnnouncementPopup } from "@/components/public/ScheduleAnnouncementPopup";
+import { useBranding } from "@/hooks/useBranding";
+import { DAY_NAMES, MONTH_NAMES, SHIFT_META, eachDate, parseDateKey } from "@/lib/shiftScheduler";
+
+const getWibNow = (): { dateKey: string; minutes: number } => {
+	const now = new Date();
+	const parts = new Intl.DateTimeFormat("en-CA", {
+		timeZone: "Asia/Jakarta",
+		year: "numeric",
+		month: "2-digit",
+		day: "2-digit",
+		hour: "2-digit",
+		minute: "2-digit",
+		hour12: false,
+	}).formatToParts(now);
+	const get = (t: string) => parts.find((p) => p.type === t)?.value || "00";
+	const h = Number(get("hour")) % 24;
+	const m = Number(get("minute"));
+	return {
+		dateKey: `${get("year")}-${get("month")}-${get("day")}`,
+		minutes: h * 60 + m,
+	};
+};
+
+const parseTimeMinutes = (hhmm: string): number => {
+	const [h, m] = hhmm.split(":").map(Number);
+	return (Number.isFinite(h) ? h : 0) * 60 + (Number.isFinite(m) ? m : 0);
+};
+
+const isSlotActiveNow = (slot: PublicScheduleSlot, currentMinutes: number): boolean => {
+	const startMin = parseTimeMinutes(slot.start_time || "00:00");
+	let endMin = parseTimeMinutes(slot.end_time || "00:00");
+	if (endMin === 0 && startMin > 0) endMin = 1440;
+	if (startMin < endMin) {
+		return currentMinutes >= startMin && currentMinutes < endMin;
+	}
+	return currentMinutes >= startMin || currentMinutes < endMin;
+};
+
+const shouldShowPopup = (popup: SchedulePopupConfig, branchSlug: string, todayKey: string): boolean => {
+	const hasContent = Boolean(popup.title?.trim() || popup.content?.trim() || popup.images?.length);
+	if (!popup.enabled || !hasContent) return false;
+
+	const storageKey = `mba_sched_popup_${branchSlug}`;
+	const sessionKey = `mba_sched_popup_sess_${branchSlug}`;
+
+	try {
+		if (popup.frequency === "always") return true;
+		if (popup.frequency === "session") {
+			return sessionStorage.getItem(sessionKey) !== "1";
+		}
+		const raw = localStorage.getItem(storageKey);
+		const saved = raw ? (JSON.parse(raw) as { dateKey?: string; timestamp?: number; version?: string }) : {};
+		if (popup.frequency === "daily") {
+			return saved.dateKey !== todayKey;
+		}
+		if (popup.frequency === "weekly") {
+			return !saved.timestamp || Date.now() - saved.timestamp >= 7 * 86_400_000;
+		}
+		if (popup.frequency === "once") {
+			return saved.version !== (popup.updatedAt || "v1");
+		}
+	} catch {
+		return true;
+	}
+	return true;
+};
+
+const markPopupSeen = (popup: SchedulePopupConfig, branchSlug: string, todayKey: string): void => {
+	const storageKey = `mba_sched_popup_${branchSlug}`;
+	const sessionKey = `mba_sched_popup_sess_${branchSlug}`;
+	try {
+		if (popup.frequency === "session") {
+			sessionStorage.setItem(sessionKey, "1");
+			return;
+		}
+		if (popup.frequency === "daily" || popup.frequency === "weekly" || popup.frequency === "once") {
+			localStorage.setItem(
+				storageKey,
+				JSON.stringify({
+					dateKey: todayKey,
+					timestamp: Date.now(),
+					version: popup.updatedAt || "v1",
+				}),
+			);
+		}
+	} catch {
+		// abaikan jika storage diblokir
+	}
+};
 
 export default function JadwalKaryawanPage() {
 	const { branchSlug, secretToken } = useParams<{ branchSlug: string; secretToken: string }>();
+	const { data: branding } = useBranding();
 
 	const { data, isLoading, error } = useQuery({
 		queryKey: ["public-employee-schedule", branchSlug, secretToken],
@@ -45,9 +107,49 @@ export default function JadwalKaryawanPage() {
 		staleTime: 60_000,
 	});
 
+	const [wibNow, setWibNow] = useState(getWibNow);
+	const [logoFailed, setLogoFailed] = useState(false);
+	const [popupOpen, setPopupOpen] = useState(false);
+	const popupCheckedRef = useRef<string | null>(null);
+
+	useEffect(() => {
+		const timer = window.setInterval(() => {
+			setWibNow(getWibNow());
+		}, 30_000);
+		return () => window.clearInterval(timer);
+	}, []);
+
 	const branch = data?.branch;
-	const todayKey = data?.todayKey || new Date().toISOString().slice(0, 10);
+	const todayKey = data?.todayKey || wibNow.dateKey;
 	const isWeekend = data?.isWeekend ?? false;
+	const popupConfig = data?.popup ?? null;
+
+	const resolvedLogoUrl =
+		data?.logoUrl && data.logoUrl !== "/logo.png"
+			? data.logoUrl
+			: branding?.logo_url || data?.logoUrl || "/logo.png";
+
+	useEffect(() => {
+		setLogoFailed(false);
+	}, [resolvedLogoUrl]);
+
+	useEffect(() => {
+		if (!data || !popupConfig || !branchSlug) return;
+		const checkKey = `${branchSlug}|${popupConfig.updatedAt}`;
+		if (popupCheckedRef.current === checkKey) return;
+		popupCheckedRef.current = checkKey;
+
+		if (shouldShowPopup(popupConfig, branchSlug, todayKey)) {
+			setPopupOpen(true);
+		}
+	}, [data, popupConfig, branchSlug, todayKey]);
+
+	const handleClosePopup = useCallback(() => {
+		setPopupOpen(false);
+		if (popupConfig && branchSlug) {
+			markPopupSeen(popupConfig, branchSlug, todayKey);
+		}
+	}, [popupConfig, branchSlug, todayKey]);
 
 	// Urutan shift standar operasional: Pagi -> Sore -> Malam
 	const SHIFT_SORT_ORDER: Record<string, number> = {
@@ -68,7 +170,7 @@ export default function JadwalKaryawanPage() {
 			list.push(asg);
 			map.set(cleanDate, list);
 		}
-		for (const [date, list] of map.entries()) {
+		for (const list of map.values()) {
 			list.sort((a, b) => {
 				const oa = SHIFT_SORT_ORDER[a.shift] ?? 99;
 				const ob = SHIFT_SORT_ORDER[b.shift] ?? 99;
@@ -182,11 +284,12 @@ export default function JadwalKaryawanPage() {
 					) : (
 						slots.map((slot, idx) => {
 							const meta = SHIFT_META[slot.shift] || SHIFT_META.pagi;
+							const isActiveShift = isToday && isSlotActiveNow(slot, wibNow.minutes);
 
 							// Warna & Style Kartu Shift
-							let bgCard = meta.bg;
-							let borderCard = `${meta.color}40`;
-							let textColor = meta.color;
+							const bgCard = meta.bg;
+							const borderCard = isActiveShift ? "#C62828" : `${meta.color}40`;
+							const textColor = meta.color;
 							let shiftEmoji = meta.emoji;
 							let shiftTitle = meta.label;
 
@@ -205,7 +308,10 @@ export default function JadwalKaryawanPage() {
 									className="flex items-center justify-between rounded-xl p-3 transition-all"
 									style={{
 										background: bgCard,
-										border: `1.5px solid ${borderCard}`,
+										border: `${isActiveShift ? "2.5px" : "1.5px"} solid ${borderCard}`,
+										boxShadow: isActiveShift
+											? "0 0 0 3px rgba(198, 40, 40, 0.16), 0 4px 12px rgba(198, 40, 40, 0.14)"
+											: undefined,
 										color: textColor,
 									}}
 								>
@@ -213,13 +319,19 @@ export default function JadwalKaryawanPage() {
 									<div className="flex items-center gap-2.5 min-w-0">
 										<span className="text-[20px] shrink-0 leading-none">{shiftEmoji}</span>
 										<div className="min-w-0">
-											<div className="flex items-center gap-1.5">
+											<div className="flex flex-wrap items-center gap-1.5">
 												<span
 													className="text-[13px] font-black uppercase tracking-wide"
 													style={{ color: textColor }}
 												>
 													{shiftTitle}
 												</span>
+												{isActiveShift && (
+													<span className="inline-flex items-center gap-1 rounded-full bg-[#C62828] px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-white shadow-sm">
+														<span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+														SEDANG JAGA
+													</span>
+												)}
 												{Boolean(slot.is_backup) && (
 													<span className="rounded bg-purple-100 px-1.5 py-0.2 text-[9px] font-bold text-purple-700 dark:bg-purple-900 dark:text-purple-200">
 														BACKUP
@@ -228,7 +340,7 @@ export default function JadwalKaryawanPage() {
 											</div>
 											<div
 												className="text-[12px] font-bold"
-												style={{ color: "inherit", opacity: 0.8 }}
+												style={{ color: "inherit", opacity: 0.85 }}
 											>
 												Jam: {slot.start_time} – {slot.end_time} ({slot.hours} Jam)
 											</div>
@@ -302,9 +414,20 @@ export default function JadwalKaryawanPage() {
 			<header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur shadow-sm dark:border-slate-800 dark:bg-slate-900/95">
 				<div className="mx-auto flex max-w-4xl items-center justify-between gap-3">
 					<div className="flex items-center gap-2.5 min-w-0">
-						<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#C62828] text-white font-black shadow-sm">
-							MBA
-						</div>
+						{!logoFailed && resolvedLogoUrl ? (
+							<div className="flex h-10 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white px-1.5 py-1 shadow-sm dark:border-slate-700 dark:bg-slate-800">
+								<img
+									src={resolvedLogoUrl}
+									alt="Logo MBA Laundry"
+									className="h-8 w-auto max-w-[90px] object-contain"
+									onError={() => setLogoFailed(true)}
+								/>
+							</div>
+						) : (
+							<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#C62828] text-white font-black shadow-sm">
+								MBA
+							</div>
+						)}
 						<div className="min-w-0">
 							<span className="block text-[10px] font-black uppercase tracking-wider text-red-600">
 								JADWAL KERJA RESMI KARYAWAN
@@ -313,7 +436,17 @@ export default function JadwalKaryawanPage() {
 						</div>
 					</div>
 
-					<div className="shrink-0 text-right">
+					<div className="flex shrink-0 items-center gap-2 text-right">
+						{popupConfig && !popupOpen && (
+							<button
+								type="button"
+								onClick={() => setPopupOpen(true)}
+								className="inline-flex cursor-pointer items-center gap-1 rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-[10px] font-black text-red-700 transition hover:bg-red-100 dark:border-red-900 dark:bg-red-950/60 dark:text-red-300"
+							>
+								<Megaphone size={11} />
+								<span>Info</span>
+							</button>
+						)}
 						<span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-black text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
 							<span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
 							RESMI AKTIF
@@ -417,6 +550,9 @@ export default function JadwalKaryawanPage() {
 					</p>
 				</footer>
 			</main>
+
+			{/* ============ POP-UP PENGUMUMAN KARYAWAN ============ */}
+			<ScheduleAnnouncementPopup open={popupOpen} onClose={handleClosePopup} popup={popupConfig} />
 		</div>
 	);
 }

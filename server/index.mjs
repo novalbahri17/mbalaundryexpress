@@ -2269,6 +2269,80 @@ app.get("/api/public/schedule/:slug/:token", async (req, res) => {
 			[branch.id, queryTo, currentWeekStart],
 		);
 
+		// Ambil logo resmi website dari /admin/pengaturan/branding (branding_files type 'logo' -> site_settings 'logo_url' -> fallback /logo.png)
+		let logoUrl = "/logo.png";
+		try {
+			const [logoFiles] = await pool.query(
+				"SELECT `file` FROM `branding_files` WHERE `type` = 'logo' AND `file` IS NOT NULL ORDER BY `created` DESC LIMIT 1",
+			);
+			if (logoFiles[0]?.file) {
+				logoUrl = `/uploads/${encodeURIComponent(logoFiles[0].file)}`;
+			} else {
+				const [logoSetting] = await pool.query(
+					"SELECT `value` FROM `site_settings` WHERE `key` = 'logo_url' LIMIT 1",
+				);
+				if (logoSetting[0]?.value) {
+					const rawLogo = String(logoSetting[0].value).trim();
+					if (rawLogo.includes("/api/files/")) {
+						const seg = rawLogo.split("/").pop();
+						if (seg) logoUrl = `/uploads/${seg}`;
+					} else if (rawLogo.startsWith("http") || rawLogo.startsWith("/")) {
+						logoUrl = rawLogo;
+					} else {
+						logoUrl = `/uploads/${encodeURIComponent(rawLogo)}`;
+					}
+				}
+			}
+		} catch {
+			// gunakan fallback /logo.png
+		}
+
+		// Ambil konfigurasi pop-up karyawan dari site_settings
+		let popup = null;
+		try {
+			const [popupRows] = await pool.query(
+				"SELECT `value` FROM `site_settings` WHERE `key` = 'schedule_popup_config' LIMIT 1",
+			);
+			if (popupRows[0]?.value) {
+				const parsed = JSON.parse(popupRows[0].value);
+				const targets = Array.isArray(parsed?.targetBranchIds) ? parsed.targetBranchIds : [];
+				const appliesToBranch = targets.length === 0 || targets.includes(branch.id);
+				if (parsed?.enabled && appliesToBranch) {
+					const rawImages = Array.isArray(parsed.images) ? parsed.images : [];
+					let validImages = rawImages
+						.map((img) => ({
+							id: String(img?.id || ""),
+							url: String(img?.url || ""),
+						}))
+						.filter((img) => Boolean(img.url));
+					if (validImages.length > 0) {
+						const [fileRows] = await pool.query(
+							"SELECT `id`, `file` FROM `branding_files` WHERE `type` = 'schedule_popup' AND `file` IS NOT NULL",
+						);
+						const fileMap = new Map(fileRows.map((r) => [r.id, `/uploads/${encodeURIComponent(r.file)}`]));
+						validImages = validImages
+							.map((img) => ({
+								id: img.id,
+								url: (img.id && fileMap.get(img.id)) || img.url,
+							}))
+							.filter((img) => Boolean(img.url));
+					}
+					if (parsed.title?.trim() || parsed.content?.trim() || validImages.length > 0) {
+						popup = {
+							enabled: true,
+							title: String(parsed.title || ""),
+							content: String(parsed.content || ""),
+							frequency: parsed.frequency || "daily",
+							images: validImages,
+							updatedAt: String(parsed.updatedAt || ""),
+						};
+					}
+				}
+			}
+		} catch {
+			popup = null;
+		}
+
 		res.json({
 			branch: {
 				id: branch.id,
@@ -2276,6 +2350,8 @@ app.get("/api/public/schedule/:slug/:token", async (req, res) => {
 				slug: branch.slug,
 				address: branch.address,
 			},
+			logoUrl,
+			popup,
 			todayKey,
 			dayOfWeek: dow,
 			isWeekend,

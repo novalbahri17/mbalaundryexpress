@@ -31,6 +31,7 @@ import {
 	LayoutGrid,
 	Link2,
 	MapPin,
+	Megaphone,
 	MessageCircle,
 	RefreshCw,
 	Rows3,
@@ -73,6 +74,7 @@ import type { DaySchedule, DaySlot, ScheduleWarning, ShiftKind } from "@/lib/shi
 import type { ShiftEmployee } from "@/types/database.types";
 import { EmployeePanel } from "./EmployeePanel";
 import { EventPanel } from "./EventPanel";
+import { SchedulePopupModal, useSchedulePopupConfig } from "./SchedulePopupModal";
 import { ModeBadge, RosterPerson, ShiftLegendRow, WeekDateHeader } from "./ShiftChip";
 
 type RangeMode = "week" | "2week" | "month" | "2month" | "3month" | "4month" | "5month" | "6month" | "year" | "custom";
@@ -673,6 +675,8 @@ export default function JadwalShiftPage() {
 	const [waOpen, setWaOpen] = useState(false);
 	const [waText, setWaText] = useState("");
 	const [shareModalOpen, setShareModalOpen] = useState(false);
+	const [popupModalOpen, setPopupModalOpen] = useState(false);
+	const { data: popupConfig } = useSchedulePopupConfig();
 
 	const publicEmployeeLink = useMemo(() => {
 		if (!activeBranch) return "";
@@ -916,6 +920,7 @@ export default function JadwalShiftPage() {
 								crewCount: 0,
 								hasBackup: false,
 								backupName: "Mbak Koperasi",
+								backupMode: "auto" as const,
 							};
 
 							return (
@@ -1097,6 +1102,18 @@ export default function JadwalShiftPage() {
 								title="Buka link rahasia jadwal khusus karyawan cabang ini"
 							>
 								Link Karyawan
+							</Button>
+
+							<Button
+								icon={<Megaphone size={14} className={popupConfig?.enabled ? "text-[#C62828]" : undefined} />}
+								onClick={() => setPopupModalOpen(true)}
+								className="!font-semibold"
+								title="Atur pop-up pengumuman & gambar di halaman jadwal karyawan"
+							>
+								<span>Pop-up Karyawan</span>
+								{popupConfig?.enabled && (
+									<span className="ml-1 inline-block h-2 w-2 rounded-full bg-emerald-500" />
+								)}
 							</Button>
 
 							{!isAlreadySaved && (
@@ -2073,6 +2090,13 @@ export default function JadwalShiftPage() {
 					</div>
 				</div>
 			</Modal>
+
+			{/* ============ Modal Pengaturan Pop-up Karyawan ============ */}
+			<SchedulePopupModal
+				open={popupModalOpen}
+				onClose={() => setPopupModalOpen(false)}
+				branches={branches}
+			/>
 		</MetronicPage>
 	);
 }
