@@ -33,7 +33,6 @@ import {
 	MapPin,
 	MessageCircle,
 	RefreshCw,
-	RotateCcw,
 	Rows3,
 	Save,
 	Share2,
@@ -1073,20 +1072,6 @@ export default function JadwalShiftPage() {
 								Input Manual
 							</Button>
 
-							{(Object.keys(manualOverrides).length > 0 || forceAuto) && (
-								<Button
-									icon={<RotateCcw size={14} />}
-									danger
-									onClick={() => {
-										setManualOverrides({});
-										setForceAuto(false);
-										message.info("Perubahan dikembalikan ke jadwal sebelumnya.");
-									}}
-								>
-									Batal Perubahan
-								</Button>
-							)}
-
 							{savedAssignments.length > 0 && !forceAuto && Object.keys(manualOverrides).length === 0 && (
 								<Tooltip title="Hitung ulang otomatis menggunakan algoritma rotasi 3 shift untuk mengganti susunan tersimpan">
 									<Button
@@ -1114,38 +1099,25 @@ export default function JadwalShiftPage() {
 								Link Karyawan
 							</Button>
 
-							<Tooltip
-								title={
-									isAlreadySaved
-										? "Jadwal pada periode ini sudah tersimpan dan sinkron dengan database."
-										: savedAssignments.length > 0
+							{!isAlreadySaved && (
+								<Tooltip
+									title={
+										savedAssignments.length > 0
 											? "Ada perubahan pada jadwal. Klik untuk menyimpan ke database."
 											: "Draf jadwal baru belum tersimpan. Klik untuk menyimpan ke database."
-								}
-							>
-								<Button
-									type={isAlreadySaved ? "default" : "primary"}
-									icon={isAlreadySaved ? <CheckCircle2 size={14} className="text-[#16A34A]" /> : <Save size={14} />}
-									loading={saving}
-									onClick={handleSave}
-									disabled={!schedule || !hasCrew}
-									style={
-										isAlreadySaved
-											? {
-													borderColor: "color-mix(in srgb, #16A34A 45%, var(--border))",
-													color: "var(--text-primary)",
-													background: "var(--bg-surface)",
-												}
-											: undefined
 									}
 								>
-									{isAlreadySaved
-										? "Sudah Tersimpan"
-										: savedAssignments.length > 0
-											? "Simpan Perubahan"
-											: "Simpan Jadwal"}
-								</Button>
-							</Tooltip>
+									<Button
+										type="primary"
+										icon={<Save size={14} />}
+										loading={saving}
+										onClick={handleSave}
+										disabled={!schedule || !hasCrew}
+									>
+										{savedAssignments.length > 0 ? "Simpan Perubahan" : "Simpan Jadwal"}
+									</Button>
+								</Tooltip>
+							)}
 						</div>
 					</div>
 
